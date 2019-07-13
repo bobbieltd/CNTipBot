@@ -202,7 +202,7 @@ async def sql_register_user(userID, coin: str = None):
                     result2['user_wallet_address'] = ''
                 return result2
     except Exception as e:
-        print "MySQL e="+str(e)+", sql="+sql
+        print("MySQL e=",str(e),", sql=",sql)
     finally:
         conn.close()
 
