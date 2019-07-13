@@ -7,7 +7,7 @@ from discord.ext.commands import Bot, AutoShardedBot, when_mentioned_or, CheckFa
 from discord.utils import get
 
 import time, timeago, json
-
+import pyotp
 
 import store, daemonrpc_client, addressvalidation
 from config import config
@@ -87,6 +87,7 @@ EMOJI_ARROW_RIGHTHOOK = "\u21AA"
 EMOJI_FORWARD = "\u23E9"
 EMOJI_REFRESH = "\U0001F504"
 EMOJI_ZIPPED_MOUTH = "\U0001F910"
+EMOJI_LOCKED = "\U0001F512"
 
 ENABLE_COIN = config.Enable_Coin.split(",")
 ENABLE_COIN_DOGE = ["DOGE"]
@@ -116,6 +117,7 @@ NOTICE_NACA = None
 
 NOTICE_DOGE = "Please acknowledge that DOGE address is for **one-time** use only for depositing."
 NOTIFICATION_OFF_CMD = 'Type: `.notifytip off` to turn off this DM notification.'
+MSG_LOCKED_ACCOUNT = "Your account is locked. Please contact CapEtn#4425 in WrkzCoin discord. Check `.about` for more info."
 
 bot_description = f"Tip {COIN_REPR} to other users on your server."
 bot_help_about = "About TipBot"
@@ -141,6 +143,20 @@ bot_help_notifytip = "Toggle notify tip notification from bot ON|OFF"
 bot_help_settings = "settings view and set for prefix, default coin. Requires permission manage_channels"
 bot_help_invite = "Invite link of bot to your server."
 bot_help_voucher = "(Testing) make a voucher image and your friend can claim via QR code."
+
+# admin commands
+bot_help_admin = "Various admin commands."
+bot_help_admin_save = "Save wallet file..."
+bot_help_admin_shutdown = "Restart bot."
+bot_help_admin_baluser = "Check a specific user's balance for verification purpose."
+bot_help_admin_lockuser = "Lock a user from any tx (tip, withdraw, info, etc) by user id"
+bot_help_admin_unlockuser = "Unlock a user by user id."
+
+# account commands
+bot_help_account = "Various user account commands. (Still testing)"
+bot_help_account_twofa = "Generate a 2FA and scanned with Authenticator Program."
+bot_help_account_verify = "Verify 2FA code from QR code and your Authenticator Program."
+bot_help_account_unverify = "Unverify your account and disable 2FA code."
 
 
 def get_emoji(coin: str):
@@ -365,20 +381,239 @@ async def about(ctx):
         print(e)
 
 
-@bot.group(hidden = True)
+@bot.group(hidden = True, help=bot_help_account)
 async def account(ctx):
     if ctx.invoked_subcommand is None:
         await ctx.send('Invalid `account` command passed...')
     return
 
 
-@account.command(hidden = True)
+@account.command(help=bot_help_account_twofa)
 async def twofa(ctx):
+    # check if account locked
+    account_lock = await alert_if_userlock(ctx, 'account twofa')
+    if account_lock:
+        await ctx.message.add_reaction(EMOJI_LOCKED) 
+        await ctx.send(f'{EMOJI_RED_NO} {MSG_LOCKED_ACCOUNT}')
+        return
+    # end of check if account locked
+
+    # return message 2FA already ON if 2FA already validated
+    # show QR for 2FA if not yet ON
+    userinfo = store.sql_discord_userinfo_get(str(ctx.message.author.id))
+    if userinfo is None:
+        # Create userinfo
+        random_secret32 = pyotp.random_base32()
+        create_userinfo = store.sql_userinfo_2fa_insert(str(ctx.message.author.id), random_secret32)
+        totp = pyotp.TOTP(random_secret32, interval=30)
+        google_str = pyotp.TOTP(random_secret32, interval=30).provisioning_uri(f"{ctx.message.author.id}@tipbot.wrkz.work", issuer_name="Discord TipBot")
+        if create_userinfo:
+            # do some QR code
+            qr = qrcode.QRCode(
+                version=1,
+                error_correction=qrcode.constants.ERROR_CORRECT_L,
+                box_size=10,
+                border=2,
+            )
+            qr.add_data(google_str)
+            qr.make(fit=True)
+            img = qr.make_image(fill_color="black", back_color="white")
+            img = img.resize((256, 256))
+            img.save(config.qrsettings.path + random_secret32 + ".png")
+            await ctx.message.author.send("**Please use Authenticator to scan**", 
+                                        file=discord.File(config.qrsettings.path + random_secret32 + ".png"))
+            await ctx.message.author.send('**[NEX STEP]**\n'
+                                          'From your Authenticator Program, please get code and verify by: ```.account verify XXXXXX```'
+                                          f'Or use **code** below to add manually:```{random_secret32}```')
+            return
+        else:
+            await ctx.send(f'{ctx.author.mention} Internal error during create 2FA.')
+            return
+    else:
+        # Check if 2FA secret has or not
+        # If has secret but not verified yet, show QR
+        # If has both secret and verify, tell you already verify
+        secret_code = None
+        verified = None
+        try:
+            verified = userinfo['twofa_verified']
+        except Exception as e:
+            print(e)
+        if verified and verified.upper() == "YES":
+            await ctx.send(f'{ctx.author.mention} You already verified 2FA.')
+            return
+
+        try:
+            secret_code = store.decrypt_string(userinfo['twofa_secret'])
+        except Exception as e:
+            print(e)
+        if secret_code and len(secret_code) > 0:
+            if os.path.exists(config.qrsettings.path + secret_code + ".png"):
+                pass
+            else:
+                google_str = pyotp.TOTP(secret_code, interval=30).provisioning_uri(f"{ctx.message.author.id}@tipbot.wrkz.work", issuer_name="Discord TipBot")
+                qr = qrcode.QRCode(
+                    version=1,
+                    error_correction=qrcode.constants.ERROR_CORRECT_L,
+                    box_size=10,
+                    border=2,
+                )
+                qr.add_data(google_str)
+                qr.make(fit=True)
+                img = qr.make_image(fill_color="black", back_color="white")
+                img = img.resize((256, 256))
+                img.save(config.qrsettings.path + secret_code + ".png")
+            await ctx.message.author.send("**Please use Authenticator to scan**", 
+                                          file=discord.File(config.qrsettings.path + secret_code + ".png"))
+            await ctx.message.author.send('**[NEX STEP]**\n'
+                                          'From your Authenticator Program, please get code and verify by: ```.account verify XXXXXX```'
+                                          f'Or use **code** below to add manually:```{secret_code}```')
+        else:
+            # Create userinfo
+            random_secret32 = pyotp.random_base32()
+            update_userinfo = store.sql_userinfo_2fa_update(str(ctx.message.author.id), random_secret32)
+            totp = pyotp.TOTP(random_secret32, interval=30)
+            google_str = pyotp.TOTP(random_secret32, interval=30).provisioning_uri(f"{ctx.message.author.id}@tipbot.wrkz.work", issuer_name="Discord TipBot")
+            if update_userinfo:
+                # do some QR code
+                qr = qrcode.QRCode(
+                    version=1,
+                    error_correction=qrcode.constants.ERROR_CORRECT_L,
+                    box_size=10,
+                    border=2,
+                )
+                qr.add_data(google_str)
+                qr.make(fit=True)
+                img = qr.make_image(fill_color="black", back_color="white")
+                img = img.resize((256, 256))
+                img.save(config.qrsettings.path + random_secret32 + ".png")
+                await ctx.message.author.send("**Please use Authenticator to scan**", 
+                                              file=discord.File(config.qrsettings.path + random_secret32 + ".png"))
+                await ctx.message.author.send('**[NEX STEP]**\n'
+                                              'From your Authenticator Program, please get code and verify by: ```.account verify XXXXXX```'
+                                              f'Or use **code** below to add manually:```{random_secret32}```')
+                return
+            else:
+                await ctx.send(f'{ctx.author.mention} Internal error during create 2FA.')
+                return
+    return
+
+
+@account.command(help=bot_help_account_verify)
+async def verify(ctx, codes: str):
+    # check if account locked
+    account_lock = await alert_if_userlock(ctx, 'account verify')
+    if account_lock:
+        await ctx.message.add_reaction(EMOJI_LOCKED) 
+        await ctx.send(f'{EMOJI_RED_NO} {MSG_LOCKED_ACCOUNT}')
+        return
+    # end of check if account locked
+
+    if len(codes) != 6:
+        await ctx.send(f'{ctx.author.mention} Incorrect code length.')
+        return
+
+    userinfo = store.sql_discord_userinfo_get(str(ctx.message.author.id))
+    if userinfo is None:
+        await ctx.send(f'{ctx.author.mention} You have not created 2FA code to scan yet.\n'
+                       'Please execute **account twofa** to generate 2FA scan code.')
+        return
+    else:
+        secret_code = None
+        verified = None
+        try:
+            verified = userinfo['twofa_verified']
+        except Exception as e:
+            print(e)
+        if verified and verified.upper() == "YES":
+            await ctx.send(f'{ctx.author.mention} You already verified 2FA. You do not need this.')
+            return
+        
+        try:
+            secret_code = store.decrypt_string(userinfo['twofa_secret'])
+        except Exception as e:
+            print(e)
+
+        if secret_code and len(secret_code) > 0:
+            totp = pyotp.TOTP(secret_code, interval=30)
+            if codes in [totp.now(), totp.at(for_time=int(time.time()-15)), totp.at(for_time=int(time.time()+15))]:
+                update_userinfo = store.sql_userinfo_2fa_verify(str(ctx.message.author.id), 'YES')
+                if update_userinfo:
+                    await ctx.send(f'{ctx.author.mention} Thanks for verification with 2FA.')
+                    return
+                else:
+                    await ctx.send(f'{ctx.author.mention} Error verification 2FA.')
+                    return
+            else:
+                await ctx.send(f'{ctx.author.mention} Incorrect 2FA code. Please re-check.\n')
+                return
+        else:
+            await ctx.send(f'{ctx.author.mention} You have not created 2FA code to scan yet.\n'
+                           'Please execute **account twofa** to generate 2FA scan code.')
+            return
+
+
+@account.command(help=bot_help_account_unverify)
+async def unverify(ctx, codes: str):
+    # check if account locked
+    account_lock = await alert_if_userlock(ctx, 'account verify')
+    if account_lock:
+        await ctx.message.add_reaction(EMOJI_LOCKED) 
+        await ctx.send(f'{EMOJI_RED_NO} {MSG_LOCKED_ACCOUNT}')
+        return
+    # end of check if account locked
+
+    if len(codes) != 6:
+        await ctx.send(f'{ctx.author.mention} Incorrect code length.')
+        return
+
+    userinfo = store.sql_discord_userinfo_get(str(ctx.message.author.id))
+    if userinfo is None:
+        await ctx.send(f'{ctx.author.mention} You have not created 2FA code to scan yet.\n'
+                       'Nothing to **unverify**.')
+        return
+    else:
+        secret_code = None
+        verified = None
+        try:
+            verified = userinfo['twofa_verified']
+        except Exception as e:
+            print(e)
+        if verified and verified.upper() == "NO":
+            await ctx.send(f'{ctx.author.mention} You have not verified yet. **Unverify** stopped.')
+            return
+        
+        try:
+            secret_code = store.decrypt_string(userinfo['twofa_secret'])
+        except Exception as e:
+            print(e)
+
+        if secret_code and len(secret_code) > 0:
+            totp = pyotp.TOTP(secret_code, interval=30)
+            if codes in [totp.now(), totp.at(for_time=int(time.time()-15)), totp.at(for_time=int(time.time()+15))]:
+                update_userinfo = store.sql_userinfo_2fa_verify(str(ctx.message.author.id), 'NO')
+                if update_userinfo:
+                    await ctx.send(f'{ctx.author.mention} You clear verification 2FA. You will need to add to your authentication program again later.')
+                    return
+                else:
+                    await ctx.send(f'{ctx.author.mention} Error unverify 2FA.')
+                    return
+            else:
+                await ctx.send(f'{ctx.author.mention} Incorrect 2FA code. Please re-check.\n')
+                return
+        else:
+            await ctx.send(f'{ctx.author.mention} You have not created 2FA code to scan yet.\n'
+                           'Nothing to **unverify**.')
+            return
+
+
+@account.command(hidden = True)
+async def set(ctx, param: str, value: str):
     await ctx.send('On progress.')
     return
 
 
-@bot.group(hidden = True)
+@bot.group(hidden = True, help=bot_help_admin)
 @commands.is_owner()
 async def admin(ctx):
     if ctx.invoked_subcommand is None:
@@ -387,7 +622,7 @@ async def admin(ctx):
 
 
 @commands.is_owner()
-@admin.command(hidden = True)
+@admin.command(help=bot_help_admin_save)
 async def save(ctx, coin: str):
     botLogChan = bot.get_channel(id=LOG_CHAN)
     COIN_NAME = coin.upper()
@@ -409,7 +644,7 @@ async def save(ctx, coin: str):
 
 
 @commands.is_owner()
-@admin.command(pass_context=True, name='shutdown', aliases=['restart'])
+@admin.command(pass_context=True, name='shutdown', aliases=['restart'], help=bot_help_admin_shutdown)
 async def shutdown(ctx):
     botLogChan = bot.get_channel(id=LOG_CHAN)
     await ctx.send(f'{EMOJI_REFRESH} {ctx.author.mention} .. restarting .. back soon.')
@@ -417,8 +652,119 @@ async def shutdown(ctx):
     await bot.logout()
 
 
+@commands.is_owner()
+@admin.command(help=bot_help_admin_baluser)
+async def baluser(ctx, user_id: str, create_wallet: str = None):
+    create_acc = None
+    # for verification | future restoration of lost account
+    table_data = [
+        ['TICKER', 'Available', 'Locked']
+    ]
+    for coinItem in ENABLE_COIN:
+        if coinItem not in MAINTENANCE_COIN:
+            COIN_DEC = get_decimal(coinItem.upper())
+            wallet = await store.sql_get_userwallet(str(user_id), coinItem.upper())
+            if wallet is None:
+                if create_wallet.upper() == "ON":
+                    create_acc = True
+                    wallet = await store.sql_get_userwallet(str(user_id), coinItem.upper())
+                    if wallet is None:
+                        userregister = await store.sql_register_user(str(user_id), coinItem.upper())
+                        wallet = await store.sql_get_userwallet(str(user_id), coinItem.upper())
+                if wallet:
+                    table_data.append([coinItem.upper(), num_format_coin(0, coinItem.upper()), num_format_coin(0, coinItem.upper())])
+                else:
+                    table_data.append([coinItem.upper(), "N/A", "N/A"])
+            else:
+                create_acc = True
+                balance_actual = num_format_coin(wallet['actual_balance'], coinItem.upper())
+                balance_locked = num_format_coin(wallet['locked_balance'], coinItem.upper())
+                balance_total = num_format_coin((wallet['actual_balance'] + wallet['locked_balance']), coinItem.upper())
+                coinName = coinItem.upper()
+                if 'user_wallet_address' not in wallet:
+                    coinName += '*'
+                if wallet['forwardtip'] == "ON":
+                    coinName += ' >>'
+                table_data.append([coinName, balance_actual, balance_locked])
+                pass
+        else:
+            table_data.append([coinItem.upper(), "***", "***"])
+    # Add DOGE
+    COIN_NAME = "DOGE"
+    if COIN_NAME not in MAINTENANCE_COIN and create_acc:
+        depositAddress = await DOGE_LTC_getaccountaddress(str(user_id), COIN_NAME)
+        actual = float(await DOGE_LTC_getbalance_acc(str(user_id), COIN_NAME, 6))
+        locked = float(await DOGE_LTC_getbalance_acc(str(user_id), COIN_NAME, 1))
+        userdata_balance = store.sql_doge_balance(str(user_id), COIN_NAME)
+
+        if actual == locked:
+            balance_actual = num_format_coin(actual + float(userdata_balance['Adjust']), COIN_NAME)
+            balance_locked = num_format_coin(0, COIN_NAME)
+        else:
+            balance_actual = num_format_coin(actual + float(userdata_balance['Adjust']), COIN_NAME)
+            if locked - actual + float(userdata_balance['Adjust']) < 0:
+                balance_locked =  num_format_coin(0, COIN_NAME)
+            else:
+                balance_locked =  num_format_coin(locked - actual + float(userdata_balance['Adjust']), COIN_NAME)
+        table_data.append([COIN_NAME, balance_actual, balance_locked])
+    else:
+        table_data.append([COIN_NAME, "***", "***"])
+    # End of Add DOGE
+
+    table = AsciiTable(table_data)
+    table.padding_left = 0
+    table.padding_right = 0
+    await ctx.message.add_reaction(EMOJI_OK)
+    await ctx.message.author.send(f'**[ BALANCE LIST OF {user_id} ]**\n'
+                                  f'```{table.table}```\n')
+    return
+
+
+@commands.is_owner()
+@admin.command(help=bot_help_admin_lockuser)
+async def lockuser(ctx, user_id: str, *, reason: str):
+    get_discord_userinfo = store.sql_discord_userinfo_get(user_id)
+    if get_discord_userinfo is None:
+        store.sql_userinfo_locked(user_id, 'YES', reason, str(ctx.message.author.id))
+        await ctx.message.add_reaction(EMOJI_OK)
+        await ctx.message.author.send(f'{user_id} is locked.')
+        return
+    else:
+        if get_discord_userinfo['locked'].upper() == "YES":
+            await ctx.message.author.send(f'{user_id} was already locked.')
+        else:
+            store.sql_userinfo_locked(user_id, 'YES', reason, str(ctx.message.author.id))
+            await ctx.message.add_reaction(EMOJI_OK)
+            await ctx.message.author.send(f'Turn {user_id} to locked.')
+        return
+
+
+@commands.is_owner()
+@admin.command(help=bot_help_admin_unlockuser)
+async def unlockuser(ctx, user_id: str):
+    get_discord_userinfo = store.sql_discord_userinfo_get(user_id)
+    if get_discord_userinfo:
+        if get_discord_userinfo['locked'].upper() == "NO":
+            await ctx.message.author.send(f'**{user_id}** was already unlocked. Nothing to do.')
+        else:
+            store.sql_change_userinfo_single(user_id, 'locked', 'NO')
+            await ctx.message.author.send(f'Unlocked {user_id} done.')
+        return      
+    else:
+        await ctx.message.author.send(f'{user_id} not stored in **discord userinfo** yet. Nothing to unlocked.')
+        return
+
+
 @bot.command(pass_context=True, name='info', aliases=['wallet'], help=bot_help_info)
 async def info(ctx, coin: str = None):
+    # check if account locked
+    account_lock = await alert_if_userlock(ctx, 'info')
+    if account_lock:
+        await ctx.message.add_reaction(EMOJI_LOCKED) 
+        await ctx.send(f'{EMOJI_RED_NO} {MSG_LOCKED_ACCOUNT}')
+        return
+    # end of check if account locked
+
     global LIST_IGNORECHAN
     wallet = None
     if coin is None:
@@ -477,10 +823,11 @@ async def info(ctx, coin: str = None):
                 f'Type: `{server_prefix}setting` if you want to change `prefix` or `default_coin` or `ignorechan` or `del_ignorechan` or `tiponly`. (Required permission)')
             return
     elif coin.upper() in ENABLE_COIN:
-        user = await store.sql_register_user(ctx.message.author.id, coin.upper())
-        wallet = await store.sql_get_userwallet(ctx.message.author.id, coin.upper())
+        wallet = await store.sql_get_userwallet(str(ctx.message.author.id), coin.upper())
+        if wallet is None:
+            userregister = await store.sql_register_user(str(ctx.message.author.id), coin.upper())
+            wallet = await store.sql_get_userwallet(str(ctx.message.author.id), coin.upper())
     elif coin.upper() in ENABLE_COIN_DOGE:
-        # user = await store.sql_register_user(ctx.message.author.id, "DOGE")
         wallet = await store.sql_get_userwallet(ctx.message.author.id, coin.upper())
         depositAddress = await DOGE_LTC_getaccountaddress(ctx.message.author.id, coin.upper())
         wallet['balance_wallet_address'] = depositAddress
@@ -528,6 +875,14 @@ async def info(ctx, coin: str = None):
 
 @bot.command(pass_context=True, name='balance', aliases=['bal'], help=bot_help_balance)
 async def balance(ctx, coin: str = None):
+    # check if account locked
+    account_lock = await alert_if_userlock(ctx, 'balance')
+    if account_lock:
+        await ctx.message.add_reaction(EMOJI_LOCKED) 
+        await ctx.send(f'{EMOJI_RED_NO} {MSG_LOCKED_ACCOUNT}')
+        return
+    # end of check if account locked
+
     PUBMSG = ctx.message.content.strip().split(" ")[-1].upper()
     prefixChar = '.'
     if isinstance(ctx.channel, discord.DMChannel):
@@ -655,7 +1010,7 @@ async def balance(ctx, coin: str = None):
         return
 
     if walletStatus is None:
-        await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} Wallet service hasn\'t started.')
+        await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} {coin.upper()} Wallet service hasn\'t started.')
         return
     else:
         localDaemonBlockCount = int(walletStatus['blockCount'])
@@ -666,7 +1021,7 @@ async def balance(ctx, coin: str = None):
             t_localDaemonBlockCount = '{:,}'.format(localDaemonBlockCount)
             t_networkBlockCount = '{:,}'.format(networkBlockCount)
             await ctx.message.add_reaction(EMOJI_WARNING)
-            await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} Wallet service hasn\'t sync fully with network or being re-sync. More info:\n```'
+            await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} {COIN_NAME} Wallet service hasn\'t sync fully with network or being re-sync. More info:\n```'
                            f'networkBlockCount:     {t_networkBlockCount}\n'
                            f'localDaemonBlockCount: {t_localDaemonBlockCount}\n'
                            f'Progress %:            {t_percent}\n```'
@@ -687,13 +1042,13 @@ async def balance(ctx, coin: str = None):
     else:
         pass
     # End Check if maintenance
-    try:
-        user = await store.sql_register_user(ctx.message.author.id, COIN_NAME)
-    except:
-        pass
-    wallet = await store.sql_get_userwallet(ctx.message.author.id, COIN_NAME)
+
+    wallet = await store.sql_get_userwallet(str(ctx.message.author.id), COIN_NAME)
     if wallet is None:
-        await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} Internal Error for `.balance`')
+        userregister = await store.sql_register_user(str(ctx.message.author.id), COIN_NAME)
+        wallet = await store.sql_get_userwallet(str(ctx.message.author.id), COIN_NAME)
+    if wallet is None:
+        await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} {COIN_NAME} Internal Error for `.balance`')
         return
     if 'lastUpdate' in wallet:
         await ctx.message.add_reaction(EMOJI_OK)
@@ -744,7 +1099,7 @@ async def botbalance(ctx, member: discord.Member = None, *args):
         walletStatus = await daemonrpc_client.getDaemonRPCStatus(COIN_NAME)
 
     if walletStatus is None:
-        await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention}  Wallet service hasn\'t started.')
+        await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} {COIN_NAME} Wallet service hasn\'t started.')
         return
     else:
         if COIN_NAME in ENABLE_COIN_DOGE:
@@ -759,7 +1114,7 @@ async def botbalance(ctx, member: discord.Member = None, *args):
             t_localDaemonBlockCount = '{:,}'.format(localDaemonBlockCount)
             t_networkBlockCount = '{:,}'.format(networkBlockCount)
             await ctx.message.add_reaction(EMOJI_WARNING)
-            await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} Wallet service hasn\'t sync fully with network or being re-sync. More info:\n```'
+            await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} {COIN_NAME} Wallet service hasn\'t sync fully with network or being re-sync. More info:\n```'
                            f'networkBlockCount:     {t_networkBlockCount}\n'
                            f'localDaemonBlockCount: {t_localDaemonBlockCount}\n'
                            f'Progress %:            {t_percent}\n```'
@@ -785,7 +1140,6 @@ async def botbalance(ctx, member: discord.Member = None, *args):
         COIN_DEC = get_decimal(COIN_NAME)
 
     if member is None:
-        # user = await store.sql_register_user(bot.user.id, COIN_NAME)
         # Bypass other if they re in ENABLE_COIN_DOGE
         if COIN_NAME in ENABLE_COIN_DOGE:
             depositAddress = await DOGE_LTC_getaccountaddress(bot.user.id, COIN_NAME)
@@ -832,7 +1186,6 @@ async def botbalance(ctx, member: discord.Member = None, *args):
         await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} Only for bot!!')
         return
     else:
-        user = await store.sql_register_user(bot.user.id, COIN_NAME)
         # Bypass other if they re in ENABLE_COIN_DOGE
         if COIN_NAME in ENABLE_COIN_DOGE:
             try:
@@ -882,6 +1235,14 @@ async def botbalance(ctx, member: discord.Member = None, *args):
 @bot.command(pass_context=True, name='forwardtip', aliases=['redirecttip'],
              help=bot_help_forwardtip)
 async def forwardtip(ctx, coin: str, option: str):
+    # check if account locked
+    account_lock = await alert_if_userlock(ctx, 'forwardtip')
+    if account_lock:
+        await ctx.message.add_reaction(EMOJI_LOCKED) 
+        await ctx.send(f'{EMOJI_RED_NO} {MSG_LOCKED_ACCOUNT}')
+        return
+    # end of check if account locked
+
     # Check to test
     # if ctx.message.author.id not in MAINTENANCE_OWNER:
         # await ctx.message.add_reaction(EMOJI_WARNING)
@@ -922,6 +1283,14 @@ async def forwardtip(ctx, coin: str, option: str):
 @bot.command(pass_context=True, name='register', aliases=['registerwallet', 'reg', 'updatewallet'],
              help=bot_help_register)
 async def register(ctx, wallet_address: str):
+    # check if account locked
+    account_lock = await alert_if_userlock(ctx, 'register')
+    if account_lock:
+        await ctx.message.add_reaction(EMOJI_LOCKED) 
+        await ctx.send(f'{EMOJI_RED_NO} {MSG_LOCKED_ACCOUNT}')
+        return
+    # end of check if account locked
+
     # Check if maintenance
     if IS_MAINTENANCE == 1:
         if int(ctx.message.author.id) in MAINTENANCE_OWNER:
@@ -1012,7 +1381,7 @@ async def register(ctx, wallet_address: str):
         await store.sql_update_user(user_id, wallet_address, COIN_NAME)
         if prev_address:
             await ctx.message.add_reaction(EMOJI_OK)
-            await ctx.send(f'Your {COIN_NAME} {ctx.author.mention} withdraw address has been changed from:\n'
+            await ctx.send(f'Your {COIN_NAME} {ctx.author.mention} withdraw address has changed from:\n'
                            f'`{prev_address}`\n to\n '
                            f'`{wallet_address}`')
             return
@@ -1020,13 +1389,21 @@ async def register(ctx, wallet_address: str):
     else:
         user = await store.sql_update_user(user_id, wallet_address, COIN_NAME)
         await ctx.message.add_reaction(EMOJI_OK)
-        await ctx.send(f'{ctx.author.mention} You have been registered {COIN_NAME} withdraw address.\n'
+        await ctx.send(f'{ctx.author.mention} You have registered {COIN_NAME} withdraw address.\n'
                        f'You can use `{server_prefix}withdraw AMOUNT {COIN_NAME}` anytime.')
         return
 
 
 @bot.command(pass_context=True, help=bot_help_withdraw)
 async def withdraw(ctx, amount: str, coin: str = None):
+    # check if account locked
+    account_lock = await alert_if_userlock(ctx, 'withdraw')
+    if account_lock:
+        await ctx.message.add_reaction(EMOJI_LOCKED) 
+        await ctx.send(f'{EMOJI_RED_NO} {MSG_LOCKED_ACCOUNT}')
+        return
+    # end of check if account locked
+
     botLogChan = bot.get_channel(id=LOG_CHAN)
     amount = amount.replace(",", "")
 
@@ -1167,7 +1544,7 @@ async def withdraw(ctx, amount: str, coin: str = None):
     walletStatus = await daemonrpc_client.getWalletStatus(COIN_NAME)
 
     if walletStatus is None:
-        await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} Wallet service hasn\'t started.')
+        await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} {COIN_NAME} Wallet service hasn\'t started.')
         return
     else:
         localDaemonBlockCount = int(walletStatus['blockCount'])
@@ -1178,7 +1555,7 @@ async def withdraw(ctx, amount: str, coin: str = None):
             t_localDaemonBlockCount = '{:,}'.format(localDaemonBlockCount)
             t_networkBlockCount = '{:,}'.format(networkBlockCount)
             await ctx.message.add_reaction(EMOJI_WARNING)
-            await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} Wallet service hasn\'t sync fully with network or being re-sync. More info:\n```'
+            await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} {COIN_NAME} Wallet service hasn\'t sync fully with network or being re-sync. More info:\n```'
                            f'networkBlockCount:     {t_networkBlockCount}\n'
                            f'localDaemonBlockCount: {t_localDaemonBlockCount}\n'
                            f'Progress %:            {t_percent}\n```'
@@ -1209,6 +1586,14 @@ async def withdraw(ctx, amount: str, coin: str = None):
 
 @bot.command(pass_context=True, help=bot_help_donate)
 async def donate(ctx, amount: str, coin: str = None):
+    # check if account locked
+    account_lock = await alert_if_userlock(ctx, 'donate')
+    if account_lock:
+        await ctx.message.add_reaction(EMOJI_LOCKED) 
+        await ctx.send(f'{EMOJI_RED_NO} {MSG_LOCKED_ACCOUNT}')
+        return
+    # end of check if account locked
+
     botLogChan = bot.get_channel(id=LOG_CHAN)
     donate_msg = ''
     if amount.upper() == "LIST":
@@ -1360,7 +1745,7 @@ async def donate(ctx, amount: str, coin: str = None):
     # Get wallet status
     walletStatus = await daemonrpc_client.getWalletStatus(COIN_NAME)
     if walletStatus is None:
-        await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} Wallet service hasn\'t started.')
+        await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} {COIN_NAME} Wallet service hasn\'t started.')
         return
     else:
         localDaemonBlockCount = int(walletStatus['blockCount'])
@@ -1371,7 +1756,7 @@ async def donate(ctx, amount: str, coin: str = None):
             t_localDaemonBlockCount = '{:,}'.format(localDaemonBlockCount)
             t_networkBlockCount = '{:,}'.format(networkBlockCount)
             await ctx.message.add_reaction(EMOJI_WARNING)
-            await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} Wallet service hasn\'t sync fully with network or being re-sync. More info:\n```'
+            await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} {COIN_NAME} Wallet service hasn\'t sync fully with network or being re-sync. More info:\n```'
                            f'networkBlockCount:     {t_networkBlockCount}\n'
                            f'localDaemonBlockCount: {t_localDaemonBlockCount}\n'
                            f'Progress %:            {t_percent}\n```'
@@ -1402,6 +1787,14 @@ async def donate(ctx, amount: str, coin: str = None):
 
 @bot.command(pass_context=True, help=bot_help_notifytip)
 async def notifytip(ctx, onoff: str):
+    # check if account locked
+    account_lock = await alert_if_userlock(ctx, 'forwardtip')
+    if account_lock:
+        await ctx.message.add_reaction(EMOJI_LOCKED) 
+        await ctx.send(f'{EMOJI_RED_NO} {MSG_LOCKED_ACCOUNT}')
+        return
+    # end of check if account locked
+
     if onoff.upper() not in ["ON", "OFF"]:
         await ctx.message.add_reaction(EMOJI_ERROR)
         await ctx.send('You need to use only `ON` or `OFF`.')
@@ -1429,6 +1822,14 @@ async def notifytip(ctx, onoff: str):
 
 @bot.command(pass_context=True, help=bot_help_tip)
 async def tip(ctx, amount: str, *args):
+    # check if account locked
+    account_lock = await alert_if_userlock(ctx, 'tip')
+    if account_lock:
+        await ctx.message.add_reaction(EMOJI_LOCKED) 
+        await ctx.send(f'{EMOJI_RED_NO} {MSG_LOCKED_ACCOUNT}')
+        return
+    # end of check if account locked
+
     botLogChan = bot.get_channel(id=LOG_CHAN)
     amount = amount.replace(",", "")
 
@@ -1454,7 +1855,7 @@ async def tip(ctx, amount: str, *args):
         else:
             COIN_NAME = COIN_NAME.upper()
     except:
-        if ('default_coin' in serverinfo):
+        if 'default_coin' in serverinfo:
             COIN_NAME = serverinfo['default_coin'].upper()
     print("COIN_NAME: " + COIN_NAME)
 
@@ -1656,7 +2057,7 @@ async def tip(ctx, amount: str, *args):
     # Get wallet status
     walletStatus = await daemonrpc_client.getWalletStatus(COIN_NAME)
     if walletStatus is None:
-        await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} Wallet service hasn\'t started.')
+        await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} {COIN_NAME} Wallet service hasn\'t started.')
         return
     else:
         localDaemonBlockCount = int(walletStatus['blockCount'])
@@ -1667,7 +2068,7 @@ async def tip(ctx, amount: str, *args):
             t_localDaemonBlockCount = '{:,}'.format(localDaemonBlockCount)
             t_networkBlockCount = '{:,}'.format(networkBlockCount)
             await ctx.message.add_reaction(EMOJI_WARNING)
-            await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} Wallet service hasn\'t sync fully with network or being re-sync. More info:\n```'
+            await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} {COIN_NAME} Wallet service hasn\'t sync fully with network or being re-sync. More info:\n```'
                            f'networkBlockCount:     {t_networkBlockCount}\n'
                            f'localDaemonBlockCount: {t_localDaemonBlockCount}\n'
                            f'Progress %:            {t_percent}\n```'
@@ -1720,6 +2121,14 @@ async def tip(ctx, amount: str, *args):
 
 @bot.command(pass_context=True, help=bot_help_tipall)
 async def tipall(ctx, amount: str, *args):
+    # check if account locked
+    account_lock = await alert_if_userlock(ctx, 'tipall')
+    if account_lock:
+        await ctx.message.add_reaction(EMOJI_LOCKED) 
+        await ctx.send(f'{EMOJI_RED_NO} {MSG_LOCKED_ACCOUNT}')
+        return
+    # end of check if account locked
+
     botLogChan = bot.get_channel(id=LOG_CHAN)
     amount = amount.replace(",", "")
 
@@ -1957,7 +2366,7 @@ async def tipall(ctx, amount: str, *args):
     # Get wallet status
     walletStatus = await daemonrpc_client.getWalletStatus(COIN_NAME)
     if walletStatus is None:
-        await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} Wallet service hasn\'t started.')
+        await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} {COIN_NAME} Wallet service hasn\'t started.')
         return
     else:
         localDaemonBlockCount = int(walletStatus['blockCount'])
@@ -1968,7 +2377,7 @@ async def tipall(ctx, amount: str, *args):
             t_localDaemonBlockCount = '{:,}'.format(localDaemonBlockCount)
             t_networkBlockCount = '{:,}'.format(networkBlockCount)
             await ctx.message.add_reaction(EMOJI_WARNING)
-            await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} Wallet service hasn\'t sync fully with network or being re-sync. More info:\n```'
+            await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} {COIN_NAME} Wallet service hasn\'t sync fully with network or being re-sync. More info:\n```'
                            f'networkBlockCount:     {t_networkBlockCount}\n'
                            f'localDaemonBlockCount: {t_localDaemonBlockCount}\n'
                            f'Progress %:            {t_percent}\n```'
@@ -2038,6 +2447,14 @@ async def tipall(ctx, amount: str, *args):
 
 @bot.command(pass_context=True, help=bot_help_send)
 async def send(ctx, amount: str, CoinAddress: str):
+    # check if account locked
+    account_lock = await alert_if_userlock(ctx, 'send')
+    if account_lock:
+        await ctx.message.add_reaction(EMOJI_LOCKED) 
+        await ctx.send(f'{EMOJI_RED_NO} {MSG_LOCKED_ACCOUNT}')
+        return
+    # end of check if account locked
+
     botLogChan = bot.get_channel(id=LOG_CHAN)
     amount = amount.replace(",", "")
 
@@ -2250,7 +2667,7 @@ async def send(ctx, amount: str, CoinAddress: str):
     # Get wallet status
     walletStatus = await daemonrpc_client.getWalletStatus(COIN_NAME)
     if walletStatus is None:
-        await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} Wallet service hasn\'t started.')
+        await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} {COIN_NAME} Wallet service hasn\'t started.')
         return
     else:
         localDaemonBlockCount = int(walletStatus['blockCount'])
@@ -2261,7 +2678,7 @@ async def send(ctx, amount: str, CoinAddress: str):
             t_localDaemonBlockCount = '{:,}'.format(localDaemonBlockCount)
             t_networkBlockCount = '{:,}'.format(networkBlockCount)
             await ctx.message.add_reaction(EMOJI_WARNING)
-            await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} Wallet service hasn\'t sync fully with network or being re-sync. More info:\n```'
+            await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} {COIN_NAME} Wallet service hasn\'t sync fully with network or being re-sync. More info:\n```'
                            f'networkBlockCount:     {t_networkBlockCount}\n'
                            f'localDaemonBlockCount: {t_localDaemonBlockCount}\n'
                            f'Progress %:            {t_percent}\n```'
@@ -2508,6 +2925,14 @@ async def address(ctx, *args):
 
 @bot.command(pass_context=True, name='optimize', aliases=['opt'], help=bot_help_optimize)
 async def optimize(ctx, coin: str, member: discord.Member = None):
+    # check if account locked
+    account_lock = await alert_if_userlock(ctx, 'optimize')
+    if account_lock:
+        await ctx.message.add_reaction(EMOJI_LOCKED) 
+        await ctx.send(f'{EMOJI_RED_NO} {MSG_LOCKED_ACCOUNT}')
+        return
+    # end of check if account locked
+
     botLogChan = bot.get_channel(id=LOG_CHAN)
     if coin.upper() not in ENABLE_COIN:
         await ctx.message.add_reaction(EMOJI_WARNING)
@@ -2549,7 +2974,7 @@ async def optimize(ctx, coin: str, member: discord.Member = None):
     # Get wallet status
     walletStatus = await daemonrpc_client.getWalletStatus(COIN_NAME)
     if walletStatus is None:
-        await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} Wallet service hasn\'t started.')
+        await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} {COIN_NAME} Wallet service hasn\'t started.')
         return
     else:
         localDaemonBlockCount = int(walletStatus['blockCount'])
@@ -2560,7 +2985,7 @@ async def optimize(ctx, coin: str, member: discord.Member = None):
             t_localDaemonBlockCount = '{:,}'.format(localDaemonBlockCount)
             t_networkBlockCount = '{:,}'.format(networkBlockCount)
             await ctx.message.add_reaction(EMOJI_WARNING)
-            await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} Wallet service hasn\'t sync fully with network or being re-sync. More info:\n```'
+            await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} {COIN_NAME} Wallet service hasn\'t sync fully with network or being re-sync. More info:\n```'
                            f'networkBlockCount:     {t_networkBlockCount}\n'
                            f'localDaemonBlockCount: {t_localDaemonBlockCount}\n'
                            f'Progress %:            {t_percent}\n```'
@@ -2762,60 +3187,32 @@ async def paymentid(ctx):
 
 @bot.command(pass_context=True, aliases=['stat'], help=bot_help_stats)
 async def stats(ctx, coin: str = None):
-    if coin is None or coin.upper() == 'BOT':
+    if ((coin is None) and isinstance(ctx.message.channel, discord.DMChannel)) or coin.upper() == "BOT":
         await bot.wait_until_ready()
+        get_all_m = bot.get_all_members()
         #membercount = '[Members] ' + '{:,.0f}'.format(sum([x.member_count for x in bot.guilds]))
         guildnumber = '[Guilds]        ' + '{:,.0f}'.format(len(bot.guilds))
         shardcount = '[Shards]        ' + '{:,.0f}'.format(bot.shard_count)
-        totalonline = '[Total Online]  ' + '{:,.0f}'.format(sum(1 for m in bot.get_all_members() if str(m.status) != 'offline'))
-        uniqmembers = '[Unique user]   ' + '{:,.0f}'.format(len(set(bot.get_all_members())))
-        uniqonlines = '[Unique Online] ' + '{:,.0f}'.format(sum(1 for m in set(bot.get_all_members()) if str(m.status) != 'offline'))
+        totalonline = '[Total Online]  ' + '{:,.0f}'.format(sum(1 for m in get_all_m if str(m.status) != 'offline'))
+        uniqmembers = '[Unique user]   ' + '{:,.0f}'.format(len(bot.users))
+        channelnumb = '[Channels]      ' + '{:,.0f}'.format(sum(1 for g in bot.guilds for _ in g.channels))
         botid = '[Bot ID]        ' + str(bot.user.id)
         botstats = '**[ TIPBOT ]**\n'
         botstats = botstats + '```'
-        botstats = botstats + botid + '\n' + guildnumber + '\n' + shardcount + '\n' + totalonline + '\n' + uniqmembers + '\n' + uniqonlines
-        botstats = botstats + '```'	
-        if isinstance(ctx.message.channel, discord.DMChannel):	
-            try:
-                await ctx.send(f'{botstats}')
-                await ctx.send('Please add ticker: '+ ', '.join(ENABLE_COIN).lower() + ' to get stats about coin instead.')
-            except Exception as e:
-                print(e)
-            return
-        else:
-            if coin and coin.upper() == 'BOT':
-                try:
-                    await ctx.send(f'{botstats}')
-                    await ctx.send('Please add ticker: '+ ', '.join(ENABLE_COIN).lower() + ' to get stats about coin instead.')
-                except Exception as e:
-                    print(e)
-                return
-            serverinfo = store.sql_info_by_server(str(ctx.guild.id))
-            try:
-                COIN_NAME = args[0]
-                if COIN_NAME.upper() not in ENABLE_COIN:
-                    if COIN_NAME.upper() in ENABLE_COIN_DOGE:
-                        COIN_NAME = COIN_NAME.upper()
-                    elif 'default_coin' in serverinfo:
-                        COIN_NAME = serverinfo['default_coin'].upper()
-                else:
-                    COIN_NAME = COIN_NAME.upper()
-            except:
-                if 'default_coin' in serverinfo:
-                    COIN_NAME = serverinfo['default_coin'].upper()
-            print("COIN_NAME: " + COIN_NAME)
-            coin = COIN_NAME
-            pass
+        botstats = botstats + botid + '\n' + guildnumber + '\n' + shardcount + '\n' + totalonline + '\n' + uniqmembers + '\n' + channelnumb
+        botstats = botstats + '```'
+        await ctx.send(f'{botstats}')
+        await ctx.send('Please add ticker: '+ ', '.join(ENABLE_COIN).lower() + ' to get stats about coin instead.')
+        return
+    elif (coin is None) and isinstance(ctx.message.channel, discord.DMChannel) == False:
+        serverinfo = get_info_pref_coin(ctx)
+        coin = serverinfo['default_coin']
+        pass
 
     if coin.upper() not in ENABLE_COIN:
-        if coin == "*":
-            await ctx.message.add_reaction(EMOJI_OK)
-            await ctx.send('Not available yet. TODO.')
-            return
-        else:
-            await ctx.message.add_reaction(EMOJI_ERROR)
-            await ctx.send('Please put available ticker: '+ ', '.join(ENABLE_COIN).lower())
-            return
+        await ctx.message.add_reaction(EMOJI_ERROR)
+        await ctx.send('Please put available ticker: '+ ', '.join(ENABLE_COIN).lower())
+        return
     else:
         coin = coin.upper()
 
@@ -3436,6 +3833,23 @@ def hhashes(num) -> str:
     return "%3.1f%s" % (num, 'TH/s')
 
 
+async def alert_if_userlock(ctx, cmd: str):
+    botLogChan = bot.get_channel(id=LOG_CHAN)
+    get_discord_userinfo = None
+    try:
+        get_discord_userinfo = store.sql_discord_userinfo_get(str(ctx.message.author.id))
+    except Exception as e:
+        print(e)
+    if get_discord_userinfo is None:
+        return None
+    else:
+        if get_discord_userinfo['locked'].upper() == "YES":
+            await botLogChan.send(f'{ctx.message.author.name} / {ctx.message.author.id} locked but is commanding `{cmd}`')
+            return True
+        else:
+            return None
+
+
 def get_info_pref_coin(ctx):
     if isinstance(ctx.channel, discord.DMChannel):
         prefixChar = '.'
@@ -3456,7 +3870,7 @@ def get_info_pref_coin(ctx):
             server_id = str(ctx.guild.id)
             server_prefix = serverinfo['prefix']
             server_coin = serverinfo['default_coin'].upper()
-        return {'server_prefix': server_prefix, 'server_coin': server_coin, 'server_id': server_id, 'servername': ctx.guild.name}
+        return {'server_prefix': server_prefix, 'default_coin': server_coin, 'server_id': server_id, 'servername': ctx.guild.name}
 
 
 def get_cn_coin_from_address(CoinAddress: str):
@@ -3527,6 +3941,22 @@ async def register_error(ctx, error):
     if isinstance(error, commands.MissingRequiredArgument):
         await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} Missing your wallet address. '
                        'You need to have a supported coin **address** after `register` command')
+    return
+
+
+@account.error
+@verify.error
+async def account_verify_error(ctx, error):
+    if isinstance(error, commands.MissingRequiredArgument):
+        await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} Missing 2FA codes.')
+    return
+
+
+@account.error
+@unverify.error
+async def account_unverify_error(ctx, error):
+    if isinstance(error, commands.MissingRequiredArgument):
+        await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} Missing 2FA codes.')
     return
 
 
@@ -3863,7 +4293,7 @@ async def _tip(ctx, amount, coin: str = None):
     # Get wallet status
     walletStatus = await daemonrpc_client.getWalletStatus(COIN_NAME)
     if walletStatus is None:
-        await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} Wallet service hasn\'t started.')
+        await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} {COIN_NAME} Wallet service hasn\'t started.')
         return
     else:
         localDaemonBlockCount = int(walletStatus['blockCount'])
@@ -3874,7 +4304,7 @@ async def _tip(ctx, amount, coin: str = None):
             t_localDaemonBlockCount = '{:,}'.format(localDaemonBlockCount)
             t_networkBlockCount = '{:,}'.format(networkBlockCount)
             await ctx.message.add_reaction(EMOJI_WARNING)
-            await ctx.send(f'{EMOJI_RED_NO} {COIN_NAME} Wallet service hasn\'t sync fully with network or being '
+            await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} {COIN_NAME} Wallet service hasn\'t sync fully with network or being '
                            're-sync. More info:\n```'
                            f'networkBlockCount:     {t_networkBlockCount}\n'
                            f'localDaemonBlockCount: {t_localDaemonBlockCount}\n'
@@ -4114,7 +4544,7 @@ async def _tip_talker(ctx, amount, list_talker, coin: str = None):
     # Get wallet status
     walletStatus = await daemonrpc_client.getWalletStatus(COIN_NAME)
     if walletStatus is None:
-        await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} Wallet service hasn\'t started.')
+        await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} {COIN_NAME} Wallet service hasn\'t started.')
         return
     else:
         localDaemonBlockCount = int(walletStatus['blockCount'])
@@ -4125,7 +4555,7 @@ async def _tip_talker(ctx, amount, list_talker, coin: str = None):
             t_localDaemonBlockCount = '{:,}'.format(localDaemonBlockCount)
             t_networkBlockCount = '{:,}'.format(networkBlockCount)
             await ctx.message.add_reaction(EMOJI_WARNING)
-            await ctx.send(f'{EMOJI_RED_NO} {COIN_NAME} Wallet service hasn\'t sync fully with network or being '
+            await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} {COIN_NAME} Wallet service hasn\'t sync fully with network or being '
                            're-sync. More info:\n```'
                            f'networkBlockCount:     {t_networkBlockCount}\n'
                            f'localDaemonBlockCount: {t_localDaemonBlockCount}\n'
