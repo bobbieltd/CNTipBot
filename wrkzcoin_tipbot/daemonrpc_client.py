@@ -15,20 +15,19 @@ class RPCException(Exception):
         super(RPCException, self).__init__(message)
 
 
-async def getWalletStatus(coin: str, coin_family: str = "TRTL"):
-    coin = coin.upper()
+async def getWalletStatus(coin: str):
     info = {}
-    return await rpc_client.call_aiohttp_wallet('getStatus', coin.upper())
+    return await rpc_client.call_aiohttp_wallet('getStatus', coin)
 
 
 async def getDaemonRPCStatus(coin: str):
-    if (coin.upper() == "DOGE") or (coin.upper() == "LTC"):
-        result = await rpc_client.call_doge_ltc('getinfo', coin.upper())
+    if (coin == "DOGE") or (coin == "LTC"):
+        result = await rpc_client.call_doge_ltc('getinfo', coin)
     return result
 
 
-async def gettopblock(coin: str, coin_family: str = "TRTL"):
-
+async def gettopblock(coin: str):
+    coin_family = getattr(config,"daemon"+coin,"daemonWRKZ").coin_family;
     if coin_family == "XMR":
         rpc_params = {
             'jsonrpc': '2.0',
@@ -36,7 +35,7 @@ async def gettopblock(coin: str, coin_family: str = "TRTL"):
             'params': []
         }
         async with aiohttp.ClientSession() as session:
-            async with session.post(get_daemon_rpc_url(coin.upper())+'/json_rpc', json=rpc_params, timeout=8) as response:
+            async with session.post(get_daemon_rpc_url(coin)+'/json_rpc', json=rpc_params, timeout=8) as response:
                 if response.status == 200:
                     res_data = await response.json()
                     await session.close()
@@ -49,7 +48,7 @@ async def gettopblock(coin: str, coin_family: str = "TRTL"):
             'params': {'height': result['count'] - 1}
         }
         async with aiohttp.ClientSession() as session:
-            async with session.post(get_daemon_rpc_url(coin.upper())+'/json_rpc', json=full_payload, timeout=8) as response:
+            async with session.post(get_daemon_rpc_url(coin)+'/json_rpc', json=full_payload, timeout=8) as response:
                 if response.status == 200:
                     res_data = await response.json()
                     await session.close()
@@ -64,7 +63,7 @@ async def call_daemon(method_name: str, coin: str, payload: Dict = None) -> Dict
         'method': f'{method_name}'
     }
     async with aiohttp.ClientSession() as session:
-        async with session.post(get_daemon_rpc_url(coin.upper())+'/json_rpc', json=full_payload, timeout=8) as response:
+        async with session.post(get_daemon_rpc_url(coin)+'/json_rpc', json=full_payload, timeout=8) as response:
             if response.status == 200:
                 res_data = await response.json()
                 await session.close()
@@ -72,5 +71,5 @@ async def call_daemon(method_name: str, coin: str, payload: Dict = None) -> Dict
 
 
 def get_daemon_rpc_url(coin: str = None):
-    return "http://"+getattr(config,"daemon"+coin.upper(),"daemonWRKZ").host+":"+str(getattr(config,"daemon"+coin.upper(),"daemonWRKZ").port)
+    return "http://"+getattr(config,"daemon"+coin,"daemonWRKZ").host+":"+str(getattr(config,"daemon"+coin,"daemonWRKZ").port)
 

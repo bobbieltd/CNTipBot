@@ -30,6 +30,7 @@ daemonWRKZ:
   DiffTarget: 60
   MinToOptimize: 1000
   IntervalOptimize: 600
+  coin_family : "TRTL"
 # TRTL
 daemonTRTL:
   host: "127.0.0.1"
@@ -52,6 +53,7 @@ daemonTRTL:
   DiffTarget: 30
   MinToOptimize: 1000
   IntervalOptimize: 600
+  coin_family : "TRTL"
 # DEGO
 daemonDEGO:
   host: "127.0.0.1"
@@ -74,6 +76,7 @@ daemonDEGO:
   DiffTarget: 20
   MinToOptimize: 1000
   IntervalOptimize: 600
+  coin_family : "TRTL"
 # BTCM
 daemonBTCM:
   host: "127.0.0.1"
@@ -96,6 +99,7 @@ daemonBTCM:
   DiffTarget: 50
   MinToOptimize: 100
   IntervalOptimize: 600
+  coin_family : "TRTL"
 # LOK
 daemonLOK:
   host: "127.0.0.1"
@@ -119,6 +123,7 @@ daemonLOK:
   DiffTarget: 120
   MinToOptimize: 1
   IntervalOptimize: 600
+  coin_family : "XMR"
 # DOGECOIN. DOGE is real amount
 daemonDOGE:
   host: "127.0.0.1"
@@ -134,6 +139,7 @@ daemonDOGE:
   min_tx_amount: 10
   max_tx_amount: 5000
   name: "DOGE"
+  coin_family : "DOGE"
 # How many seconds between balance refresh with wallet-api
 wallet_balance_update_interval: 60
 # Flood tip limit per 10 seconds
