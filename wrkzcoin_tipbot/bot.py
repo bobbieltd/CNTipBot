@@ -98,7 +98,6 @@ ENABLE_COIN_VOUCHER = config.Enable_Coin_Voucher.split(",")
 
 # Some notice about coin that going to swap or take out.
 NOTICE_COIN = {\
-"TRTL":None,"DEGO":None,"WRKZ":None,"LOK":None,\
 "DOGE":"Please acknowledge that DOGE address is for **one-time** use only for depositing."}
 
 NOTIFICATION_OFF_CMD = 'Type: `.notifytip off` to turn off this DM notification.'
@@ -151,13 +150,7 @@ def get_emoji(coin: str):
 
 
 def get_notice_txt(coin: str):
-    if coin is None:
-        coin = "WRKZ"
-    else:
-        coin = coin.upper()
-    notice_txt = NOTICE_COIN[coin]
-    if notice_txt is None:
-        notice_txt = "*Any support, please approach CapEtn#4425.*"
+    notice_txt = getattr(NOTICE_COIN,coin,"*Any support, please approach CapEtn#4425.*")
     return notice_txt
 
 
