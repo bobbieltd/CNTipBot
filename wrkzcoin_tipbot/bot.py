@@ -3187,6 +3187,8 @@ async def paymentid(ctx):
 
 @bot.command(pass_context=True, aliases=['stat'], help=bot_help_stats)
 async def stats(ctx, coin: str = None):
+	coin_family = "TRTL"
+	if (coin == "LOK") coin_family = "XMR" # TODO reading from config or mysql table
     if ((coin is None) and isinstance(ctx.message.channel, discord.DMChannel)) or coin.upper() == "BOT":
         await bot.wait_until_ready()
         get_all_m = bot.get_all_members()
@@ -3222,7 +3224,7 @@ async def stats(ctx, coin: str = None):
 
     gettopblock = None
     try:
-        gettopblock = await daemonrpc_client.gettopblock(coin)
+        gettopblock = await daemonrpc_client.gettopblock(coin, coin_family)
     except Exception as e:
         print(e)
     walletStatus = None
