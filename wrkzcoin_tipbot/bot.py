@@ -3188,10 +3188,10 @@ async def paymentid(ctx):
 @bot.command(pass_context=True, aliases=['stat'], help=bot_help_stats)
 async def stats(ctx, coin: str = None):
 	# TODO reading coin_family from config or mysql table
-	coin = coin.upper()
-	coin_family = "TRTL"
-	if coin == "LOK": 
-		coin_family = "XMR"
+    coin = coin.upper()
+    coin_family = "TRTL"
+    if coin == "LOK": 
+        coin_family = "XMR"
 
     if ((coin is None) and isinstance(ctx.message.channel, discord.DMChannel)) or coin.upper() == "BOT":
         await bot.wait_until_ready()
