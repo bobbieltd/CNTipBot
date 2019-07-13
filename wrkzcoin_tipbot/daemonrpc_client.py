@@ -74,14 +74,5 @@ async def call_daemon(method_name: str, coin: str, payload: Dict = None) -> Dict
 def get_daemon_rpc_url(coin: str = None):
     if coin is None:
         coin = "WRKZ"
-    if coin.upper() == "TRTL":
-        url = "http://"+config.daemonTRTL.host+":"+str(config.daemonTRTL.port)
-    elif coin.upper() == "DEGO":
-        url = "http://"+config.daemonDEGO.host+":"+str(config.daemonDEGO.port)
-    elif coin.upper() == "BTCM":
-        url = "http://"+config.daemonBTCM.host+":"+str(config.daemonBTCM.port)
-    elif coin.upper() == "LOK":
-        url = "http://"+config.daemonLOK.host+":"+str(config.daemonLOK.port)
-    else:
-        url = "http://"+config.daemonWRKZ.host+":"+str(config.daemonWRKZ.port)
-    return url
+    return "http://"+getattr(config,daemon+coin.upper()).host+":"+str(getattr(config,daemon+coin.upper()).port)
+
