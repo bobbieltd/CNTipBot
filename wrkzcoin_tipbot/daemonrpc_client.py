@@ -29,7 +29,7 @@ async def getDaemonRPCStatus(coin: str):
 
 async def gettopblock(coin: str, coin_family: str = "TRTL"):
 
-	if coin_family == "XMR":
+    if coin_family == "XMR":
 		rpc_params = {
 			'jsonrpc': '2.0',
 			'method': 'getlastblockheader',
