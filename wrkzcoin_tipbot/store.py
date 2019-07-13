@@ -135,6 +135,8 @@ async def sql_update_some_balances(wallet_addresses: List[str], coin: str = None
 async def sql_register_user(userID, coin: str = None):
     global conn
     sql = None
+    balance_address = {}
+    chainHeight = 0
     if coin is None:
         coin = "WRKZ"
     try:
@@ -152,7 +154,6 @@ async def sql_register_user(userID, coin: str = None):
             cur.execute(sql, userID)
             result = cur.fetchone()
             if result is None:
-                balance_address = {}
                 if coin.upper() in ENABLE_COIN:
                     balance_address = await wallet.registerOTHER(coin.upper())
                 elif coin.upper() in ENABLE_COIN_DOGE:
@@ -161,7 +162,6 @@ async def sql_register_user(userID, coin: str = None):
                     print('Internal error during call register wallet-api')
                     return
                 else:
-                    chainHeight = 0
                     walletStatus = None
                     if coin.upper() in ENABLE_COIN:
                         walletStatus = await daemonrpc_client.getWalletStatus(COIN_NAME)
