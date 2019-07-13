@@ -42,7 +42,7 @@ async def gettopblock(coin: str, coin_family: str = "TRTL"):
                     await session.close()
                     return res_data['result']
     else:
-		result = await call_daemon('getblockcount', coin)
+        result = await call_daemon('getblockcount', coin)
 		full_payload = {
 			'jsonrpc': '2.0',
 			'method': 'getblockheaderbyheight',
