@@ -30,17 +30,17 @@ async def getDaemonRPCStatus(coin: str):
 async def gettopblock(coin: str, coin_family: str = "TRTL"):
 
     if coin_family == "XMR":
-		rpc_params = {
-			'jsonrpc': '2.0',
-			'method': 'getlastblockheader',
-			'params': []
-		}
-		async with aiohttp.ClientSession() as session:
-			async with session.post(get_daemon_rpc_url(coin.upper())+'/json_rpc', json=rpc_params, timeout=8) as response:
-				if response.status == 200:
-					res_data = await response.json()
-					await session.close()
-					return res_data['result']
+        rpc_params = {
+            'jsonrpc': '2.0',
+            'method': 'getlastblockheader',
+            'params': []
+        }
+        async with aiohttp.ClientSession() as session:
+            async with session.post(get_daemon_rpc_url(coin.upper())+'/json_rpc', json=rpc_params, timeout=8) as response:
+                if response.status == 200:
+                    res_data = await response.json()
+                    await session.close()
+                    return res_data['result']
     else:
 		result = await call_daemon('getblockcount', coin)
 		full_payload = {
