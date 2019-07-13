@@ -27,7 +27,7 @@ async def getDaemonRPCStatus(coin: str):
 
 
 async def gettopblock(coin: str):
-    coin_family = getattr(getattr(config,"daemon"+coin),coin_family,"TRTL");
+    coin_family = getattr(getattr(config,"daemon"+coin),"coin_family","TRTL");
     if coin_family == "XMR":
         rpc_params = {
             'jsonrpc': '2.0',
