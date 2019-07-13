@@ -134,12 +134,12 @@ async def sql_update_some_balances(wallet_addresses: List[str], coin: str = None
 
 async def sql_register_user(userID, coin: str = None):
     global conn
+    sql = None
     if coin is None:
         coin = "WRKZ"
     try:
         openConnection()
         with conn.cursor() as cur:
-            sql = None
             COIN_NAME = None
             if coin.upper() in ENABLE_COIN:
                 sql = """ SELECT user_id, balance_wallet_address, user_wallet_address FROM """+coin.lower()+"""_user 
@@ -202,7 +202,7 @@ async def sql_register_user(userID, coin: str = None):
                     result2['user_wallet_address'] = ''
                 return result2
     except Exception as e:
-        print(e)
+        print("MySQL e="+e+", sql="+sql)
     finally:
         conn.close()
 

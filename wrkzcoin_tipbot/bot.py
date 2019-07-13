@@ -673,6 +673,7 @@ async def unlockuser(ctx, user_id: str):
 
 @bot.command(pass_context=True, name='info', aliases=['wallet'], help=bot_help_info)
 async def info(ctx, coin: str = None):
+    coin = coin.upper()
     # check if account locked
     account_lock = await alert_if_userlock(ctx, 'info')
     if account_lock:
