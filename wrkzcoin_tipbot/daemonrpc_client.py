@@ -41,7 +41,7 @@ async def gettopblock(coin: str, coin_family: str = "TRTL"):
 					res_data = await response.json()
 					await session.close()
 					return res_data['result']
-	elif
+    else:
 		result = await call_daemon('getblockcount', coin)
 		full_payload = {
 			'jsonrpc': '2.0',
