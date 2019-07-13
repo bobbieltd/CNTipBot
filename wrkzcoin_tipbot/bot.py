@@ -62,24 +62,24 @@ EMOJI_SCALE = "\u2696"
 
 EMOJI_TIP = EMOJI_MONEYFACE
 EMOJI_COIN = {\
-WRKZ : "\U0001F477"\
-TRTL : "\U0001F422"\
-DEGO : "\U0001F49B"\
-LCX = "\U0001F517"\
-CX = "\U0001F64F"\
-OSL = "\U0001F381"\
-BTCM = "\U0001F4A9"\
-MTIP = "\U0001F595"\
-XCY = "\U0001F3B2"\
-PLE = "\U0001F388"\
-ELPH = "\U0001F310"\
-ANX = "\U0001F3E6"\
-NBX = "\U0001F5A4"\
-ARMS = "\U0001F52B"\
-IRD = "\U0001F538"\
-HITC = "\U0001F691"\
-NACA = "\U0001F355"\
-DOGE = "\U0001F436"}
+"WRKZ" : "\U0001F477"\
+"TRTL" : "\U0001F422"\
+"DEGO" : "\U0001F49B"\
+"LCX" = "\U0001F517"\
+"CX" = "\U0001F64F"\
+"OSL" = "\U0001F381"\
+"BTCM" = "\U0001F4A9"\
+"MTIP" = "\U0001F595"\
+"XCY" = "\U0001F3B2"\
+"PLE" = "\U0001F388"\
+"ELPH" = "\U0001F310"\
+"ANX" = "\U0001F3E6"\
+"NBX" = "\U0001F5A4"\
+"ARMS" = "\U0001F52B"\
+"IRD" = "\U0001F538"\
+"HITC" = "\U0001F691"\
+"NACA" = "\U0001F355"\
+"DOGE" = "\U0001F436"}
 
 EMOJI_RED_NO = "\u26D4"
 EMOJI_SPEAK = "\U0001F4AC"
@@ -97,7 +97,8 @@ DEFAULT_TICKER = "WRKZ"
 ENABLE_COIN_VOUCHER = config.Enable_Coin_Voucher.split(",")
 
 # Some notice about coin that going to swap or take out.
-NOTICE_COIN = {"TRTL":None,"DEGO":None,"WRKZ":None,"LOK":None,\
+NOTICE_COIN = {\
+"TRTL":None,"DEGO":None,"WRKZ":None,"LOK":None,\
 "DOGE":"Please acknowledge that DOGE address is for **one-time** use only for depositing."}
 
 NOTIFICATION_OFF_CMD = 'Type: `.notifytip off` to turn off this DM notification.'
