@@ -3254,7 +3254,7 @@ async def stats(ctx, coin: str = None):
         print(e)
     walletStatus = None
     try:
-        walletStatus = await daemonrpc_client.getWalletStatus(coin)
+        walletStatus = await daemonrpc_client.getWalletStatus(coin, coin_family)
     except Exception as e:
         print(e)
     if gettopblock:

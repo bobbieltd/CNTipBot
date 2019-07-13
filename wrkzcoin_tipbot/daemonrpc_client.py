@@ -15,7 +15,7 @@ class RPCException(Exception):
         super(RPCException, self).__init__(message)
 
 
-async def getWalletStatus(coin: str):
+async def getWalletStatus(coin: str, coin_family: str = "TRTL"):
     coin = coin.upper()
     info = {}
     return await rpc_client.call_aiohttp_wallet('getStatus', coin.upper())
@@ -72,7 +72,5 @@ async def call_daemon(method_name: str, coin: str, payload: Dict = None) -> Dict
 
 
 def get_daemon_rpc_url(coin: str = None):
-    if coin is None:
-        coin = "WRKZ"
-    return "http://"+getattr(config,"daemon"+coin.upper()).host+":"+str(getattr(config,"daemon"+coin.upper()).port)
+    return "http://"+getattr(config,"daemon"+coin.upper(),"daemonWRKZ").host+":"+str(getattr(config,"daemon"+coin.upper(),"daemonWRKZ").port)
 
