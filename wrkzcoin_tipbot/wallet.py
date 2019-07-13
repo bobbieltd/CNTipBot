@@ -128,13 +128,19 @@ async def get_some_balances(wallet_addresses: List[str], coin: str) -> Dict[str,
 
 
 async def get_sum_balances(coin: str) -> Dict[str, Dict]:
-    coin = coin.upper()
+    coin_family = getattr(getattr(config,"daemon"+coin),"coin_family","TRTL");
     wallet = None
-    wallet = await rpc_client.call_aiohttp_wallet('getBalance', coin)
-    if wallet:
-        wallet = {'unlocked':wallet['availableBalance'],'locked':wallet['lockedAmount']}
-        return wallet
-    return None
+    if coin_family == "XMR":
+        result = await rpc_client.call_aiohttp_wallet('getbalance', coin)
+        if result:
+            wallet = {'unlocked':result['unlocked_balance'],'locked':result['balance']-result['unlocked_balance']}
+
+    else:
+        result = await rpc_client.call_aiohttp_wallet('getBalance', coin)
+        if result:
+            wallet = {'unlocked':result['availableBalance'],'locked':result['lockedAmount']}
+
+    return wallet
 
 
 async def get_balance_address(address: str, coin: str) -> Dict[str, Dict]:

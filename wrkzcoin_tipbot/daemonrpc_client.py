@@ -16,8 +16,11 @@ class RPCException(Exception):
 
 
 async def getWalletStatus(coin: str):
-    info = {}
-    return await rpc_client.call_aiohttp_wallet('getStatus', coin)
+    coin_family = getattr(getattr(config,"daemon"+coin),"coin_family","TRTL");
+    result = {"blockCount":1,"knownBlockCount":1}
+    if coin_family == "TRTL":
+        result = await rpc_client.call_aiohttp_wallet('getStatus', coin)
+    return result
 
 
 async def getDaemonRPCStatus(coin: str):
