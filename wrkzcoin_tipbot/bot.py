@@ -3165,9 +3165,9 @@ async def stats(ctx, coin: str = None):
     except Exception as e:
         print(e)
     if gettopblock:
-        COIN_NAME = coin.upper()
-        COIN_DEC = get_decimal(coin.upper())
-        COIN_DIFF = get_diff_target(coin.upper())
+        COIN_NAME = coin
+        COIN_DEC = get_decimal(coin)
+        COIN_DIFF = get_diff_target(coin)
         blockfound = datetime.utcfromtimestamp(int(gettopblock['block_header']['timestamp'])).strftime("%Y-%m-%d %H:%M:%S")
         ago = str(timeago.format(blockfound, datetime.utcnow()))
         difficulty = "{:,}".format(gettopblock['block_header']['difficulty'])
