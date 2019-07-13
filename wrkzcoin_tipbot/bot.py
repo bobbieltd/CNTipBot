@@ -3190,7 +3190,7 @@ async def stats(ctx, coin: str = None):
 	# TODO reading coin_family from config or mysql table
 	coin = coin.upper()
 	coin_family = "TRTL"
-	if (coin == "LOK"): 
+	if coin == "LOK": 
 		coin_family = "XMR" 
     if ((coin is None) and isinstance(ctx.message.channel, discord.DMChannel)) or coin.upper() == "BOT":
         await bot.wait_until_ready()
