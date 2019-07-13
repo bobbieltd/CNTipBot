@@ -27,7 +27,7 @@ async def getDaemonRPCStatus(coin: str):
 
 
 async def gettopblock(coin: str):
-    coin_family = getattr(config,"daemon"+coin,"daemonWRKZ").coin_family;
+    coin_family = getattr(getattr(config,"daemon"+coin),coin_family,"TRTL");
     if coin_family == "XMR":
         rpc_params = {
             'jsonrpc': '2.0',
@@ -71,5 +71,5 @@ async def call_daemon(method_name: str, coin: str, payload: Dict = None) -> Dict
 
 
 def get_daemon_rpc_url(coin: str = None):
-    return "http://"+getattr(config,"daemon"+coin,"daemonWRKZ").host+":"+str(getattr(config,"daemon"+coin,"daemonWRKZ").port)
+    return "http://"+getattr(config,"daemon"+coin,config.daemonWRKZ).host+":"+str(getattr(config,"daemon"+coin,config.daemonWRKZ).port)
 
