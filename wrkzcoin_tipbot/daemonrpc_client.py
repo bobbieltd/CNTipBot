@@ -43,17 +43,17 @@ async def gettopblock(coin: str, coin_family: str = "TRTL"):
                     return res_data['result']
     else:
         result = await call_daemon('getblockcount', coin)
-		full_payload = {
-			'jsonrpc': '2.0',
-			'method': 'getblockheaderbyheight',
-			'params': {'height': result['count'] - 1}
-		}
-		async with aiohttp.ClientSession() as session:
-			async with session.post(get_daemon_rpc_url(coin.upper())+'/json_rpc', json=full_payload, timeout=8) as response:
-				if response.status == 200:
-					res_data = await response.json()
-					await session.close()
-					return res_data['result']
+        full_payload = {
+            'jsonrpc': '2.0',
+            'method': 'getblockheaderbyheight',
+            'params': {'height': result['count'] - 1}
+        }
+        async with aiohttp.ClientSession() as session:
+            async with session.post(get_daemon_rpc_url(coin.upper())+'/json_rpc', json=full_payload, timeout=8) as response:
+                if response.status == 200:
+                    res_data = await response.json()
+                    await session.close()
+                    return res_data['result']
 
 
 async def call_daemon(method_name: str, coin: str, payload: Dict = None) -> Dict:
