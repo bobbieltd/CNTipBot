@@ -292,7 +292,7 @@ async def on_ready():
     game = discord.Game(name="Tip Forever!")
     await bot.change_presence(status=discord.Status.online, activity=game)
     botLogChan = bot.get_channel(id=LOG_CHAN)
-    if botLogChan != NoneType:
+    if botLogChan is not None:
         await botLogChan.send(f'{EMOJI_REFRESH} I am back :)')
 
 
@@ -306,7 +306,7 @@ async def on_guild_join(guild):
     botLogChan = bot.get_channel(id=LOG_CHAN)
     add_server_info = store.sql_addinfo_by_server(str(guild.id), guild.name,
                                                   config.discord.prefixCmd, "WRKZ")
-    if botLogChan != NoneType:
+    if botLogChan is not None:
         await botLogChan.send(f'Bot joins a new guild {guild.name} / {guild.id}')
     return
 
@@ -634,7 +634,7 @@ async def save(ctx, coin: str):
     
     if COIN_NAME in ENABLE_COIN:
         duration = await rpc_cn_wallet_save(COIN_NAME)
-        if botLogChan != NoneType:
+        if botLogChan is not None:
             await botLogChan.send(f'{ctx.message.author.name} / {ctx.message.author.id} called `save` for {COIN_NAME}')
         if duration:
             await ctx.send(f'{get_emoji(COIN_NAME)} {coin.upper()} `save` took {round(duration,3)}s.')
@@ -651,7 +651,7 @@ async def save(ctx, coin: str):
 async def shutdown(ctx):
     botLogChan = bot.get_channel(id=LOG_CHAN)
     await ctx.send(f'{EMOJI_REFRESH} {ctx.author.mention} .. restarting .. back soon.')
-    if botLogChan != NoneType:
+    if botLogChan is not None:
         await botLogChan.send(f'{EMOJI_REFRESH} {ctx.message.author.name} / {ctx.message.author.id} called `restart`. I will be back soon hopefully.')
     await bot.logout()
 
@@ -1419,7 +1419,7 @@ async def withdraw(ctx, amount: str, coin: str = None):
     if repeatTx >= config.floodTip:
         await ctx.message.add_reaction(EMOJI_ERROR)
         await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} Cool down your tip or TX. or increase your amount next time.')
-        if botLogChan != NoneType:
+        if botLogChan is not None:
             await botLogChan.send(f'{ctx.message.author.name} / {ctx.message.author.id} reached max. TX threshold. Currently halted: `.withdraw`')
         return
     # End of Check flood of tip
@@ -1574,7 +1574,7 @@ async def withdraw(ctx, amount: str, coin: str = None):
 
     if withdrawal:
         await ctx.message.add_reaction(EMOJI_TIP)
-        if botLogChan != NoneType:
+        if botLogChan is not None:
             await botLogChan.send(f'A user successfully executed `.withdraw {num_format_coin(real_amount, COIN_NAME)} {COIN_NAME}`')
         await ctx.message.author.send(
             f'{EMOJI_ARROW_RIGHTHOOK} You have withdrawn {num_format_coin(real_amount, COIN_NAME)} '
@@ -1583,7 +1583,7 @@ async def withdraw(ctx, amount: str, coin: str = None):
         return
     else:
         await ctx.message.add_reaction(EMOJI_ERROR)
-        if botLogChan != NoneType:
+        if botLogChan is not None:
             await botLogChan.send(f'A user failed to execute `.withdraw {num_format_coin(real_amount, COIN_NAME)} {COIN_NAME}`')
         await ctx.send(f'{ctx.author.mention} You may need to `optimize` or try again.')
         # add to failed tx table
@@ -1627,7 +1627,7 @@ async def donate(ctx, amount: str, coin: str = None):
     if repeatTx >= config.floodTip:
         await ctx.message.add_reaction(EMOJI_ERROR)
         await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} Cool down your tip or TX. or increase your amount next time.')
-        if botLogChan != NoneType:
+        if botLogChan is not None:
             await botLogChan.send(f'{ctx.message.author.name} / {ctx.message.author.id} reached max. TX threshold. Currently halted: `.donate`')
         return
     # End of Check flood of tip
@@ -1712,7 +1712,7 @@ async def donate(ctx, amount: str, coin: str = None):
                                             COIN_NAME, "DONATE")
         if donateTx:
             await ctx.message.add_reaction(EMOJI_TIP)
-            if botLogChan != NoneType:
+            if botLogChan is not None:
                 await botLogChan.send(f'{EMOJI_MONEYFACE} TipBot got donation: {num_format_coin(real_amount, COIN_NAME)}{COIN_NAME}')
             await ctx.message.author.send(
                                    f'{EMOJI_MONEYFACE} TipBot got donation: {num_format_coin(real_amount, COIN_NAME)}'
@@ -1779,7 +1779,7 @@ async def donate(ctx, amount: str, coin: str = None):
 
     if tip:
         await ctx.message.add_reaction(EMOJI_TIP)
-        if botLogChan != NoneType:
+        if botLogChan is not None:
             await botLogChan.send(f'{EMOJI_MONEYFACE} TipBot got donation: {num_format_coin(real_amount, COIN_NAME)}{COIN_NAME}')
         await ctx.message.author.send(
                                f'{EMOJI_MONEYFACE} TipBot got donation: {num_format_coin(real_amount, COIN_NAME)} '
@@ -1950,7 +1950,7 @@ async def tip(ctx, amount: str, *args):
     if repeatTx >= config.floodTip:
         await ctx.message.add_reaction(EMOJI_ERROR)
         await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} Cool down your tip or TX. or increase your amount next time.')
-        if botLogChan != NoneType:
+        if botLogChan is not None:
             await botLogChan.send(f'{ctx.message.author.name} / {ctx.message.author.id} reached max. TX threshold. Currently halted: `.tip`')
         return
     # End of Check flood of tip
@@ -2194,7 +2194,7 @@ async def tipall(ctx, amount: str, *args):
     if repeatTx >= config.floodTip:
         await ctx.message.add_reaction(EMOJI_ERROR)
         await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} Cool down your tip or TX. or increase your amount next time.')
-        if botLogChan != NoneType:
+        if botLogChan is not None:
             await botLogChan.send(f'{ctx.message.author.name} / {ctx.message.author.id} reached max. TX threshold. Currently halted: `.tipall`')
         return
     # End of Check flood of tip
@@ -2478,7 +2478,7 @@ async def send(ctx, amount: str, CoinAddress: str):
     if repeatTx >= config.floodTip:
         await ctx.message.add_reaction(EMOJI_ERROR)
         await ctx.send(f'{EMOJI_RED_NO}{ctx.author.mention} Cool down your tip or TX. or increase your amount next time.')
-        if botLogChan != NoneType:
+        if botLogChan is not None:
             await botLogChan.send(f'{ctx.message.author.name} / {ctx.message.author.id} reached max. TX threshold. Currently halted: `.send`')
         return
     # End of Check flood of tip
@@ -2552,7 +2552,7 @@ async def send(ctx, amount: str, CoinAddress: str):
                                                           CoinAddress, COIN_NAME, "SEND")
             if SendTx:
                 await ctx.message.add_reaction(EMOJI_TIP)
-                if botLogChan != NoneType:
+                if botLogChan is not None:
                     await botLogChan.send(f'A user successfully executed `.send {num_format_coin(real_amount, COIN_NAME)} {COIN_NAME}`.')
                 await ctx.message.author.send(f'{EMOJI_ARROW_RIGHTHOOK} You have sent {num_format_coin(real_amount, COIN_NAME)} '
                                               f'{COIN_NAME} to `{CoinAddress}`.\n'
@@ -2561,7 +2561,7 @@ async def send(ctx, amount: str, CoinAddress: str):
                 return
             else:
                 await ctx.message.add_reaction(EMOJI_ERROR)
-                if botLogChan != NoneType:
+                if botLogChan is not None:
                     await botLogChan.send(f'A user failed to execute `.send {num_format_coin(real_amount, COIN_NAME)} {COIN_NAME}`.')
                 return
             return
@@ -2711,7 +2711,7 @@ async def send(ctx, amount: str, CoinAddress: str):
             print(e)
         if tip:
             await ctx.message.add_reaction(EMOJI_TIP)
-            if botLogChan != NoneType:
+            if botLogChan is not None:
                 await botLogChan.send(f'A user successfully executed `.send {num_format_coin(real_amount, COIN_NAME)} {COIN_NAME}` with paymentid.')
             await ctx.message.author.send(
                                    f'{EMOJI_ARROW_RIGHTHOOK} You have sent {num_format_coin(real_amount, COIN_NAME)} '
@@ -2723,7 +2723,7 @@ async def send(ctx, amount: str, CoinAddress: str):
             return
         else:
             await ctx.message.add_reaction(EMOJI_ERROR)
-            if botLogChan != NoneType:
+            if botLogChan is not None:
                 await botLogChan.send(f'A user failed to execute `.send {num_format_coin(real_amount, COIN_NAME)} {COIN_NAME}` with paymentid.')
             await ctx.send('{ctx.author.mention} You may need to `optimize` or retry.')
             return
@@ -2735,7 +2735,7 @@ async def send(ctx, amount: str, CoinAddress: str):
             print(e)
         if tip:
             await ctx.message.add_reaction(EMOJI_TIP)
-            if botLogChan != NoneType:
+            if botLogChan is not None:
                 await botLogChan.send(f'A user successfully executed `.send {num_format_coin(real_amount, COIN_NAME)} {COIN_NAME}`.')
             await ctx.message.author.send(f'{EMOJI_ARROW_RIGHTHOOK} You have sent {num_format_coin(real_amount, COIN_NAME)} '
                                           f'{COIN_NAME} '
@@ -2744,7 +2744,7 @@ async def send(ctx, amount: str, CoinAddress: str):
             return
         else:
             await ctx.message.add_reaction(EMOJI_ERROR)
-            if botLogChan != NoneType:
+            if botLogChan is not None:
                 await botLogChan.send(f'A user failed to execute `.send {num_format_coin(real_amount, COIN_NAME)} {COIN_NAME}`.')
             await ctx.send(f'{ctx.author.mention} Can not deliver TX for {COIN_NAME} right now. Try again soon.')
             # add to failed tx table
@@ -2963,10 +2963,10 @@ async def optimize(ctx, coin: str, member: discord.Member = None):
         # Check if in logchan
         if ctx.message.channel.id == LOG_CHAN and (ctx.message.author.id in MAINTENANCE_OWNER):
             wallet_to_opt = 5
-            if botLogChan != NoneType:
+            if botLogChan is not None:
                 await botLogChan.send(f'OK, I will do some optimization for this `{COIN_NAME}`..')
             opt_numb = await store.sql_optimize_admin_do(COIN_NAME, wallet_to_opt)
-            if botLogChan != NoneType:
+            if botLogChan is not None:
                 if opt_numb:
                     await botLogChan.send(f'I optimized only {opt_numb} wallets of `{COIN_NAME}`..')
                 else:
@@ -3439,7 +3439,7 @@ async def setting(ctx, *args):
             else:
                 changeinfo = store.sql_changeinfo_by_server(str(ctx.guild.id), 'tiponly', args[1].upper())
                 if args[1].upper() == "ALLCOIN":
-                    if botLogChan != NoneType:
+                    if botLogChan is not None:
                         await botLogChan.send(f'{ctx.message.author.name} / {ctx.message.author.id} changed tiponly in {ctx.guild.name} / {ctx.guild.id} to `{args[1].upper()}`')
                     await ctx.send(f'{ctx.author.mention} {args[1].upper()} is allowed here.')
                 else:
