@@ -100,21 +100,21 @@ daemonBTCM:
 daemonLOK:
   host: "127.0.0.1"
   port: 22023
-  # NACA is 8-digit, 100000000
+  # LOK is 9-digit, 100000000
   wallethost: "127.0.0.1"
   walletport: "22024"
   mixin: 9
   tx_fee: 10
-  min_tx_amount: 10000
-  max_tx_amount: 100000000000
+  min_tx_amount: 1
+  max_tx_amount: 1000
   # other settings
   DonateAddress: "L6XqN6JDedz5Ub8KxpMYRCUoQCuyEA8EegEmeQsdP5FCNuXJavcrxPvLhpqY6emphGTYVrmAUVECsE9drafvY2hXUTJz6rW"
-  prefix: 375936
-  prefixChar: "NaCa"
-  decimal: 100000000
-  AddrLen: 98
-  IntAddrLen: 186
-  name: "NACA"
+  prefix: 114
+  prefixChar: "L"
+  decimal: 1000000000
+  AddrLen: 95
+  IntAddrLen: 159
+  name: "LOK"
   coin_family: "XMR"
   DiffTarget: 120
   MinToOptimize: 1
