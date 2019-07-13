@@ -3191,7 +3191,8 @@ async def stats(ctx, coin: str = None):
 	coin = coin.upper()
 	coin_family = "TRTL"
 	if coin == "LOK": 
-		coin_family = "XMR" 
+		coin_family = "XMR"
+		
     if ((coin is None) and isinstance(ctx.message.channel, discord.DMChannel)) or coin.upper() == "BOT":
         await bot.wait_until_ready()
         get_all_m = bot.get_all_members()
