@@ -1520,6 +1520,8 @@ def sql_get_poolinfo():
 
 # Steal from https://nitratine.net/blog/post/encryption-and-decryption-in-python/
 def encrypt_string(to_encrypt: str):
+
+    return to_encrypt
     key = (config.encrypt.key).encode()
 
     # Encrypt
@@ -1530,6 +1532,8 @@ def encrypt_string(to_encrypt: str):
 
 
 def decrypt_string(decrypted: str):
+
+    return decrypted
     key = (config.encrypt.key).encode()
 
     # Decrypt
