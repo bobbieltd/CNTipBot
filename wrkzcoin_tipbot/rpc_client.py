@@ -31,7 +31,7 @@ async def call_aiohttp_wallet(method_name: str, coin: str, payload: Dict = None)
                 res_data = res_data.decode('utf-8')
                 await session.close()
                 decoded_data = json.loads(res_data)
-                print(" RPC result : "+decoded_data);
+                print(" RPC finished : "+url);
                 return decoded_data['result']
 
 
