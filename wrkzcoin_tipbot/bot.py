@@ -196,7 +196,7 @@ async def on_ready():
     print("Users: {}".format(sum([x.member_count for x in bot.guilds])))
     game = discord.Game(name="Tip Forever!")
     await bot.change_presence(status=discord.Status.online, activity=game)
-    # botLogChan = bot.get_channel(id=LOG_CHAN)
+    botLogChan = bot.get_channel(id=LOG_CHAN)
     if botLogChan is not None:
         await botLogChan.send(f'{EMOJI_REFRESH} I am back :)')
 
