@@ -196,7 +196,7 @@ async def on_ready():
     print("Users: {}".format(sum([x.member_count for x in bot.guilds])))
     game = discord.Game(name="Tip Forever!")
     await bot.change_presence(status=discord.Status.online, activity=game)
-    botLogChan = bot.get_channel(id=LOG_CHAN)
+    # botLogChan = bot.get_channel(id=LOG_CHAN)
     if botLogChan is not None:
         await botLogChan.send(f'{EMOJI_REFRESH} I am back :)')
 
@@ -208,7 +208,7 @@ async def on_shard_ready(shard_id):
 
 @bot.event
 async def on_guild_join(guild):
-    botLogChan = bot.get_channel(id=LOG_CHAN)
+    # botLogChan = bot.get_channel(id=LOG_CHAN)
     add_server_info = store.sql_addinfo_by_server(str(guild.id), guild.name,
                                                   config.discord.prefixCmd, "WRKZ")
     if botLogChan is not None:
@@ -533,7 +533,7 @@ async def admin(ctx):
 async def save(ctx, coin: str):
     if coin is not None:
         coin = coin.upper()
-    botLogChan = bot.get_channel(id=LOG_CHAN)
+    # botLogChan = bot.get_channel(id=LOG_CHAN)
     COIN_NAME = coin.upper()
     if COIN_NAME in MAINTENANCE_COIN:
         await ctx.send(f'{EMOJI_RED_NO} {coin.upper()} in maintenance.')
@@ -556,7 +556,7 @@ async def save(ctx, coin: str):
 @commands.is_owner()
 @admin.command(pass_context=True, name='shutdown', aliases=['restart'], help=bot_help_admin_shutdown)
 async def shutdown(ctx):
-    botLogChan = bot.get_channel(id=LOG_CHAN)
+    # botLogChan = bot.get_channel(id=LOG_CHAN)
     await ctx.send(f'{EMOJI_REFRESH} {ctx.author.mention} .. restarting .. back soon.')
     if botLogChan is not None:
         await botLogChan.send(f'{EMOJI_REFRESH} {ctx.message.author.name} / {ctx.message.author.id} called `restart`. I will be back soon hopefully.')
@@ -1323,7 +1323,7 @@ async def withdraw(ctx, amount: str, coin: str = None):
         return
     # end of check if account locked
 
-    botLogChan = bot.get_channel(id=LOG_CHAN)
+    # botLogChan = bot.get_channel(id=LOG_CHAN)
     amount = amount.replace(",", "")
 
     # Check flood of tip
@@ -1518,7 +1518,7 @@ async def donate(ctx, amount: str, coin: str = None):
         return
     # end of check if account locked
 
-    botLogChan = bot.get_channel(id=LOG_CHAN)
+    # botLogChan = bot.get_channel(id=LOG_CHAN)
     donate_msg = ''
     if amount.upper() == "LIST":
         # if .donate list
@@ -1757,7 +1757,7 @@ async def tip(ctx, amount: str, *args):
         return
     # end of check if account locked
 
-    botLogChan = bot.get_channel(id=LOG_CHAN)
+    # botLogChan = bot.get_channel(id=LOG_CHAN)
     amount = amount.replace(",", "")
 
     try:
@@ -2055,7 +2055,7 @@ async def tipall(ctx, amount: str, *args):
         return
     # end of check if account locked
 
-    botLogChan = bot.get_channel(id=LOG_CHAN)
+    # botLogChan = bot.get_channel(id=LOG_CHAN)
     amount = amount.replace(",", "")
 
     try:
@@ -2382,7 +2382,7 @@ async def send(ctx, amount: str, CoinAddress: str):
         return
     # end of check if account locked
 
-    botLogChan = bot.get_channel(id=LOG_CHAN)
+    # botLogChan = bot.get_channel(id=LOG_CHAN)
     amount = amount.replace(",", "")
 
     # Check flood of tip
@@ -2869,7 +2869,7 @@ async def optimize(ctx, coin: str, member: discord.Member = None):
         return
     # end of check if account locked
 
-    botLogChan = bot.get_channel(id=LOG_CHAN)
+    # botLogChan = bot.get_channel(id=LOG_CHAN)
     if coin.upper() not in ENABLE_COIN:
         await ctx.message.add_reaction(EMOJI_WARNING)
         await ctx.send(f'{EMOJI_RED_NO} You need to specify a correct TICKER.')
@@ -2984,7 +2984,7 @@ async def voucher(ctx, command: str, amount: str, coin: str = None):
     if coin is not None:
         coin = coin.upper()
     # This is still ongoing work
-    botLogChan = bot.get_channel(id=LOG_CHAN)
+    # botLogChan = bot.get_channel(id=LOG_CHAN)
     amount = amount.replace(",", "")
 
     # Turn this off when public
@@ -3282,7 +3282,7 @@ async def setting(ctx, *args):
     if isinstance(ctx.channel, discord.DMChannel):
         await ctx.send('This command is not available in DM.')
         return
-    botLogChan = bot.get_channel(id=LOG_CHAN)
+    # botLogChan = bot.get_channel(id=LOG_CHAN)
     tickers = '|'.join(ENABLE_COIN).lower()
     serverinfo = store.sql_info_by_server(str(ctx.guild.id))
     if serverinfo is None:
@@ -3779,7 +3779,7 @@ def hhashes(num) -> str:
 
 
 async def alert_if_userlock(ctx, cmd: str):
-    botLogChan = bot.get_channel(id=LOG_CHAN)
+    # botLogChan = bot.get_channel(id=LOG_CHAN)
     get_discord_userinfo = None
     try:
         get_discord_userinfo = store.sql_discord_userinfo_get(str(ctx.message.author.id))
