@@ -40,19 +40,19 @@ async def registerOTHER(coin: str) -> str:
 
 async def getSpendKey(from_address: str, coin: str) -> str:
     coin_family = getattr(getattr(config,"daemon"+coin),"coin_family","TRTL");
-    let spentKey = ""
+    spendKey = ""
     payload = {
         'address': from_address
     }
     # index and not using spentKey with Monero
     if coin_family == "XMR":
         result = await rpc_client.call_aiohttp_wallet('get_address_index', coin, payload=payload)
-        spentKey =  str(result['index ']['major'])+","+str(result['index ']['minor'])
+        spendKey =  str(result['index ']['major'])+","+str(result['index ']['minor'])
     else:
         result = await rpc_client.call_aiohttp_wallet('getSpendKeys', coin, payload=payload)
-        spentKey = result['spendSecretKey']
+        spendKey = result['spendSecretKey']
 
-    return spentKey
+    return spendKey
 
 
 async def send_transaction_donate(from_address: str, to_address: str, amount: int, coin: str) -> str:
