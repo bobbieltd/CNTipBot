@@ -13,7 +13,7 @@ sys.path.append("..")
 
 async def registerOTHER(coin: str) -> str:
     coin_family = getattr(getattr(config,"daemon"+coin),"coin_family","TRTL");
-    reg_address = {}
+
     payload = {
         'account_index': 0,
         'label' : 'tipbot'
@@ -29,6 +29,7 @@ async def registerOTHER(coin: str) -> str:
             print("Error when creating address ");
             return None
 
+    reg_address = {}
     reg_address['privateSpendKey'] = await getSpendKey(result['address'], coin)
     reg_address['address'] = result['address']
     
@@ -47,7 +48,7 @@ async def getSpendKey(from_address: str, coin: str) -> str:
     # index and not using spentKey with Monero
     if coin_family == "XMR":
         result = await rpc_client.call_aiohttp_wallet('get_address_index', coin, payload=payload)
-        spendKey =  str(result['index ']['major'])+","+str(result['index ']['minor'])
+        spendKey =  str(result['index']['major'])+","+str(result['index']['minor'])
     else:
         result = await rpc_client.call_aiohttp_wallet('getSpendKeys', coin, payload=payload)
         spendKey = result['spendSecretKey']
@@ -130,7 +131,6 @@ async def send_transactionall(from_address: str, to_address, coin: str) -> str:
 
 
 async def get_all_balances_all(coin: str) -> Dict[str, Dict]:
-    coin = coin.upper()
     walletCall = await rpc_client.call_aiohttp_wallet('getAddresses', coin)
     wallets = [] ## new array
     for address in walletCall['addresses']:
@@ -140,7 +140,6 @@ async def get_all_balances_all(coin: str) -> Dict[str, Dict]:
 
 
 async def get_some_balances(wallet_addresses: List[str], coin: str) -> Dict[str, Dict]:
-    coin = coin.upper()
     wallets = []  # new array
     for address in wallet_addresses:
         wallet = await rpc_client.call_aiohttp_wallet('getBalance', coin, {'address': address})
@@ -149,17 +148,10 @@ async def get_some_balances(wallet_addresses: List[str], coin: str) -> Dict[str,
 
 
 async def get_sum_balances(coin: str) -> Dict[str, Dict]:
-    coin_family = getattr(getattr(config,"daemon"+coin),"coin_family","TRTL");
     wallet = None
-    if coin_family == "XMR":
-        result = await rpc_client.call_aiohttp_wallet('getbalance', coin)
-        if result:
-            wallet = {'unlocked':result['unlocked_balance'],'locked':result['balance']-result['unlocked_balance']}
-
-    else:
-        result = await rpc_client.call_aiohttp_wallet('getBalance', coin)
-        if result:
-            wallet = {'unlocked':result['availableBalance'],'locked':result['lockedAmount']}
+    result = await rpc_client.call_aiohttp_wallet('getBalance', coin)
+    if result:
+        wallet = {'unlocked':result['availableBalance'],'locked':result['lockedAmount']}
 
     return wallet
 

@@ -17,6 +17,9 @@ class RPCException(Exception):
 
 
 async def call_aiohttp_wallet(method_name: str, coin: str, payload: Dict = None) -> Dict:
+    coin_family = getattr(getattr(config,"daemon"+coin),"coin_family","TRTL");
+    if coin_family == "XMR" and method_name == "getBalance":
+        method_name = "get_balance"
     full_payload = {
         'params': payload or {},
         'jsonrpc': '2.0',
@@ -31,8 +34,12 @@ async def call_aiohttp_wallet(method_name: str, coin: str, payload: Dict = None)
                 res_data = res_data.decode('utf-8')
                 await session.close()
                 decoded_data = json.loads(res_data)
+                result = decoded_data['result']
+                if coin_family == "XMR" and method_name == "get_balance":
+                    result['availableBalance'] = result['unlocked_balance']
+                    result['lockedAmount'] = result['balance']-result['unlocked_balance']
                 print(" RPC finished : "+res_data);
-                return decoded_data['result']
+                return result
             else:
                 print(" RPC Error status : "+response.status);
                 return None
