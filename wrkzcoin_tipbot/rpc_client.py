@@ -34,7 +34,7 @@ async def call_aiohttp_wallet(method_name: str, coin: str, payload: Dict = None)
                 print(" RPC finished : "+url);
                 return decoded_data['result']
             else:
-                print(" RPC Error : "+response.status);
+                print(" RPC Error status : "+response.status);
                 return None
 
 
