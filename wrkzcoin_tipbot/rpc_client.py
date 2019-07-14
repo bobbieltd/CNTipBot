@@ -33,6 +33,9 @@ async def call_aiohttp_wallet(method_name: str, coin: str, payload: Dict = None)
                 decoded_data = json.loads(res_data)
                 print(" RPC finished : "+url);
                 return decoded_data['result']
+            else:
+                print(" RPC Error : "+response.status);
+                return None
 
 
 async def call_doge_ltc(method_name: str, coin: str, payload: str = None) -> Dict:
