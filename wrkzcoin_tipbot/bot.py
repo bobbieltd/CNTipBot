@@ -1784,7 +1784,7 @@ async def tip(ctx, amount: str, *args):
     except:
         if 'default_coin' in serverinfo:
             COIN_NAME = serverinfo['default_coin'].upper()
-    print("COIN_NAME: " + COIN_NAME + " args: " + args[0])
+    print("TIP COIN_NAME: " + COIN_NAME + " args: " + args[0])
 
     # Check allowed coins
     tiponly_coins = serverinfo['tiponly'].split(",")
@@ -3791,7 +3791,8 @@ async def alert_if_userlock(ctx, cmd: str):
         return None
     else:
         if get_discord_userinfo['locked'].upper() == "YES":
-            await botLogChan.send(f'{ctx.message.author.name} / {ctx.message.author.id} locked but is commanding `{cmd}`')
+            if botLogChan is not None:
+                await botLogChan.send(f'{ctx.message.author.name} / {ctx.message.author.id} locked but is commanding `{cmd}`')
             return True
         else:
             return None
@@ -4545,6 +4546,7 @@ def truncate(number, digits) -> float:
 @click.command()
 def main():
     #bot.loop.create_task(update_balance_wallets())
+    update_balance_wallets()
     bot.run(config.discord.token, reconnect=True)
 
 
