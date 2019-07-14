@@ -4024,8 +4024,9 @@ async def update_balance_wallets():
     while not bot.is_closed:
         # do not update yet
         for coin in ENABLE_COIN:
+            print("Updating balances for "+coin)
             store.sql_update_balances(coin.upper())
-            await asyncio.sleep(20)
+            await asyncio.sleep(2)
         await asyncio.sleep(config.wallet_balance_update_interval)
 
 
