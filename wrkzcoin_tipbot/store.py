@@ -89,9 +89,9 @@ async def sql_update_balances(coin: str = None):
     updateTime = int(time.time())
     if coin is None:
         coin = "WRKZ"
-    if coin.upper() in ENABLE_COIN:
-        print('SQL: Updating all wallet balances '+coin.upper())
-        balances = await wallet.get_all_balances_all(coin.upper())
+    if coin in ENABLE_COIN:
+        print('SQL: Updating all wallet balances '+coin)
+        balances = await wallet.get_all_balances_all(coin)
         try:
             openConnection()
             with conn.cursor() as cur:
@@ -113,9 +113,9 @@ async def sql_update_some_balances(wallet_addresses: List[str], coin: str = None
     updateTime = int(time.time())
     if coin is None:
         coin = "WRKZ"
-    if coin.upper() in ENABLE_COIN:
-        print('SQL: Updating some wallet balances '+coin.upper())
-        balances = await wallet.get_some_balances(wallet_addresses, coin.upper())   
+    if coin in ENABLE_COIN:
+        print('SQL: Updating some wallet balances '+coin)
+        balances = await wallet.get_some_balances(wallet_addresses, coin)   
         try:
             openConnection()
             with conn.cursor() as cur:
@@ -143,45 +143,45 @@ async def sql_register_user(userID, coin: str = None):
         openConnection()
         with conn.cursor() as cur:
             COIN_NAME = None
-            if coin.upper() in ENABLE_COIN:
+            if coin in ENABLE_COIN:
                 sql = """ SELECT user_id, balance_wallet_address, user_wallet_address FROM """+coin.lower()+"""_user 
                           WHERE `user_id`=%s LIMIT 1 """
-                COIN_NAME = coin.upper()
-            elif coin.upper() in ENABLE_COIN_DOGE:
+                COIN_NAME = coin
+            elif coin in ENABLE_COIN_DOGE:
                 sql = """ SELECT user_id, balance_wallet_address, user_wallet_address FROM """+coin.lower()+"""_user
                           WHERE `user_id`=%s LIMIT 1 """
-                COIN_NAME = coin.upper()
+                COIN_NAME = coin
             cur.execute(sql, userID)
             result = cur.fetchone()
             if result is None:
-                if coin.upper() in ENABLE_COIN:
-                    balance_address = await wallet.registerOTHER(coin.upper())
-                elif coin.upper() in ENABLE_COIN_DOGE:
-                    balance_address = await wallet.DOGE_LTC_register(str(userID), coin.upper())
+                if coin in ENABLE_COIN:
+                    balance_address = await wallet.registerOTHER(coin)
+                elif coin in ENABLE_COIN_DOGE:
+                    balance_address = await wallet.DOGE_LTC_register(str(userID), coin)
                 if balance_address is None:
                     print('Internal error during call register wallet-api')
                     return
                 else:
                     walletStatus = None
-                    if coin.upper() in ENABLE_COIN:
+                    if coin in ENABLE_COIN:
                         walletStatus = await daemonrpc_client.getWalletStatus(COIN_NAME)
-                    elif coin.upper() in ENABLE_COIN_DOGE:
+                    elif coin in ENABLE_COIN_DOGE:
                         walletStatus = await daemonrpc_client.getDaemonRPCStatus(COIN_NAME)
                     if walletStatus is None:
                         print('Can not reach wallet-api during sql_register_user')
                         chainHeight = 0
                     else:
-                        if coin.upper() in ENABLE_COIN:
+                        if coin in ENABLE_COIN:
                             chainHeight = int(walletStatus['blockCount'])
-                        elif coin.upper() in ENABLE_COIN_DOGE:
+                        elif coin in ENABLE_COIN_DOGE:
                             chainHeight = int(walletStatus['blocks'])
-                    if coin.upper() in ENABLE_COIN:
+                    if coin in ENABLE_COIN:
                         sql = """ INSERT INTO """+coin.lower()+"""_user (`user_id`, `balance_wallet_address`, 
                                   `balance_wallet_address_ts`, `balance_wallet_address_ch`, `privateSpendKey`) 
                                   VALUES (%s, %s, %s, %s, %s) """
                         cur.execute(sql, (str(userID), balance_address['address'], int(time.time()), chainHeight,
                                           encrypt_string(balance_address['privateSpendKey']), ))
-                    elif coin.upper() in ENABLE_COIN_DOGE:
+                    elif coin in ENABLE_COIN_DOGE:
                         sql = """ INSERT INTO """+coin.lower()+"""_user (`user_id`, `balance_wallet_address`, 
                                   `balance_wallet_address_ts`, `balance_wallet_address_ch`, `privateKey`) 
                                   VALUES (%s, %s, %s, %s, %s) """
@@ -215,22 +215,22 @@ async def sql_update_user(userID, user_wallet_address, coin: str = None):
         openConnection()
         with conn.cursor() as cur:
             sql = None
-            if (coin.upper() in ENABLE_COIN) or (coin.upper() in ENABLE_COIN_DOGE):
+            if (coin in ENABLE_COIN) or (coin in ENABLE_COIN_DOGE):
                 sql = """ SELECT user_id, user_wallet_address, balance_wallet_address FROM """+coin.lower()+"""_user 
                           WHERE `user_id`=%s LIMIT 1 """
             cur.execute(sql, userID)
             result = cur.fetchone()
             if result is None:
                 balance_address = None
-                if coin.upper() in ENABLE_COIN:
-                    balance_address = await wallet.registerOTHER(coin.upper())
-                elif coin.upper() == "DOGE" or coin.upper() == "LTC":
-                    balance_address = await wallet.DOGE_LTC_getaccountaddress(str(userID), coin.upper())
+                if coin in ENABLE_COIN:
+                    balance_address = await wallet.registerOTHER(coin)
+                elif coin == "DOGE" or coin == "LTC":
+                    balance_address = await wallet.DOGE_LTC_getaccountaddress(str(userID), coin)
                 if balance_address is None:
                     print('Internal error during call register wallet-api')
                     return
             else:
-                if (coin.upper() in ENABLE_COIN) or (coin.upper() in ENABLE_COIN_DOGE):
+                if (coin in ENABLE_COIN) or (coin in ENABLE_COIN_DOGE):
                     sql = """ UPDATE """+coin.lower()+"""_user SET user_wallet_address=%s WHERE user_id=%s """               
                     cur.execute(sql, (user_wallet_address, str(userID),))
                     conn.commit()
@@ -252,23 +252,23 @@ async def sql_get_userwallet(userID, coin: str = None):
         openConnection()
         sql = None
         with conn.cursor() as cur:
-            if coin.upper() in ENABLE_COIN:
+            if coin in ENABLE_COIN:
                 sql = """ SELECT user_id, balance_wallet_address, user_wallet_address, balance_wallet_address_ts, 
                           balance_wallet_address_ch, lastOptimize, forwardtip 
                           FROM """+coin.lower()+"""_user WHERE `user_id`=%s LIMIT 1 """
-            elif coin.upper() in ENABLE_COIN_DOGE:
+            elif coin in ENABLE_COIN_DOGE:
                 sql = """ SELECT user_id, balance_wallet_address, user_wallet_address, balance_wallet_address_ts, 
                           balance_wallet_address_ch, lastUpdate 
                           FROM """+coin.lower()+"""_user WHERE `user_id`=%s LIMIT 1 """
             cur.execute(sql, (str(userID),))
             result = cur.fetchone()
             if result is None:
-                if coin.upper() in ENABLE_COIN_DOGE:
+                if coin in ENABLE_COIN_DOGE:
                     # Sometimes balance account exists
-                    depositAddress = await wallet.DOGE_LTC_getaccountaddress(str(userID), coin.upper())
-                    walletStatus = await daemonrpc_client.getDaemonRPCStatus(coin.upper())
+                    depositAddress = await wallet.DOGE_LTC_getaccountaddress(str(userID), coin)
+                    walletStatus = await daemonrpc_client.getDaemonRPCStatus(coin)
                     chainHeight = int(walletStatus['blocks'])
-                    privateKey = await wallet.DOGE_LTC_dumpprivkey(depositAddress, coin.upper())
+                    privateKey = await wallet.DOGE_LTC_dumpprivkey(depositAddress, coin)
                     sql = """ INSERT INTO """+coin.lower()+"""_user (`user_id`, `balance_wallet_address`, 
                               `balance_wallet_address_ts`, `balance_wallet_address_ch`, `privateKey`) 
                               VALUES (%s, %s, %s, %s, %s) """
@@ -281,8 +281,8 @@ async def sql_get_userwallet(userID, coin: str = None):
                 if result[1]:
                     userwallet['balance_wallet_address'] = result[1] 
 
-                if coin.upper() in ENABLE_COIN_DOGE:
-                    depositAddress = await wallet.DOGE_LTC_getaccountaddress(str(userID), coin.upper())
+                if coin in ENABLE_COIN_DOGE:
+                    depositAddress = await wallet.DOGE_LTC_getaccountaddress(str(userID), coin)
                     userwallet['balance_wallet_address'] = depositAddress
               
                 if result[2] is not None:
@@ -291,20 +291,20 @@ async def sql_get_userwallet(userID, coin: str = None):
                     userwallet['balance_wallet_address_ts'] = result[3]
                 if result[4] is not None:
                     userwallet['balance_wallet_address_ch'] = result[4]
-                if coin.upper() in ENABLE_COIN:
+                if coin in ENABLE_COIN:
                     if result[5]:
                         userwallet['lastOptimize'] = result[5]
                     if result[6]:
                         userwallet['forwardtip'] = result[6]
                 with conn.cursor() as cur:
                     result2 = None
-                    if coin.upper() in ENABLE_COIN:
+                    if coin in ENABLE_COIN:
                         sql = """ SELECT balance_wallet_address, actual_balance, locked_balance, lastUpdate 
                                   FROM """+coin.lower()+"""_walletapi 
                                   WHERE `balance_wallet_address`=%s LIMIT 1 """
                         cur.execute(sql, (userwallet['balance_wallet_address'],))
                         result2 = cur.fetchone()
-                if coin.upper() in ENABLE_COIN:
+                if coin in ENABLE_COIN:
                     if result2:
                         userwallet['actual_balance'] = int(result2[1])
                         userwallet['locked_balance'] = int(result2[2])
@@ -313,10 +313,10 @@ async def sql_get_userwallet(userID, coin: str = None):
                         userwallet['actual_balance'] = 0
                         userwallet['locked_balance'] = 0
                         userwallet['lastUpdate'] = int(time.time())
-                if coin.upper() in ENABLE_COIN_DOGE:
+                if coin in ENABLE_COIN_DOGE:
                     # Call to API instead
-                    actual = float(await wallet.DOGE_LTC_getbalance_acc(str(userID), coin.upper(), 6))
-                    locked = float(await wallet.DOGE_LTC_getbalance_acc(str(userID), coin.upper(), 1))
+                    actual = float(await wallet.DOGE_LTC_getbalance_acc(str(userID), coin, 6))
+                    locked = float(await wallet.DOGE_LTC_getbalance_acc(str(userID), coin, 1))
                     if actual == locked:
                         balance_actual = '{:,.8f}'.format(actual)
                         balance_locked = '{:,.8f}'.format(0)
@@ -343,7 +343,7 @@ def sql_get_countLastTip(userID, lastDuration: int, coin: str = None):
         openConnection()
         sql = None
         with conn.cursor() as cur:
-            if coin.upper() in ENABLE_COIN:
+            if coin in ENABLE_COIN:
                 sql = """ (SELECT `from_user`,`amount`,`date` FROM """+coin.lower()+"""_tip WHERE `from_user` = %s AND `date`>%s )
                           UNION
                           (SELECT `from_user`,`amount_total`,`date` FROM """+coin.lower()+"""_tipall WHERE `from_user` = %s AND `date`>%s )
@@ -372,23 +372,23 @@ async def sql_send_tip(user_from: str, user_to: str, amount: int, coin: str = No
     if coin is None:
         coin = "WRKZ"
     else:
-        coin = coin.upper()
+        coin = coin
     user_from_wallet = None
     user_to_wallet = None
     address_to = None
     #print('sql_send_tip')
-    if coin.upper() in ENABLE_COIN:
-        user_from_wallet = await sql_get_userwallet(user_from, coin.upper())
-        user_to_wallet = await sql_get_userwallet(user_to, coin.upper())
+    if coin in ENABLE_COIN:
+        user_from_wallet = await sql_get_userwallet(user_from, coin)
+        user_to_wallet = await sql_get_userwallet(user_to, coin)
         if (user_to_wallet['forwardtip'] == "ON") and ('user_wallet_address' in user_to_wallet):
             address_to = user_to_wallet['user_wallet_address']
         else:
             address_to = user_to_wallet['balance_wallet_address']
     if all(v is not None for v in [user_from_wallet['balance_wallet_address'], address_to]):
         tx_hash = None
-        if coin.upper() in ENABLE_COIN:
+        if coin in ENABLE_COIN:
             tx_hash = await wallet.send_transaction(user_from_wallet['balance_wallet_address'],
-                                                    address_to, amount, coin.upper())
+                                                    address_to, amount, coin)
         if tx_hash:
             updateTime = int(time.time())
             try:
@@ -396,26 +396,26 @@ async def sql_send_tip(user_from: str, user_to: str, amount: int, coin: str = No
                 with conn.cursor() as cur:
                     timestamp = int(time.time())
                     sql = None
-                    if coin.upper() in ENABLE_COIN:
+                    if coin in ENABLE_COIN:
                         sql = """ INSERT INTO """+coin.lower()+"""_tip (`from_user`, `to_user`, `amount`, `date`, `tx_hash`) 
                                   VALUES (%s, %s, %s, %s, %s) """
                         cur.execute(sql, (user_from, user_to, amount, timestamp, tx_hash,))
                         conn.commit()
                     updateBalance = None
-                    if coin.upper() in ENABLE_COIN:
+                    if coin in ENABLE_COIN:
                         updateBalance = await wallet.get_balance_address(user_from_wallet['balance_wallet_address'],
-                                                                         coin.upper())
+                                                                         coin)
                     if updateBalance:
-                        if coin.upper() in ENABLE_COIN:
+                        if coin in ENABLE_COIN:
                             sql = """ UPDATE """+coin.lower()+"""_walletapi SET `actual_balance`=%s, `locked_balance`=%s, 
                                       `lastUpdate`=%s WHERE `balance_wallet_address`=%s """
                             cur.execute(sql, (updateBalance['unlocked'], updateBalance['locked'],
                                               updateTime, user_from_wallet['balance_wallet_address'],))
                             conn.commit()
                             updateBalance = await wallet.get_balance_address(user_to_wallet['balance_wallet_address'],
-                                                                             coin.upper())
+                                                                             coin)
                     if updateBalance:
-                        if coin.upper() in ENABLE_COIN:
+                        if coin in ENABLE_COIN:
                             sql = """ UPDATE """+coin.lower()+"""_walletapi SET `actual_balance`=%s, 
                                       `locked_balance`=%s, `lastUpdate`=%s WHERE `balance_wallet_address`=%s """
                             cur.execute(sql, (updateBalance['unlocked'], updateBalance['locked'],
@@ -437,15 +437,15 @@ async def sql_send_tipall(user_from: str, user_tos, amount: int, amount_div: int
     if coin is None:
         coin = "WRKZ"
     else:
-        coin = coin.upper()
+        coin = coin
     user_from_wallet = None
-    if coin.upper() in ENABLE_COIN:
-        user_from_wallet = await sql_get_userwallet(user_from, coin.upper())
+    if coin in ENABLE_COIN:
+        user_from_wallet = await sql_get_userwallet(user_from, coin)
     if 'balance_wallet_address' in user_from_wallet:
         tx_hash = None
-        if coin.upper() in ENABLE_COIN:
+        if coin in ENABLE_COIN:
             try:
-                tx_hash = await wallet.send_transactionall(user_from_wallet['balance_wallet_address'], user_tos, coin.upper())
+                tx_hash = await wallet.send_transactionall(user_from_wallet['balance_wallet_address'], user_tos, coin)
                 print('tx_hash: ')
                 print(tx_hash)
             except Exception as e:
@@ -455,7 +455,7 @@ async def sql_send_tipall(user_from: str, user_tos, amount: int, amount_div: int
                 openConnection()
                 with conn.cursor() as cur:
                     timestamp = int(time.time())
-                    if coin.upper() in ENABLE_COIN:
+                    if coin in ENABLE_COIN:
                         sql = """ INSERT INTO """+coin.lower()+"""_tipall (`from_user`, `amount_total`, `date`, `tx_hash`, `numb_receivers`) 
                                   VALUES (%s, %s, %s, %s, %s) """
                         cur.execute(sql, (user_from, amount, timestamp, tx_hash, len(user_tos),))
@@ -483,15 +483,15 @@ async def sql_send_tip_Ex(user_from: str, address_to: str, amount: int, coin: st
     if coin is None:
         coin = "WRKZ"
     else:
-        coin = coin.upper()
+        coin = coin
     user_from_wallet = None
-    if coin.upper() in ENABLE_COIN:
-        user_from_wallet = await sql_get_userwallet(user_from, coin.upper())
+    if coin in ENABLE_COIN:
+        user_from_wallet = await sql_get_userwallet(user_from, coin)
     if 'balance_wallet_address' in user_from_wallet:
         tx_hash = None
-        if coin.upper() in ENABLE_COIN:
+        if coin in ENABLE_COIN:
             tx_hash = await wallet.send_transaction(user_from_wallet['balance_wallet_address'], address_to, 
-                                                    amount, coin.upper())
+                                                    amount, coin)
         if tx_hash is not None:
             updateTime = int(time.time())
             try:
@@ -499,15 +499,15 @@ async def sql_send_tip_Ex(user_from: str, address_to: str, amount: int, coin: st
                 with conn.cursor() as cur:
                     timestamp = int(time.time())
                     updateBalance = None
-                    if coin.upper() in ENABLE_COIN:
+                    if coin in ENABLE_COIN:
                         sql = """ INSERT INTO """+coin.lower()+"""_send (`from_user`, `to_address`, `amount`, `date`, 
                                   `tx_hash`) VALUES (%s, %s, %s, %s, %s) """
                         cur.execute(sql, (user_from, address_to, amount, timestamp, tx_hash,))
                         conn.commit()
                         updateBalance = await wallet.get_balance_address(user_from_wallet['balance_wallet_address'], 
-                                                                      coin.upper())
+                                                                      coin)
                     if updateBalance:
-                        if coin.upper() in ENABLE_COIN:
+                        if coin in ENABLE_COIN:
                             sql = """ UPDATE """+coin.lower()+"""_walletapi SET `actual_balance`=%s, 
                                       `locked_balance`=%s, `lastUpdate`=%s WHERE `balance_wallet_address`=%s """
                             cur.execute(sql, (updateBalance['unlocked'], updateBalance['locked'],
@@ -527,15 +527,15 @@ async def sql_send_tip_Ex_id(user_from: str, address_to: str, amount: int, payme
     if coin is None:
         coin = "WRKZ"
     else:
-        coin = coin.upper()
+        coin = coin
     user_from_wallet = None
-    if coin.upper() in ENABLE_COIN:
-        user_from_wallet = await sql_get_userwallet(user_from, coin.upper())
+    if coin in ENABLE_COIN:
+        user_from_wallet = await sql_get_userwallet(user_from, coin)
     if 'balance_wallet_address' in user_from_wallet:
         tx_hash = None
-        if coin.upper() in ENABLE_COIN:
+        if coin in ENABLE_COIN:
             tx_hash = await wallet.send_transaction_id(user_from_wallet['balance_wallet_address'], address_to,
-                                                       amount, paymentid, coin.upper())
+                                                       amount, paymentid, coin)
         if tx_hash:
             updateTime = int(time.time())
             try:
@@ -543,14 +543,14 @@ async def sql_send_tip_Ex_id(user_from: str, address_to: str, amount: int, payme
                 updateBalance = None
                 with conn.cursor() as cur:
                     timestamp = int(time.time())
-                    if coin.upper() in ENABLE_COIN:
+                    if coin in ENABLE_COIN:
                         sql = """ INSERT INTO """+coin.lower()+"""_send (`from_user`, `to_address`, `amount`, `date`, 
                                   `tx_hash`, `paymentid`) VALUES (%s, %s, %s, %s, %s, %s) """
                         cur.execute(sql, (user_from, address_to, amount, timestamp, tx_hash, paymentid, ))
                         conn.commit()
-                        updateBalance = await wallet.get_balance_address(user_from_wallet['balance_wallet_address'], coin.upper())
+                        updateBalance = await wallet.get_balance_address(user_from_wallet['balance_wallet_address'], coin)
                     if updateBalance:
-                        if coin.upper() in ENABLE_COIN:
+                        if coin in ENABLE_COIN:
                             sql = """ UPDATE """+coin.lower()+"""_walletapi SET `actual_balance`=%s, 
                                       `locked_balance`=%s, `lastUpdate`=%s WHERE `balance_wallet_address`=%s """
                             cur.execute(sql, (updateBalance['unlocked'], updateBalance['locked'], 
@@ -571,12 +571,12 @@ async def sql_withdraw(user_from: str, amount: int, coin: str=None):
         coin = "WRKZ"
     tx_hash = None
     user_from_wallet = None
-    if coin.upper() in ENABLE_COIN:
-        user_from_wallet = await sql_get_userwallet(user_from, coin.upper())
+    if coin in ENABLE_COIN:
+        user_from_wallet = await sql_get_userwallet(user_from, coin)
     if all(v is not None for v in [user_from_wallet['balance_wallet_address'], user_from_wallet['user_wallet_address']]):
-        if coin.upper() in ENABLE_COIN:
+        if coin in ENABLE_COIN:
             tx_hash = await wallet.send_transaction(user_from_wallet['balance_wallet_address'],
-                                                    user_from_wallet['user_wallet_address'], amount, coin.upper())
+                                                    user_from_wallet['user_wallet_address'], amount, coin)
         if tx_hash:
             updateTime = int(time.time())
             try:
@@ -584,14 +584,14 @@ async def sql_withdraw(user_from: str, amount: int, coin: str=None):
                 with conn.cursor() as cur:
                     timestamp = int(time.time())
                     updateBalance = None
-                    if coin.upper() in ENABLE_COIN:
+                    if coin in ENABLE_COIN:
                         sql = """ INSERT INTO """+coin.lower()+"""_withdraw (`user_id`, `to_address`, `amount`, 
                                   `date`, `tx_hash`) VALUES (%s, %s, %s, %s, %s) """
                         cur.execute(sql, (user_from, user_from_wallet['user_wallet_address'], amount, timestamp, tx_hash,))
                         conn.commit()
-                        updateBalance = await wallet.get_balance_address(user_from_wallet['balance_wallet_address'], coin.upper())
+                        updateBalance = await wallet.get_balance_address(user_from_wallet['balance_wallet_address'], coin)
                     if updateBalance:
-                        if coin.upper() in ENABLE_COIN:
+                        if coin in ENABLE_COIN:
                             sql = """ UPDATE """+coin.lower()+"""_walletapi SET `actual_balance`=%s, 
                                       `locked_balance`=%s, `lastUpdate`=%s WHERE `balance_wallet_address`=%s """
                             cur.execute(sql, (updateBalance['unlocked'], updateBalance['locked'], 
@@ -611,14 +611,14 @@ async def sql_donate(user_from: str, address_to: str, amount: int, coin: str = N
     if coin is None:
         coin = "WRKZ"
     else:
-        coin = coin.upper()
+        coin = coin
     user_from_wallet = None
-    if coin.upper() in ENABLE_COIN:
-        user_from_wallet = await sql_get_userwallet(user_from, coin.upper())
+    if coin in ENABLE_COIN:
+        user_from_wallet = await sql_get_userwallet(user_from, coin)
     if all(v is not None for v in [user_from_wallet['balance_wallet_address'], address_to]):
         tx_hash = None
-        if coin.upper() in ENABLE_COIN:
-            tx_hash = await wallet.send_transaction_donate(user_from_wallet['balance_wallet_address'], address_to, amount, coin.upper())
+        if coin in ENABLE_COIN:
+            tx_hash = await wallet.send_transaction_donate(user_from_wallet['balance_wallet_address'], address_to, amount, coin)
         if tx_hash is not None:
             updateTime = int(time.time())
             try:
@@ -626,14 +626,14 @@ async def sql_donate(user_from: str, address_to: str, amount: int, coin: str = N
                 with conn.cursor() as cur:
                     timestamp = int(time.time())
                     updateBalance = None
-                    if coin.upper() in ENABLE_COIN:
+                    if coin in ENABLE_COIN:
                         sql = """ INSERT INTO """+coin.lower()+"""_donate (`from_user`, `to_address`, `amount`, 
                                   `date`, `tx_hash`) VALUES (%s, %s, %s, %s, %s) """
                         cur.execute(sql, (user_from, address_to, amount, timestamp, tx_hash,))
                         conn.commit()
-                        updateBalance = await wallet.get_balance_address(user_from_wallet['balance_wallet_address'], coin.upper())
+                        updateBalance = await wallet.get_balance_address(user_from_wallet['balance_wallet_address'], coin)
                     if updateBalance:
-                        if coin.upper() in ENABLE_COIN:
+                        if coin in ENABLE_COIN:
                             sql = """ UPDATE """+coin.lower()+"""_walletapi SET `actual_balance`=%s, 
                                       `locked_balance`=%s, `lastUpdate`=%s WHERE `balance_wallet_address`=%s """
                             cur.execute(sql, (updateBalance['unlocked'], updateBalance['locked'], 
@@ -687,7 +687,7 @@ def sql_optimize_check(coin: str = None):
         openConnection()
         with conn.cursor() as cur:
             timeNow = int(time.time()) - 600
-            if coin.upper() in ENABLE_COIN:
+            if coin in ENABLE_COIN:
                 sql = """ SELECT COUNT(*) FROM """+coin.lower()+"""_user WHERE lastOptimize>%s """
                 cur.execute(sql, timeNow, )
                 result = cur.fetchone()
@@ -703,13 +703,13 @@ async def sql_optimize_do(userID: str, coin: str = None):
     if coin is None:
         coin = "WRKZ"
     else:
-        coin = coin.upper()
+        coin = coin
     user_from_wallet = None
-    if coin.upper() in ENABLE_COIN:
-        user_from_wallet = await sql_get_userwallet(userID, coin.upper())
-    #print('store.check estimation fusion first: ' + coin.upper())
+    if coin in ENABLE_COIN:
+        user_from_wallet = await sql_get_userwallet(userID, coin)
+    #print('store.check estimation fusion first: ' + coin)
     estimate = await wallet.wallet_estimate_fusion(user_from_wallet['balance_wallet_address'], 
-                                             user_from_wallet['actual_balance'], coin.upper())
+                                             user_from_wallet['actual_balance'], coin)
     if estimate:
         if 'fusionReadyCount' in estimate:
             print('fusionReadyCount: '+ str(estimate['fusionReadyCount']))
@@ -720,29 +720,29 @@ async def sql_optimize_do(userID: str, coin: str = None):
         print('fusionReadyCount check error.')
         return 0
 
-    print('store.sql_optimize_do: ' + coin.upper())
+    print('store.sql_optimize_do: ' + coin)
     if user_from_wallet:
         OptimizeCount = 0
-        if coin.upper() in ENABLE_COIN:
+        if coin in ENABLE_COIN:
             OptimizeCount = await wallet.wallet_optimize_single(user_from_wallet['balance_wallet_address'], 
-                                                          int(user_from_wallet['actual_balance']), coin.upper())
+                                                          int(user_from_wallet['actual_balance']), coin)
         # in case failed for some reason, reduce threshold
         if estimate['fusionReadyCount'] >= 2 and OptimizeCount == 0:
             OptimizeCount = await wallet.wallet_optimize_single(user_from_wallet['balance_wallet_address'], 
-                                                          int(round(user_from_wallet['actual_balance']/2)), coin.upper())        
+                                                          int(round(user_from_wallet['actual_balance']/2)), coin)        
         if OptimizeCount > 0:
             updateTime = int(time.time())
-            if coin.upper() in ENABLE_COIN:
-                sql_optimize_update(str(userID), coin.upper())
+            if coin in ENABLE_COIN:
+                sql_optimize_update(str(userID), coin)
             try:
                 openConnection()
                 with conn.cursor() as cur:
                     updateBalance = None
-                    if coin.upper() in ENABLE_COIN:
-                        updateBalance = await wallet.get_balance_address(user_from_wallet['balance_wallet_address'], coin.upper())
+                    if coin in ENABLE_COIN:
+                        updateBalance = await wallet.get_balance_address(user_from_wallet['balance_wallet_address'], coin)
                     if updateBalance:
                         sql = None
-                        if coin.upper() in ENABLE_COIN:
+                        if coin in ENABLE_COIN:
                             sql = """ UPDATE """+coin.lower()+"""_walletapi SET `actual_balance`=%s, 
                                      `locked_balance`=%s, `lastUpdate`=%s WHERE `balance_wallet_address`=%s """
                         cur.execute(sql, (updateBalance['unlocked'], updateBalance['locked'], 
@@ -763,7 +763,7 @@ def sql_optimize_update(userID: str, coin: str = None):
         openConnection()
         with conn.cursor() as cur:
             timeNow = int(time.time())
-            if coin.upper() in ENABLE_COIN:
+            if coin in ENABLE_COIN:
                 sql = """ UPDATE """+coin.lower()+"""_user SET `lastOptimize`=%s WHERE `user_id`=%s LIMIT 1 """
                 cur.execute(sql, (timeNow, str(userID),))
                 conn.commit()
@@ -779,24 +779,24 @@ async def sql_optimize_admin_do(coin: str, opt_num: int = None):
         opt_num = 5
     if coin is None:
         coin = "WRKZ"
-    if coin.upper() in ENABLE_COIN:
-        addresses = await wallet.get_all_balances_all(coin.upper())
+    if coin in ENABLE_COIN:
+        addresses = await wallet.get_all_balances_all(coin)
     else:
         return None
     AccumOpt = 0
     for address in addresses:
         if address['unlocked'] > 0:
             estimate = None
-            estimate = await wallet.wallet_estimate_fusion(address['address'], address['unlocked'], coin.upper())
+            estimate = await wallet.wallet_estimate_fusion(address['address'], address['unlocked'], coin)
             if estimate:
                 if 'fusionReadyCount' in estimate:
                     #print('fusionReadyCount: '+ str(estimate['fusionReadyCount']))
                     #print('totalOutputCount: '+ str(estimate['totalOutputCount']))
                     if estimate['fusionReadyCount'] >= 2:
-                        print(f'Optimize {coin.upper()}: ' + address['address'])
+                        print(f'Optimize {coin}: ' + address['address'])
                         OptimizeCount = 0
                         try:
-                            OptimizeCount = await wallet.wallet_optimize_single(address['address'], int(round(address['unlocked']/2)), coin.upper())
+                            OptimizeCount = await wallet.wallet_optimize_single(address['address'], int(round(address['unlocked']/2)), coin)
                         except Exception as e:
                             print(e)
                         if OptimizeCount > 0:
@@ -812,31 +812,31 @@ async def sql_send_to_voucher(user_id: str, user_name: str, message_creating: st
     if coin is None:
         coin = "WRKZ"
     else:
-        coin = coin.upper()
+        coin = coin
     user_from_wallet = None
-    if coin.upper() in ENABLE_COIN:
-        user_from_wallet = await sql_get_userwallet(user_id, coin.upper())
+    if coin in ENABLE_COIN:
+        user_from_wallet = await sql_get_userwallet(user_id, coin)
     if 'balance_wallet_address' in user_from_wallet:
         tx_hash = None
-        if coin.upper() in ENABLE_COIN:
-            tx_hash = await wallet.send_transaction(user_from_wallet['balance_wallet_address'], wallet.get_voucher_address(coin.upper()), 
-                                                    amount + reserved_fee, coin.upper())
+        if coin in ENABLE_COIN:
+            tx_hash = await wallet.send_transaction(user_from_wallet['balance_wallet_address'], wallet.get_voucher_address(coin), 
+                                                    amount + reserved_fee, coin)
         if tx_hash:
             try:
                 openConnection()
                 with conn.cursor() as cur:
                     timestamp = int(time.time())
                     updateBalance = None
-                    if coin.upper() in ENABLE_COIN:
+                    if coin in ENABLE_COIN:
                         sql = """ INSERT INTO """+coin.lower()+"""_voucher (`user_id`, `user_name`, `message_creating`, `amount`, 
                                   `reserved_fee`, `date_create`, `secret_string`, `voucher_image_name`, `tx_hash_deposit`) 
                                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s) """
                         cur.execute(sql, (user_id, user_name, message_creating, amount, reserved_fee, int(time.time()), secret_string, voucher_image_name, tx_hash,))
                         conn.commit()
                         updateBalance = await wallet.get_balance_address(user_from_wallet['balance_wallet_address'], 
-                                                                         coin.upper())
+                                                                         coin)
                     if updateBalance:
-                        if coin.upper() in ENABLE_COIN:
+                        if coin in ENABLE_COIN:
                             sql = """ UPDATE """+coin.lower()+"""_walletapi SET `actual_balance`=%s, 
                                       `locked_balance`=%s, `lastUpdate`=%s WHERE `balance_wallet_address`=%s """
                             cur.execute(sql, (updateBalance['unlocked'], updateBalance['locked'],
@@ -1255,7 +1255,7 @@ def sql_add_failed_tx(coin: str, user_id: str, user_author: str, amount: int, tx
         with conn.cursor() as cur:
             sql = """ INSERT IGNORE INTO `discord_txfail` (`coin_name`, `user_id`, `tx_author`, `amount`, `tx_type`, `fail_time`)
                       VALUES (%s, %s, %s, %s, %s, %s) """
-            cur.execute(sql, (coin.upper(), user_id, user_author, amount, tx_type.upper(), int(time.time())))
+            cur.execute(sql, (coin, user_id, user_author, amount, tx_type.upper(), int(time.time())))
             conn.commit()
     except Exception as e:
         print(e)
@@ -1337,7 +1337,7 @@ def sql_updateinfo_by_server(server_id: str, what: str, value: str):
 
 def sql_mv_doge_single(user_from: str, to_user: str, amount: float, coin: str, tiptype: str):
     global conn
-    if coin.upper() not in ENABLE_COIN_DOGE:
+    if coin not in ENABLE_COIN_DOGE:
         return False
     if tiptype.upper() not in ["TIP", "DONATE"]:
         return False
@@ -1359,7 +1359,7 @@ def sql_mv_doge_single(user_from: str, to_user: str, amount: float, coin: str, t
 def sql_mv_doge_multiple(user_from: str, user_tos, amount_each: float, coin: str, tiptype: str):
     # user_tos is array "account1", "account2", ....
     global conn
-    if coin.upper() not in ENABLE_COIN_DOGE:
+    if coin not in ENABLE_COIN_DOGE:
         return False
     if tiptype.upper() not in ["TIPS", "TIPALL"]:
         return False
@@ -1385,13 +1385,13 @@ def sql_mv_doge_multiple(user_from: str, user_tos, amount_each: float, coin: str
 
 async def sql_external_doge_single(user_from: str, amount: float, fee: float, to_address: str, coin: str, tiptype: str):
     global conn
-    if coin.upper() not in ENABLE_COIN_DOGE:
+    if coin not in ENABLE_COIN_DOGE:
         return False
     if tiptype.upper() not in ["SEND", "WITHDRAW"]:
         return False
     try:
         openConnection()
-        txHash = await wallet.DOGE_LTC_sendtoaddress(to_address, amount, user_from, coin.upper())
+        txHash = await wallet.DOGE_LTC_sendtoaddress(to_address, amount, user_from, coin)
         #print(txHash)
         with conn.cursor() as cur: 
             sql = """ INSERT INTO """+coin.lower()+"""_external_tx (`user_id`, `amount`, `fee`, `to_address`, 
@@ -1409,7 +1409,7 @@ async def sql_external_doge_single(user_from: str, amount: float, fee: float, to
 
 def sql_doge_balance(userID: str, coin: str):
     global conn
-    if coin.upper() not in ENABLE_COIN_DOGE:
+    if coin not in ENABLE_COIN_DOGE:
         return False
     try:
         openConnection()
@@ -1467,7 +1467,7 @@ def sql_set_forwardtip(userID: str, coin: str, option: str):
     global conn
     if option.upper() not in ["ON", "OFF"]:
         return None
-    if coin.upper() in ENABLE_COIN:
+    if coin in ENABLE_COIN:
         try:
             openConnection()
             with conn.cursor() as cur: 
