@@ -4024,8 +4024,8 @@ async def update_balance_wallets():
     while not bot.is_closed:
         # do not update yet
         for coin in ENABLE_COIN:
-            await asyncio.sleep(20)
             store.sql_update_balances(coin.upper())
+            await asyncio.sleep(20)
         await asyncio.sleep(config.wallet_balance_update_interval)
 
 
@@ -4546,7 +4546,7 @@ def truncate(number, digits) -> float:
 @click.command()
 def main():
     #bot.loop.create_task(update_balance_wallets())
-    update_balance_wallets()
+    await update_balance_wallets()
     bot.run(config.discord.token, reconnect=True)
 
 
