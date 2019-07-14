@@ -20,13 +20,13 @@ async def registerOTHER(coin: str) -> str:
     }
     if coin_family == "XMR":
         result = await rpc_client.call_aiohttp_wallet('create_address', coin, payload=payload)
-        if result is None:
+        if result is None or not hasattr(result,'address'):
             print("Error when creating address " + result);
             return None
         reg_address['privateSpendKey'] =  result['address_index']
     else:
         result = await rpc_client.call_aiohttp_wallet('createAddress', coin)
-        if result is None:
+        if result is None or not hasattr(result,'address'):
             print("Error when creating address " + result);
             return None
         reg_address['privateSpendKey'] = await getSpendKey(result['address'], coin)

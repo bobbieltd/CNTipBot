@@ -329,7 +329,7 @@ async def sql_get_userwallet(userID, coin: str = None):
                 #print(userwallet)
                 return userwallet
     except Exception as e:
-        print(e)
+        print("Error sql_get_userwallet: "+str(e))
     finally:
         conn.close()
 
