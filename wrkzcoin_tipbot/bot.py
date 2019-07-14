@@ -738,7 +738,6 @@ async def info(ctx, coin: str = None):
     elif coin in ENABLE_COIN:
         wallet = await store.sql_get_userwallet(str(ctx.message.author.id), coin)
         if wallet is None:
-            print(coin+" - Creating wallet for "+str(ctx.message.author.id))
             userregister = await store.sql_register_user(str(ctx.message.author.id), coin)
             wallet = await store.sql_get_userwallet(str(ctx.message.author.id), coin)
     elif coin in ENABLE_COIN_DOGE:

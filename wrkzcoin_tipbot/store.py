@@ -155,6 +155,7 @@ async def sql_register_user(userID, coin: str = None):
             result = cur.fetchone()
             if result is None:
                 if coin in ENABLE_COIN:
+                    print(coin+" - Creating wallet for "+str(userID))
                     balance_address = await wallet.registerOTHER(coin)
                 elif coin in ENABLE_COIN_DOGE:
                     balance_address = await wallet.DOGE_LTC_register(str(userID), coin)
