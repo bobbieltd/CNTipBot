@@ -1522,21 +1522,8 @@ def sql_get_poolinfo():
 def encrypt_string(to_encrypt: str):
 
     return to_encrypt
-    key = (config.encrypt.key).encode()
-
-    # Encrypt
-    message = to_encrypt.encode()
-    f = Fernet(key)
-    encrypted = f.encrypt(message)
-    return encrypted.decode()
-
 
 def decrypt_string(decrypted: str):
 
     return decrypted
-    key = (config.encrypt.key).encode()
 
-    # Decrypt
-    f = Fernet(key)
-    decrypted = f.decrypt(decrypted.encode())
-    return decrypted.decode()
