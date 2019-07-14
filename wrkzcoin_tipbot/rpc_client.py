@@ -41,7 +41,7 @@ async def call_aiohttp_wallet(method_name: str, coin: str, payload: Dict = None)
     coin_family = getattr(getattr(config,"daemon"+coin),"coin_family","TRTL");
     if coin_family == "XMR" and method_name == "getBalance":
         method_name = "get_balance"
-        if payload['address'] is not None:
+        if payload is not None and payload['address'] is not None:
             indices = await rpc_client.call_aiohttp_wallet_original('get_address_index', coin, payload=payload)
             payload["account_index"] = indices['index']['major']
             payload["address_indices"] = indices['index']['minor']
