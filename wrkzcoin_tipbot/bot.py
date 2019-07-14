@@ -4022,7 +4022,7 @@ async def on_command_error(ctx, error):
 async def update_balance_wallets():
     while not bot.is_closed:
         # do not update yet
-        for coin in ENABLE_COIN
+        for coin in ENABLE_COIN:
             await asyncio.sleep(20)
             store.sql_update_balances(coin.upper())
         await asyncio.sleep(config.wallet_balance_update_interval)
