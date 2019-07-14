@@ -735,14 +735,15 @@ async def info(ctx, coin: str = None):
                 f'Please add ticker after **{cmdName.lower()}**. Example: `{server_prefix}{cmdName.lower()} {server_coin}`, if you want to get your address(es).\n\n'
                 f'Type: `{server_prefix}setting` if you want to change `prefix` or `default_coin` or `ignorechan` or `del_ignorechan` or `tiponly`. (Required permission)')
             return
-    elif coin.upper() in ENABLE_COIN:
-        wallet = await store.sql_get_userwallet(str(ctx.message.author.id), coin.upper())
+    elif coin in ENABLE_COIN:
+        wallet = await store.sql_get_userwallet(str(ctx.message.author.id), coin)
         if wallet is None:
-            userregister = await store.sql_register_user(str(ctx.message.author.id), coin.upper())
-            wallet = await store.sql_get_userwallet(str(ctx.message.author.id), coin.upper())
-    elif coin.upper() in ENABLE_COIN_DOGE:
-        wallet = await store.sql_get_userwallet(ctx.message.author.id, coin.upper())
-        depositAddress = await DOGE_LTC_getaccountaddress(ctx.message.author.id, coin.upper())
+            print(coin+" - Creating wallet for "+str(ctx.message.author.id))
+            userregister = await store.sql_register_user(str(ctx.message.author.id), coin)
+            wallet = await store.sql_get_userwallet(str(ctx.message.author.id), coin)
+    elif coin in ENABLE_COIN_DOGE:
+        wallet = await store.sql_get_userwallet(ctx.message.author.id, coin)
+        depositAddress = await DOGE_LTC_getaccountaddress(ctx.message.author.id, coin)
         wallet['balance_wallet_address'] = depositAddress
     else:
         await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} **INVALID TICKER**')
