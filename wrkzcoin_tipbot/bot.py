@@ -531,6 +531,7 @@ async def admin(ctx):
 @commands.is_owner()
 @admin.command(help=bot_help_admin_save)
 async def save(ctx, coin: str):
+    coin = coin.upper()
     botLogChan = bot.get_channel(id=LOG_CHAN)
     COIN_NAME = coin.upper()
     if COIN_NAME in MAINTENANCE_COIN:
@@ -785,6 +786,7 @@ async def info(ctx, coin: str = None):
 
 @bot.command(pass_context=True, name='balance', aliases=['bal'], help=bot_help_balance)
 async def balance(ctx, coin: str = None):
+    coin = coin.upper()
     # check if account locked
     account_lock = await alert_if_userlock(ctx, 'balance')
     if account_lock:
@@ -1145,6 +1147,7 @@ async def botbalance(ctx, member: discord.Member = None, *args):
 @bot.command(pass_context=True, name='forwardtip', aliases=['redirecttip'],
              help=bot_help_forwardtip)
 async def forwardtip(ctx, coin: str, option: str):
+    coin = coin.upper()
     # check if account locked
     account_lock = await alert_if_userlock(ctx, 'forwardtip')
     if account_lock:
@@ -1306,6 +1309,7 @@ async def register(ctx, wallet_address: str):
 
 @bot.command(pass_context=True, help=bot_help_withdraw)
 async def withdraw(ctx, amount: str, coin: str = None):
+    coin = coin.upper()
     # check if account locked
     account_lock = await alert_if_userlock(ctx, 'withdraw')
     if account_lock:
@@ -1499,6 +1503,7 @@ async def withdraw(ctx, amount: str, coin: str = None):
 
 @bot.command(pass_context=True, help=bot_help_donate)
 async def donate(ctx, amount: str, coin: str = None):
+    coin = coin.upper()
     # check if account locked
     account_lock = await alert_if_userlock(ctx, 'donate')
     if account_lock:
@@ -1762,7 +1767,7 @@ async def tip(ctx, amount: str, *args):
 
     serverinfo = store.sql_info_by_server(str(ctx.guild.id))
     try:
-        COIN_NAME = args[0]
+        COIN_NAME = args[0].upper()
         if COIN_NAME.upper() not in ENABLE_COIN:
             if (COIN_NAME.upper() in ENABLE_COIN_DOGE):
                 COIN_NAME = COIN_NAME.upper()
@@ -2850,6 +2855,7 @@ async def address(ctx, *args):
 
 @bot.command(pass_context=True, name='optimize', aliases=['opt'], help=bot_help_optimize)
 async def optimize(ctx, coin: str, member: discord.Member = None):
+    coin = coin.upper()
     # check if account locked
     account_lock = await alert_if_userlock(ctx, 'optimize')
     if account_lock:
@@ -2970,6 +2976,7 @@ async def optimize(ctx, coin: str, member: discord.Member = None):
 
 @bot.command(pass_context=True, name='voucher', aliases=['redeem'], help=bot_help_voucher, hidden = True)
 async def voucher(ctx, command: str, amount: str, coin: str = None):
+    coin = coin.upper()
     # This is still ongoing work
     botLogChan = bot.get_channel(id=LOG_CHAN)
     amount = amount.replace(",", "")
@@ -3208,6 +3215,7 @@ async def stats(ctx, coin: str = None):
 
 @bot.command(pass_context=True, help=bot_help_height, hidden = True)
 async def height(ctx, coin: str = None):
+    coin = coin.upper()
     COIN_NAME = None
     if coin is None:
         if isinstance(ctx.message.channel, discord.DMChannel):
@@ -4044,6 +4052,7 @@ async def update_balance_wallets():
 
 # Multiple tip
 async def _tip(ctx, amount, coin: str = None):
+    coin = coin.upper()
     serverinfo = store.sql_info_by_server(str(ctx.guild.id))
     COIN_NAME = coin.upper()
     try:
@@ -4293,6 +4302,7 @@ async def _tip(ctx, amount, coin: str = None):
 
 # Multiple tip
 async def _tip_talker(ctx, amount, list_talker, coin: str = None):
+    coin = coin.upper()
     serverinfo = store.sql_info_by_server(str(ctx.guild.id))
     COIN_NAME = coin.upper()
     try:
