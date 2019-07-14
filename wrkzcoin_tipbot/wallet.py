@@ -30,7 +30,7 @@ async def registerOTHER(coin: str) -> str:
             print("Error when creating address " + result);
             return None
         reg_address['privateSpendKey'] = await getSpendKey(result['address'], coin)
-
+    print(" Registration result : "+result);
     reg_address['address'] = result['address']
 
     # Avoid any crash and nothing to restore or import

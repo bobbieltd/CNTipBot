@@ -666,7 +666,7 @@ async def unlockuser(ctx, user_id: str):
         return
 
 
-@bot.command(pass_context=True, name='info', aliases=['wallet'], help=bot_help_info)
+@bot.command(pass_context=True, name='info', aliases=['wallet','address'], help=bot_help_info)
 async def info(ctx, coin: str = None):
     if coin is not None:
         coin = coin.upper()
@@ -2670,7 +2670,7 @@ async def send(ctx, amount: str, CoinAddress: str):
             return
 
 
-@bot.command(pass_context=True, name='address', aliases=['addr'], help=bot_help_address)
+@bot.command(pass_context=True, name='checkaddress', aliases=['addr'], help=bot_help_address)
 async def address(ctx, *args):
     if len(args) == 0:
         if isinstance(ctx.message.channel, discord.DMChannel):
