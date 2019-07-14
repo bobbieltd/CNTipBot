@@ -1779,11 +1779,10 @@ async def tip(ctx, amount: str, *args):
                 COIN_NAME = COIN_NAME
             elif ('default_coin' in serverinfo):
                 COIN_NAME = serverinfo['default_coin'].upper()
-
     except:
         if 'default_coin' in serverinfo:
             COIN_NAME = serverinfo['default_coin'].upper()
-    print("COIN_NAME: " + COIN_NAME)
+    print("COIN_NAME: " + COIN_NAME + " args: " + args[0])
 
     # Check allowed coins
     tiponly_coins = serverinfo['tiponly'].split(",")
