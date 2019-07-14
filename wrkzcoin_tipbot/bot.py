@@ -771,18 +771,20 @@ async def info(ctx, coin: str = None):
         await ctx.message.author.send("**QR for your Deposit**", 
                                     file=discord.File(config.qrsettings.path + wallet['balance_wallet_address'] + ".png"))
         await ctx.message.author.send(f'**[ACCOUNT INFO]**\n\n'
-                                    f'{EMOJI_MONEYBAG} Deposit Address: `' + '`\n' + wallet['balance_wallet_address'] + '`\n'
                                     f'{EMOJI_SCALE} Registered Wallet: `'
                                     ''+ wallet['user_wallet_address'] + '`\n'
-                                    f'{get_notice_txt(coin.upper())}')
+                                    f'{get_notice_txt(coin.upper())}'
+                                    f'{EMOJI_MONEYBAG} Deposit Address: `' + '`\n')
+        await ctx.message.author.send(wallet['balance_wallet_address'])
     else:
         await ctx.message.add_reaction(EMOJI_WARNING)
         await ctx.message.author.send("**QR for your Deposit**", 
                                     file=discord.File(config.qrsettings.path + wallet['balance_wallet_address'] + ".png"))
         await ctx.message.author.send(f'**[ACCOUNT INFO]**\n\n'
-                               f'{EMOJI_MONEYBAG} Deposit Address: `' + '`\n' + wallet['balance_wallet_address'] + '`\n'
                                f'{EMOJI_SCALE} Registered Wallet: `NONE, Please register.`\n'
-                               f'{get_notice_txt(coin.upper())}')
+                               f'{get_notice_txt(coin.upper())}'
+                               f'{EMOJI_MONEYBAG} Deposit Address: `' + '`\n')
+        await ctx.message.author.send(wallet['balance_wallet_address'])
     return
 
 
