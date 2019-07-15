@@ -71,6 +71,7 @@ async def call_aiohttp_wallet(method_name: str, coin: str, payload: Dict = None)
         'id': str(uuid4()),
         'method': f'{method_name}'
     }
+
     url = get_wallet_rpc_url(coin)
     async with aiohttp.ClientSession() as session:
         async with session.post(url, json=full_payload, timeout=8) as response:
