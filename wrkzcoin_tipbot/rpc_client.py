@@ -54,7 +54,7 @@ async def call_aiohttp_wallet(method_name: str, coin: str, payload: Dict = None)
 
     if coin_family == "XMR" and method_name == "sendTransaction":
         method_name = "transfer"
-        indices = await call_aiohttp_wallet_original('get_address_index', coin, rpcpayload={"address":payload["addresses"]})
+        indices = await call_aiohttp_wallet_original('get_address_index', coin, payload={"address":payload["addresses"]})
         indexMajor = indices['index']['major']
         payload["account_index"] = indexMajor
         payload["subaddr_indices"] = [indices['index']['minor']]
