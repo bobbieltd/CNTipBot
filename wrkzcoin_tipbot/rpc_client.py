@@ -49,6 +49,18 @@ async def call_aiohttp_wallet(method_name: str, coin: str, payload: Dict = None)
     if coin_family == "XMR" and method_name == "getAddresses":
         method_name = "get_address"
 
+    if coin_family == "XMR" and method_name == "sendTransaction":
+        method_name = "transfer"
+        indices = await call_aiohttp_wallet_original('get_address_index', coin, rpcpayload={"address":payload["addresses"]})
+        payload["account_index"] = indices['index']['major']
+        payload["subaddr_indices"] = [indices['index']['minor']]
+        payload["destinations"] = payload["transfers"]
+        payload["priority"] = 0
+        payload["mixin"] = payload["anonymity"]
+        payload["get_tx_key"] = True
+        payload["unlock_time"] = 0
+        payload["payment_id"] = payload["paymentId"]
+
     full_payload = {
         'params': payload or {},
         'jsonrpc': '2.0',
@@ -73,6 +85,9 @@ async def call_aiohttp_wallet(method_name: str, coin: str, payload: Dict = None)
                     for address in result["addresses"]:
                         resultReformat['addresses'].append(address["address"])
                     result = resultReformat
+                if coin_family == "XMR" and method_name == "transfer"
+                    getattr(config,"daemon"+coin).fee = result["fee"]
+                    result["transactionHash"] = result["tx_hash"]
                 if coin_family == "XMR":
                     print(coin+" RPC for XMR family: "+json.dumps(result))
                 return result
