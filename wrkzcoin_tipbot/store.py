@@ -96,6 +96,7 @@ async def sql_update_balances(coin: str = None):
             openConnection()
             with conn.cursor() as cur:
                 for details in balances:
+                    print('SQL: Insert walletapi '+details['address'])
                     sql = """ INSERT INTO """+coin.lower()+"""_walletapi (`balance_wallet_address`, `actual_balance`, 
                     `locked_balance`, `lastUpdate`) VALUES (%s, %s, %s, %s) 
                     ON DUPLICATE KEY UPDATE `actual_balance`=%s, `locked_balance`=%s, `lastUpdate`=%s """
@@ -120,6 +121,7 @@ async def sql_update_some_balances(wallet_addresses: List[str], coin: str = None
             openConnection()
             with conn.cursor() as cur:
                 for details in balances:
+                    print('SQL: Insert walletapi '+details['address'])
                     sql = """ INSERT INTO """+coin.lower()+"""_walletapi (`balance_wallet_address`, `actual_balance`, 
                               `locked_balance`, `lastUpdate`) VALUES (%s, %s, %s, %s) 
                               ON DUPLICATE KEY UPDATE `actual_balance`=%s, `locked_balance`=%s, `lastUpdate`=%s """
