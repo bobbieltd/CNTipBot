@@ -4546,7 +4546,9 @@ def truncate(number, digits) -> float:
 @click.command()
 def main():
     #bot.loop.create_task(update_balance_wallets())
-    update_balance_wallets()
+    for coin in ENABLE_COIN:
+        print("Updating balances for "+coin)
+        await store.sql_update_balances(coin.upper())
     bot.run(config.discord.token, reconnect=True)
 
 
