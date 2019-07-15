@@ -85,7 +85,7 @@ async def call_aiohttp_wallet(method_name: str, coin: str, payload: Dict = None)
                     for address in result["addresses"]:
                         resultReformat['addresses'].append(address["address"])
                     result = resultReformat
-                if coin_family == "XMR" and method_name == "transfer"
+                if coin_family == "XMR" and method_name == "transfer":
                     getattr(config,"daemon"+coin).fee = result["fee"]
                     result["transactionHash"] = result["tx_hash"]
                 if coin_family == "XMR":
