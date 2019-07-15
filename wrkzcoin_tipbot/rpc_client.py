@@ -54,7 +54,7 @@ async def call_aiohttp_wallet(method_name: str, coin: str, payload: Dict = None)
 
     if coin_family == "XMR" and method_name == "sendTransaction":
         method_name = "transfer"
-        indices = await call_aiohttp_wallet_original('get_address_index', coin, payload={"address":payload["addresses"]})
+        indices = await call_aiohttp_wallet_original('get_address_index', coin, {"address":payload["addresses"][0]})
         indexMajor = indices['index']['major']
         payload["account_index"] = indexMajor
         payload["subaddr_indices"] = [indices['index']['minor']]
@@ -63,7 +63,8 @@ async def call_aiohttp_wallet(method_name: str, coin: str, payload: Dict = None)
         payload["mixin"] = payload["anonymity"]
         payload["get_tx_key"] = True
         payload["unlock_time"] = 0
-        payload["payment_id"] = payload["paymentId"]
+        if hasattr(payload,"paymentId"):
+            payload["payment_id"] = payload["paymentId"]
 
     full_payload = {
         'params': payload or {},

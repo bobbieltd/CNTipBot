@@ -15,11 +15,10 @@ async def registerOTHER(coin: str) -> str:
     coin_family = getattr(getattr(config,"daemon"+coin),"coin_family","TRTL");
 
     payload = {
-        'account_index': 0,
         'label' : 'tipbot'
     }
     if coin_family == "XMR":
-        result = await rpc_client.call_aiohttp_wallet('create_address', coin, payload=payload)
+        result = await rpc_client.call_aiohttp_wallet('create_account', coin, payload=payload)
         if result is None:
             print("Error when creating address ");
             return None
