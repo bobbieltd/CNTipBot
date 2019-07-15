@@ -4029,7 +4029,6 @@ async def update_balance_wallets():
             await asyncio.sleep(2)
         await asyncio.sleep(config.wallet_balance_update_interval)
 
-
 # Multiple tip
 async def _tip(ctx, amount, coin: str = None):
     if coin is not None:

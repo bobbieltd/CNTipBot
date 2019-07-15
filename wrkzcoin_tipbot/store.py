@@ -89,8 +89,8 @@ async def sql_update_balances(coin: str = None):
     updateTime = int(time.time())
     if coin is None:
         coin = "WRKZ"
+    print('SQL: Updating ALL wallet balances '+coin)
     if coin in ENABLE_COIN:
-        print('SQL: Updating all wallet balances '+coin)
         balances = await wallet.get_all_balances_all(coin)
         try:
             openConnection()
@@ -113,8 +113,8 @@ async def sql_update_some_balances(wallet_addresses: List[str], coin: str = None
     updateTime = int(time.time())
     if coin is None:
         coin = "WRKZ"
+    print('SQL: Updating SOME wallet balances '+coin)
     if coin in ENABLE_COIN:
-        print('SQL: Updating some wallet balances '+coin)
         balances = await wallet.get_some_balances(wallet_addresses, coin)   
         try:
             openConnection()
