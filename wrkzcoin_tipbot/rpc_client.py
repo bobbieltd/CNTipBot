@@ -64,15 +64,17 @@ async def call_aiohttp_wallet(method_name: str, coin: str, payload: Dict = None)
                 await session.close()
                 decoded_data = json.loads(res_data)
                 result = decoded_data['result']
+                print(" RPC finished : "+res_data);
                 if coin_family == "XMR" and method_name == "get_balance":
                     result['availableBalance'] = result['unlocked_balance']
                     result['lockedAmount'] = result['balance']-result['unlocked_balance']
                 if coin_family == "XMR" and method_name == "get_address":
                     resultReformat = []
-                    for address in result:
+                    for address in result["addresses"]:
                         resultReformat.append(address["address"])
                     result = resultReformat
-                print(" RPC finished : "+res_data);
+                if coin_family == "XMR":
+                    print(" RPC finished : "+result);
                 return result
             else:
                 print(" RPC Error status : "+response.status);
