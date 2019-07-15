@@ -46,16 +46,20 @@ async def call_aiohttp_wallet(method_name: str, coin: str, payload: Dict = None)
         if payload is not None and payload['address'] is not None:
             indices = await call_aiohttp_wallet_original('get_address_index', coin, payload=payload)
             indexMajor = indices['index']['major']
+            if indices['index']['minor'] !== 0:
+                print(coin+" - Error user with subindex: "+indices['index']['minor'])
             payload["account_index"] = indexMajor
             payload["address_indices"] = [indices['index']['minor']]
 
     if coin_family == "XMR" and method_name == "getAddresses":
-        method_name = "get_address"
+        method_name = "get_accounts"
 
     if coin_family == "XMR" and method_name == "sendTransaction":
         method_name = "transfer"
         indices = await call_aiohttp_wallet_original('get_address_index', coin, {"address":payload["addresses"][0]})
         indexMajor = indices['index']['major']
+        if indices['index']['minor'] !== 0:
+            print(coin+" - Error user with subindex: "+indices['index']['minor'])
         payload["account_index"] = indexMajor
         payload["subaddr_indices"] = [indices['index']['minor']]
         payload["destinations"] = payload["transfers"]
@@ -82,14 +86,14 @@ async def call_aiohttp_wallet(method_name: str, coin: str, payload: Dict = None)
                 await session.close()
                 decoded_data = json.loads(res_data)
                 result = decoded_data['result']
-                print(" RPC finished : "+res_data);
+                print(coin + " RPC finished : "+res_data);
                 if coin_family == "XMR" and method_name == "get_balance":
                     result['availableBalance'] = result["per_subaddress"][0]['unlocked_balance']
                     result['lockedAmount'] = result["per_subaddress"][0]['balance']-result["per_subaddress"][0]['unlocked_balance']
-                if coin_family == "XMR" and method_name == "get_address":
+                if coin_family == "XMR" and method_name == "get_accounts":
                     resultReformat = {'addresses' : []}
-                    for address in result["addresses"]:
-                        resultReformat['addresses'].append(address["address"])
+                    for address in result["subaddress_accounts"]:
+                        resultReformat['addresses'].append(address["base_address"])
                     result = resultReformat
                 if coin_family == "XMR" and method_name == "transfer":
                     getattr(config,"daemon"+coin).fee = result["fee"]
@@ -98,7 +102,7 @@ async def call_aiohttp_wallet(method_name: str, coin: str, payload: Dict = None)
                     print(coin+" RPC Result from XMR family: "+json.dumps(result))
                 return result
             else:
-                print(" RPC Error status : "+response.status);
+                print(coin + " RPC Error status : "+response.status);
                 return None
 
 async def call_doge_ltc(method_name: str, coin: str, payload: str = None) -> Dict:
