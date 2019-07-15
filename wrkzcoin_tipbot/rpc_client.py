@@ -46,8 +46,8 @@ async def call_aiohttp_wallet(method_name: str, coin: str, payload: Dict = None)
         if payload is not None and payload['address'] is not None:
             indices = await call_aiohttp_wallet_original('get_address_index', coin, payload=payload)
             indexMajor = indices['index']['major']
-            if indices['index']['minor'] !== 0:
-                print(coin+" - Error user with subindex: "+indices['index']['minor'])
+            if int(indices['index']['minor']) != 0:
+                print(coin+" - Error user with subindex: "+int(indices['index']['minor']))
             payload["account_index"] = indexMajor
             payload["address_indices"] = [indices['index']['minor']]
 
@@ -58,8 +58,8 @@ async def call_aiohttp_wallet(method_name: str, coin: str, payload: Dict = None)
         method_name = "transfer"
         indices = await call_aiohttp_wallet_original('get_address_index', coin, {"address":payload["addresses"][0]})
         indexMajor = indices['index']['major']
-        if indices['index']['minor'] !== 0:
-            print(coin+" - Error user with subindex: "+indices['index']['minor'])
+        if int(indices['index']['minor']) != 0:
+            print(coin+" - Error user with subindex: "+int(indices['index']['minor']))
         payload["account_index"] = indexMajor
         payload["subaddr_indices"] = [indices['index']['minor']]
         payload["destinations"] = payload["transfers"]
