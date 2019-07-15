@@ -4549,9 +4549,9 @@ def main():
     #task = bot.loop.create_task(update_balance_wallets())
     #bot.loop.run_until_complete(task)
     bot.run(config.discord.token, reconnect=True)
-    for coin in ENABLE_COIN:
-        print("Updating balances for "+coin)
-        result = await store.sql_update_balances(coin.upper())
+    loop = asyncio.get_event_loop()  
+    loop.run_until_complete(update_balance_wallets())  
+    loop.close()
 
 
 if __name__ == '__main__':
