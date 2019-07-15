@@ -38,12 +38,15 @@ async def call_aiohttp_wallet_original(method_name: str, coin: str, payload: Dic
                 return None
                 
 async def call_aiohttp_wallet(method_name: str, coin: str, payload: Dict = None) -> Dict:
-    coin_family = getattr(getattr(config,"daemon"+coin),"coin_family","TRTL");
+    coin_family = getattr(getattr(config,"daemon"+coin),"coin_family","TRTL")
+    indexMajor = 0
+
     if coin_family == "XMR" and method_name == "getBalance":
         method_name = "get_balance"
         if payload is not None and payload['address'] is not None:
             indices = await call_aiohttp_wallet_original('get_address_index', coin, payload=payload)
-            payload["account_index"] = indices['index']['major']
+            indexMajor = indices['index']['major']
+            payload["account_index"] = indexMajor
             payload["address_indices"] = [indices['index']['minor']]
 
     if coin_family == "XMR" and method_name == "getAddresses":
@@ -52,7 +55,8 @@ async def call_aiohttp_wallet(method_name: str, coin: str, payload: Dict = None)
     if coin_family == "XMR" and method_name == "sendTransaction":
         method_name = "transfer"
         indices = await call_aiohttp_wallet_original('get_address_index', coin, rpcpayload={"address":payload["addresses"]})
-        payload["account_index"] = indices['index']['major']
+        indexMajor = indices['index']['major']
+        payload["account_index"] = indexMajor
         payload["subaddr_indices"] = [indices['index']['minor']]
         payload["destinations"] = payload["transfers"]
         payload["priority"] = 0
@@ -78,8 +82,8 @@ async def call_aiohttp_wallet(method_name: str, coin: str, payload: Dict = None)
                 result = decoded_data['result']
                 print(" RPC finished : "+res_data);
                 if coin_family == "XMR" and method_name == "get_balance":
-                    result['availableBalance'] = result["per_subaddress"]['unlocked_balance']
-                    result['lockedAmount'] = result["per_subaddress"]['balance']-result["per_subaddress"]['unlocked_balance']
+                    result['availableBalance'] = result["per_subaddress"][0]['unlocked_balance']
+                    result['lockedAmount'] = result["per_subaddress"][0]['balance']-result["per_subaddress"][0]['unlocked_balance']
                 if coin_family == "XMR" and method_name == "get_address":
                     resultReformat = {'addresses' : []}
                     for address in result["addresses"]:
