@@ -74,7 +74,9 @@ async def call_aiohttp_wallet(method_name: str, coin: str, payload: Dict = None)
                         resultReformat.append(address["address"])
                     result = resultReformat
                 if coin_family == "XMR":
-                    print(" RPC finished : "+result);
+                    print(" RPC for XMR:")
+                    for x in range(len(result)): 
+                        print(result[x]+",")
                 return result
             else:
                 print(" RPC Error status : "+response.status);
