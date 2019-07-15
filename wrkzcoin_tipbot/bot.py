@@ -4548,7 +4548,7 @@ def main():
     #bot.loop.create_task(update_balance_wallets())
     for coin in ENABLE_COIN:
         print("Updating balances for "+coin)
-        await store.sql_update_balances(coin.upper())
+        store.sql_update_balances(coin.upper())
     bot.run(config.discord.token, reconnect=True)
 
 
