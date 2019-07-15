@@ -4549,10 +4549,6 @@ def main():
     #task = bot.loop.create_task(update_balance_wallets())
     #bot.loop.run_until_complete(task)
     bot.run(config.discord.token, reconnect=True)
-    loop = asyncio.get_event_loop()  
-    loop.run_until_complete(update_balance_wallets())  
-    loop.close()
-
 
 if __name__ == '__main__':
     main()

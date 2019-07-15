@@ -46,6 +46,9 @@ async def call_aiohttp_wallet(method_name: str, coin: str, payload: Dict = None)
             payload["account_index"] = indices['index']['major']
             payload["address_indices"] = indices['index']['minor']
 
+    if coin_family == "XMR" and method_name == "getAddresses":
+        method_name = "get_address"
+
     full_payload = {
         'params': payload or {},
         'jsonrpc': '2.0',
@@ -64,6 +67,11 @@ async def call_aiohttp_wallet(method_name: str, coin: str, payload: Dict = None)
                 if coin_family == "XMR" and method_name == "get_balance":
                     result['availableBalance'] = result['unlocked_balance']
                     result['lockedAmount'] = result['balance']-result['unlocked_balance']
+                if coin_family == "XMR" and method_name == "get_address":
+                    resultReformat = []
+                    for address in result:
+                        resultReformat.append(address["address"])
+                    result = resultReformat
                 print(" RPC finished : "+res_data);
                 return result
             else:
