@@ -280,6 +280,7 @@ def validate_address(wallet_address, coin: str):
     coin_family = getattr(getattr(config,"daemon"+coin),"coin_family","TRTL");
 
     if coin_family == "XMR":
+        prefix_char=wallet.get_prefix_char(coin.upper())
         my_regex = r""+prefix_char+r"[a-zA-Z0-9]"
         if not re.match(my_regex, wallet_address.strip()):
             return None
