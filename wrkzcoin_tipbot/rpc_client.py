@@ -31,7 +31,7 @@ async def call_aiohttp_wallet_original(method_name: str, coin: str, payload: Dic
                 await session.close()
                 decoded_data = json.loads(res_data)
                 result = decoded_data['result']
-                print(" RPC Original finished : "+res_data);
+                print(method_name+" RPC Original finished : "+res_data);
                 return result
             else:
                 print(" RPC Original Error status : "+response.status);

@@ -249,6 +249,12 @@ def get_intaddrlen(coin: str = None):
 
 def get_prefix(coin: str = None):
     return getattr(config,"daemon"+coin,config.daemonWRKZ).prefix
+    
+def get_prefix_ex1(coin: str = None):
+    return getattr(config,"daemon"+coin,config.daemonWRKZ).prefixEx1
+    
+def get_prefix_ex2(coin: str = None):
+    return getattr(config,"daemon"+coin,config.daemonWRKZ).prefixEx2
 
 def get_prefix_char(coin: str = None):
     return getattr(config,"daemon"+coin,config.daemonWRKZ).prefixChar
