@@ -289,7 +289,7 @@ def validate_address(wallet_address, coin: str):
     if coin_family == "XMR":
         address_hex = decode(wallet_address)
         if address_hex.startswith(prefix_hex):
-            return True
+            return wallet_address
         return None
     main_address_len=wallet.get_addrlen(coin.upper())
     remain_length=main_address_len-len(prefix_char)
