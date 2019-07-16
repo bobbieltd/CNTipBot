@@ -2504,7 +2504,7 @@ async def send(ctx, amount: str, CoinAddress: str):
     EMOJI_TIP = get_emoji(COIN_NAME)
 
     if COIN_NAME.upper() in MAINTENANCE_COIN:
-        await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} {COIN_NAME.upper()} in maintenance.')
+        await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} {COIN_NAME} in maintenance.')
         return
 
     if len(CoinAddress) == int(addressLength):
@@ -2512,12 +2512,12 @@ async def send(ctx, amount: str, CoinAddress: str):
         # print(valid_address)
         if valid_address is None:
             await ctx.message.add_reaction(EMOJI_ERROR)
-            await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} Invalid address:\n'
+            await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} Invalid {COIN_NAME} address:\n'
                            f'`{CoinAddress}`')
             return
         if valid_address != CoinAddress:
             await ctx.message.add_reaction(EMOJI_ERROR)
-            await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} Invalid address:\n'
+            await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} Invalid {COIN_NAME} address:\n'
                            f'`{CoinAddress}`')
             return
     elif len(CoinAddress) == int(IntaddressLength):
@@ -2568,7 +2568,7 @@ async def send(ctx, amount: str, CoinAddress: str):
                 return
     else:
         await ctx.message.add_reaction(EMOJI_ERROR)
-        await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} Invalid address:\n'
+        await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} Invalid {COIN_NAME} address:\n'
                        f'`{CoinAddress}`')
         return
 
