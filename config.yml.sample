@@ -22,6 +22,8 @@ daemonWRKZ:
   # other settings
   DonateAddress: "WrkzRNDQDwFCBynKPc459v3LDa1gEGzG3j962tMUBko1fw9xgdaS9mNiGMgA9s1q7hS1Z8SGRVWzcGc8Sh8xsvfZ6u2wJEtoZB"
   prefix: 999730
+  prefixExtra1: None
+  prefixExtra2: None
   prefixChar: "Wrkz"
   decimal: 100
   AddrLen: 98

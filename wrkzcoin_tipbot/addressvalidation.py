@@ -288,6 +288,16 @@ def validate_address(wallet_address, coin: str):
 
     if coin_family == "XMR":
         address_hex = decode(wallet_address)
+        prefix=wallet.get_prefix(coin)
+        prefix_hex=varint_encode(prefix).hex()
+        if address_hex.startswith(prefix_hex):
+            return wallet_address
+        prefix=wallet.get_prefix_extra1(coin)
+        prefix_hex=varint_encode(prefix).hex()
+        if address_hex.startswith(prefix_hex):
+            return wallet_address
+        prefix=wallet.get_prefix_extra2(coin)
+        prefix_hex=varint_encode(prefix).hex()
         if address_hex.startswith(prefix_hex):
             return wallet_address
         return None
