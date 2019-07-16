@@ -297,6 +297,7 @@ def validate_address(wallet_address, coin: str):
         prefix_hex=varint_encode(prefix).hex()
         if address_hex.startswith(prefix_hex):
             return wallet_address
+        print("Wrong prefix for address_hex = "+address_hex)
         return None
         
     prefix=wallet.get_prefix(coin)
