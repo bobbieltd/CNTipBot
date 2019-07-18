@@ -19,12 +19,12 @@ conn = None
 conn_cursors = None
 sys.path.append("..")
 
+ENABLE_COIN = config.Enable_Coin.split(",")
+ENABLE_COIN_DOGE = ["DOGE"]
+
 pymysqlpool.logger.setLevel('DEBUG')
 config={'host': config.mysql.host, 'user':config.mysql.user, 'password':config.mysql.password, 'database':config.mysql.db, 'autocommit':True}
 connPool = pymysqlpool.ConnectionPool(size=5, name='connPool', **config)
-
-ENABLE_COIN = config.Enable_Coin.split(",")
-ENABLE_COIN_DOGE = ["DOGE"]
 
 # OpenConnection
 def openConnection():
