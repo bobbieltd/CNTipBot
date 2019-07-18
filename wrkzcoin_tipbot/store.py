@@ -106,12 +106,8 @@ async def sql_update_balances(coin: str = None):
                     ON DUPLICATE KEY UPDATE `actual_balance`=%s, `locked_balance`=%s, `lastUpdate`=%s """
                     cur.execute(sql, (details['address'], details['unlocked'], details['locked'], updateTime,
                                       details['unlocked'], details['locked'], updateTime,))
-                    conn.commit()
         except Exception as e:
-            print(e)
-        finally:
-            conn.close()
-
+            print("sql_update_balances Error "+e)
 
 async def sql_update_some_balances(wallet_addresses: List[str], coin: str = None):
     global conn
