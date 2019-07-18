@@ -12,7 +12,7 @@ import sys
 from cryptography.fernet import Fernet
 
 # MySQL
-import pymysql pymysqlpool
+import pymysql, pymysqlpool
 import pymysql.cursors
 
 conn = None
