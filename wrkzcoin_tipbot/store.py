@@ -12,12 +12,16 @@ import sys
 from cryptography.fernet import Fernet
 
 # MySQL
-import pymysql
+import pymysql pymysqlpool
 import pymysql.cursors
 
 conn = None
 conn_cursors = None
 sys.path.append("..")
+
+pymysqlpool.logger.setLevel('DEBUG')
+config={'host': config.mysql.host, 'user':config.mysql.user, 'password':config.mysql.password, 'database':config.mysql.db, 'antocomit':True}
+connPool = pymysqlpool.ConnectionPool(size=5, name='connPool', **config)
 
 ENABLE_COIN = config.Enable_Coin.split(",")
 ENABLE_COIN_DOGE = ["DOGE"]
@@ -85,7 +89,7 @@ def sql_get_walletinfo():
 
 
 async def sql_update_balances(coin: str = None):
-    global conn
+    global connPool
     updateTime = int(time.time())
     if coin is None:
         coin = "WRKZ"
@@ -93,7 +97,7 @@ async def sql_update_balances(coin: str = None):
     if coin in ENABLE_COIN:
         balances = await wallet.get_all_balances_all(coin)
         try:
-            openConnection()
+            con = connPool.get_connection(timeout=5, retry_num=2)
             with conn.cursor() as cur:
                 for details in balances:
                     print('SQL: Insert walletapi '+details['address'])
