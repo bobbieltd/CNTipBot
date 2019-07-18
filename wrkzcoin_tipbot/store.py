@@ -20,7 +20,7 @@ conn_cursors = None
 sys.path.append("..")
 
 pymysqlpool.logger.setLevel('DEBUG')
-config={'host': config.mysql.host, 'user':config.mysql.user, 'password':config.mysql.password, 'database':config.mysql.db, 'antocomit':True}
+config={'host': config.mysql.host, 'user':config.mysql.user, 'password':config.mysql.password, 'database':config.mysql.db, 'autocomit':True}
 connPool = pymysqlpool.ConnectionPool(size=5, name='connPool', **config)
 
 ENABLE_COIN = config.Enable_Coin.split(",")
