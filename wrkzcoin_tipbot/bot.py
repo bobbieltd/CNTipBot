@@ -2508,7 +2508,7 @@ async def send(ctx, amount: str, CoinAddress: str):
         await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} {COIN_NAME} in maintenance.')
         return
 
-    if len(CoinAddress) == int(addressLength) or getattr(getattr(config,"daemon"+coin),"coin_family") == "XMR":
+    if len(CoinAddress) == int(addressLength) or getattr(getattr(config,"daemon"+COIN_NAME),"coin_family") == "XMR":
         valid_address = addressvalidation.validate_address_cn(CoinAddress, COIN_NAME)
         # print(valid_address)
         if valid_address is None:
