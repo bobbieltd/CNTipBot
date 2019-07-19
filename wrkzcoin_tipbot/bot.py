@@ -200,7 +200,7 @@ async def on_ready():
     print("Users: {}".format(sum([x.member_count for x in bot.guilds])))
     game = discord.Game(name="Tip Forever!")
     await bot.change_presence(status=discord.Status.online, activity=game)
-    botLogChan = bot.get_channel(id=LOG_CHAN)
+    # botLogChan = bot.get_channel(id=LOG_CHAN)
     if botLogChan is not None:
         await botLogChan.send(f'{EMOJI_REFRESH} I am back :)')
 
@@ -3372,7 +3372,8 @@ async def setting(ctx, *args):
                         await botLogChan.send(f'{ctx.message.author.name} / {ctx.message.author.id} changed tiponly in {ctx.guild.name} / {ctx.guild.id} to `{args[1].upper()}`')
                     await ctx.send(f'{ctx.author.mention} {args[1].upper()} is allowed here.')
                 else:
-                    await botLogChan.send(f'{ctx.message.author.name} / {ctx.message.author.id} changed tiponly in {ctx.guild.name} / {ctx.guild.id} to `{args[1].upper()}`')
+                    if botLogChan is not None:
+                        await botLogChan.send(f'{ctx.message.author.name} / {ctx.message.author.id} changed tiponly in {ctx.guild.name} / {ctx.guild.id} to `{args[1].upper()}`')
                     await ctx.send(f'{ctx.author.mention} {args[1].upper()} will be the only tip here.')
                 return
         elif args[0].upper() == "PREFIX":
@@ -3386,7 +3387,8 @@ async def setting(ctx, *args):
                 else:
                     changeinfo = store.sql_changeinfo_by_server(str(ctx.guild.id), 'prefix', args[1].lower())
                     await ctx.send(f'{ctx.author.mention} Prefix changed from `{server_prefix}` to `{args[1].lower()}`.')
-                    await botLogChan.send(f'{ctx.message.author.name} / {ctx.message.author.id} changed prefix in {ctx.guild.name} / {ctx.guild.id} to `{args[1].lower()}`')
+                    if botLogChan is not None:
+                        await botLogChan.send(f'{ctx.message.author.name} / {ctx.message.author.id} changed prefix in {ctx.guild.name} / {ctx.guild.id} to `{args[1].lower()}`')
                     return
         elif args[0].upper() == "DEFAULT_COIN" or args[0].upper() == "DEFAULTCOIN" or args[0].upper() == "COIN":
             if args[1].upper() not in ENABLE_COIN:
@@ -3399,7 +3401,8 @@ async def setting(ctx, *args):
                 else:
                     changeinfo = store.sql_changeinfo_by_server(str(ctx.guild.id), 'default_coin', args[1].upper())
                     await ctx.send(f'Default Coin changed from `{server_coin}` to `{args[1].upper()}`.')
-                    await botLogChan.send(f'{ctx.message.author.name} / {ctx.message.author.id} changed default coin in {ctx.guild.name} / {ctx.guild.id} to {args[1].upper()}.')
+                    if botLogChan is not None:
+                        await botLogChan.send(f'{ctx.message.author.name} / {ctx.message.author.id} changed default coin in {ctx.guild.name} / {ctx.guild.id} to {args[1].upper()}.')
                     return
         else:
             await ctx.send(f'{ctx.author.mention} Invalid command input and parameter.')
@@ -3412,7 +3415,8 @@ async def setting(ctx, *args):
                 return
             if args[1].upper() == "ALLCOIN":
                 changeinfo = store.sql_changeinfo_by_server(str(ctx.guild.id), 'tiponly', args[1].upper())
-                await botLogChan.send(f'{ctx.message.author.name} / {ctx.message.author.id} changed tiponly in {ctx.guild.name} / {ctx.guild.id} to `ALLCOIN`')
+                if botLogChan is not None:
+                    await botLogChan.send(f'{ctx.message.author.name} / {ctx.message.author.id} changed tiponly in {ctx.guild.name} / {ctx.guild.id} to `ALLCOIN`')
                 await ctx.send(f'{ctx.author.mention} all coins will be allowed in here.')
                 return
             else:
@@ -3424,7 +3428,8 @@ async def setting(ctx, *args):
                     return
                 else:
                     tiponly_value = ','.join(contained)
-                    await botLogChan.send(f'{ctx.message.author.name} / {ctx.message.author.id} changed tiponly in {ctx.guild.name} / {ctx.guild.id} to `{tiponly_value}`')
+                    if botLogChan is not None:
+                        await botLogChan.send(f'{ctx.message.author.name} / {ctx.message.author.id} changed tiponly in {ctx.guild.name} / {ctx.guild.id} to `{tiponly_value}`')
                     await ctx.send(f'{ctx.author.mention} TIPONLY set to: {tiponly_value}.')
                     changeinfo = store.sql_changeinfo_by_server(str(ctx.guild.id), 'tiponly', tiponly_value.upper())
                     return
