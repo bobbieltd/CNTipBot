@@ -255,7 +255,7 @@ def intToHexStr(i):
 
 
 def validate_address_cn(wallet_address: str, coin: str):
-    if coin.upper() in ENABLE_COIN:
+    if coin in ENABLE_COIN:
         return validate_address(wallet_address, coin.upper())
     else:
         return None
@@ -275,7 +275,7 @@ def make_integrated_cn(wallet_address, coin, integrated_id=None):
         return None
 
 
-# Validate address:
+# Validate address: - XMR for three prefixes
 def validate_address(wallet_address, coin: str):
     coin_family = getattr(getattr(config,"daemon"+coin),"coin_family","TRTL");
 
