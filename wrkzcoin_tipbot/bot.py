@@ -4513,7 +4513,7 @@ async def _tip_talker(ctx, amount, list_talker, coin: str = None):
     if tip:
         servername = serverinfo['servername']
         userfrom = await store.sql_get_userwallet(str(ctx.message.author.id), COIN_NAME)
-        addresses.append(userfrom)
+        addresses.append(userfrom['balance_wallet_address'])
         await store.sql_update_some_balances(addresses, COIN_NAME)
         await ctx.message.add_reaction(EMOJI_TIP)
         if has_forwardtip:
