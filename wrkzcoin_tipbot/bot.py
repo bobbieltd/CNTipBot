@@ -1779,7 +1779,8 @@ async def tip(ctx, amount: str, *args):
 
     serverinfo = store.sql_info_by_server(str(ctx.guild.id))
     try:
-        if args is None:
+        if args is None and 'default_coin' in serverinfo:
+            args = []
             args[0] = serverinfo['default_coin'].upper()
         COIN_NAME = args[0].upper()
         if COIN_NAME not in ENABLE_COIN:
@@ -2683,6 +2684,9 @@ async def address(ctx, *args):
         else:
             serverinfo = store.sql_info_by_server(str(ctx.guild.id))
             try:
+                if args is None and 'default_coin' in serverinfo:
+                    args = []
+                    args[0] = serverinfo['default_coin'].upper()
                 COIN_NAME = args[0]
                 if COIN_NAME.upper() not in ENABLE_COIN:
                     if COIN_NAME.upper() in ENABLE_COIN_DOGE:
