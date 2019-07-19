@@ -30,7 +30,7 @@ from terminaltables import AsciiTable
 import sys
 import asyncio
 
-
+botLogChan = None
 sys.path.append("..")
 
 MAINTENANCE_OWNER = [386761001808166912]  # list owner
