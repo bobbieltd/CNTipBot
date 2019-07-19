@@ -97,7 +97,7 @@ async def sql_update_balances(coin: str = None):
     if coin in ENABLE_COIN:
         balances = await wallet.get_all_balances_all(coin)
         try:
-            con = connPool.get_connection(timeout=5, retry_num=2)
+            conn = connPool.get_connection(timeout=5, retry_num=2)
             with conn.cursor() as cur:
                 for details in balances:
                     print('SQL: Insert walletapi '+details['address'])
