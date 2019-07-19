@@ -15,8 +15,6 @@ from cryptography.fernet import Fernet
 import pymysql, pymysqlpool
 import pymysql.cursors
 
-conn = None
-conn_cursors = None
 sys.path.append("..")
 
 ENABLE_COIN = config.Enable_Coin.split(",")
@@ -25,43 +23,12 @@ ENABLE_COIN_DOGE = ["DOGE"]
 pymysqlpool.logger.setLevel('DEBUG')
 config={'host': config.mysql.host, 'user':config.mysql.user, 'password':config.mysql.password, 'database':config.mysql.db, 'autocommit':True}
 connPool = pymysqlpool.ConnectionPool(size=5, name='connPool', **config)
-
-# OpenConnection
-def openConnection():
-    global conn
-    try:
-        if conn is None:
-            conn = pymysql.connect(config.mysql.host, user=config.mysql.user, passwd=config.mysql.password,
-                                   db=config.mysql.db, connect_timeout=5)
-        elif not conn.open:
-            conn = pymysql.connect(config.mysql.host, user=config.mysql.user, passwd=config.mysql.password,
-                                   db=config.mysql.db, connect_timeout=5)
-    except:
-        print("ERROR: Unexpected error: Could not connect to MySql instance.")
-        sys.exit()
-
-# openConnection_cursors 
-def openConnection_cursors():
-    global conn_cursors
-    try:
-        if conn_cursors is None:
-            conn_cursors = pymysql.connect(config.mysql.host, user=config.mysql.user, passwd=config.mysql.password,
-                                   db=config.mysql.db, charset='utf8mb4', 
-                                   cursorclass=pymysql.cursors.DictCursor, connect_timeout=5)
-        elif not conn_cursors.open:
-            conn_cursors = pymysql.connect(config.mysql.host, user=config.mysql.user, passwd=config.mysql.password,
-                                   db=config.mysql.db, charset='utf8mb4', 
-                                   cursorclass=pymysql.cursors.DictCursor, connect_timeout=5)
-    except:
-        print("ERROR: Unexpected error: Could not connect to MySql instance.")
-        sys.exit()
-
+conn = connPool.get_connection(timeout=5, retry_num=2)
 
 def sql_get_walletinfo():
     global conn
     wallet_service = {}
     try:
-        openConnection()
         with conn.cursor() as cur: 
             sql = """ SELECT `coin_name`, `coin_family`, `host`, `port`, `wallethost`, `walletport`, `mixin`, 
                       `tx_fee`, `min_tx_amount`, `max_tx_amount`, `DonateAddress`, `prefix`, `prefixChar`, `decimal`, 
@@ -84,12 +51,9 @@ def sql_get_walletinfo():
                 return wallet_service
     except Exception as e:
         print(e)
-    finally:
-        conn.close()
-
 
 async def sql_update_balances(coin: str = None):
-    global connPool
+    global conn
     updateTime = int(time.time())
     if coin is None:
         coin = "WRKZ"
@@ -97,7 +61,6 @@ async def sql_update_balances(coin: str = None):
     if coin in ENABLE_COIN:
         balances = await wallet.get_all_balances_all(coin)
         try:
-            conn = connPool.get_connection(timeout=5, retry_num=2)
             with conn.cursor() as cur:
                 for details in balances:
                     print('SQL: Insert walletapi '+details['address'])
@@ -118,7 +81,6 @@ async def sql_update_some_balances(wallet_addresses: List[str], coin: str = None
     if coin in ENABLE_COIN:
         balances = await wallet.get_some_balances(wallet_addresses, coin)   
         try:
-            openConnection()
             with conn.cursor() as cur:
                 for details in balances:
                     print('SQL: Insert walletapi '+details['address'])
@@ -127,12 +89,8 @@ async def sql_update_some_balances(wallet_addresses: List[str], coin: str = None
                               ON DUPLICATE KEY UPDATE `actual_balance`=%s, `locked_balance`=%s, `lastUpdate`=%s """
                     cur.execute(sql, (details['address'], details['unlocked'], details['locked'], updateTime,
                                       details['unlocked'], details['locked'], updateTime,))
-                    conn.commit()
         except Exception as e:
             print(e)
-        finally:
-            conn.close()
-
 
 async def sql_register_user(userID, coin: str = None):
     global conn
@@ -142,7 +100,6 @@ async def sql_register_user(userID, coin: str = None):
     if coin is None:
         coin = "WRKZ"
     try:
-        openConnection()
         with conn.cursor() as cur:
             COIN_NAME = None
             if coin in ENABLE_COIN:
@@ -190,7 +147,6 @@ async def sql_register_user(userID, coin: str = None):
                                   VALUES (%s, %s, %s, %s, %s) """
                         cur.execute(sql, (str(userID), balance_address['address'], int(time.time()),
                                           chainHeight, encrypt_string(balance_address['privateKey']), ))
-                    conn.commit()
                     result2 = {}
                     result2['balance_wallet_address'] = balance_address
                     result2['user_wallet_address'] = ''
@@ -206,16 +162,12 @@ async def sql_register_user(userID, coin: str = None):
                 return result2
     except Exception as e:
         print("MySQL e=",str(e),", sql=",sql,str(userID),balance_address['address'],str(time.time()),str(chainHeight),balance_address['privateSpendKey'])
-    finally:
-        conn.close()
-
 
 async def sql_update_user(userID, user_wallet_address, coin: str = None):
     if coin is None:
         coin = "WRKZ"
     global conn
     try:
-        openConnection()
         with conn.cursor() as cur:
             sql = None
             if (coin in ENABLE_COIN) or (coin in ENABLE_COIN_DOGE):
@@ -236,23 +188,18 @@ async def sql_update_user(userID, user_wallet_address, coin: str = None):
                 if (coin in ENABLE_COIN) or (coin in ENABLE_COIN_DOGE):
                     sql = """ UPDATE """+coin.lower()+"""_user SET user_wallet_address=%s WHERE user_id=%s """               
                     cur.execute(sql, (user_wallet_address, str(userID),))
-                    conn.commit()
                 result2 = {}
                 result2['balance_wallet_address'] = result[2]
                 result2['user_wallet_address'] = user_wallet_address
                 return result2  # return userwallet
     except Exception as e:
         print(e)
-    finally:
-        conn.close()
-
 
 async def sql_get_userwallet(userID, coin: str = None):
     global conn
     if coin is None:
         coin = "WRKZ"
     try:
-        openConnection()
         sql = None
         with conn.cursor() as cur:
             if coin in ENABLE_COIN:
@@ -275,8 +222,7 @@ async def sql_get_userwallet(userID, coin: str = None):
                     sql = """ INSERT INTO """+coin.lower()+"""_user (`user_id`, `balance_wallet_address`, 
                               `balance_wallet_address_ts`, `balance_wallet_address_ch`, `privateKey`) 
                               VALUES (%s, %s, %s, %s, %s) """
-                    cur.execute(sql, (str(userID), depositAddress, int(time.time()), chainHeight, encrypt_string(privateKey), ))
-                    conn.commit()               
+                    cur.execute(sql, (str(userID), depositAddress, int(time.time()), chainHeight, encrypt_string(privateKey), ))       
                 else:
                     return None
             else:
@@ -333,9 +279,6 @@ async def sql_get_userwallet(userID, coin: str = None):
                 return userwallet
     except Exception as e:
         print("Error sql_get_userwallet: "+str(e))
-    finally:
-        conn.close()
-
 
 def sql_get_countLastTip(userID, lastDuration: int, coin: str = None):
     global conn
@@ -343,7 +286,6 @@ def sql_get_countLastTip(userID, lastDuration: int, coin: str = None):
         coin = "WRKZ"
     lapDuration = int(time.time()) - lastDuration
     try:
-        openConnection()
         sql = None
         with conn.cursor() as cur:
             if coin in ENABLE_COIN:
@@ -366,9 +308,6 @@ def sql_get_countLastTip(userID, lastDuration: int, coin: str = None):
                 return len(result)
     except Exception as e:
         print(e)
-    finally:
-        conn.close()
-
 
 async def sql_send_tip(user_from: str, user_to: str, amount: int, coin: str = None):
     global conn
@@ -395,7 +334,6 @@ async def sql_send_tip(user_from: str, user_to: str, amount: int, coin: str = No
         if tx_hash:
             updateTime = int(time.time())
             try:
-                openConnection()
                 with conn.cursor() as cur:
                     timestamp = int(time.time())
                     sql = None
@@ -403,7 +341,6 @@ async def sql_send_tip(user_from: str, user_to: str, amount: int, coin: str = No
                         sql = """ INSERT INTO """+coin.lower()+"""_tip (`from_user`, `to_user`, `amount`, `date`, `tx_hash`) 
                                   VALUES (%s, %s, %s, %s, %s) """
                         cur.execute(sql, (user_from, user_to, amount, timestamp, tx_hash,))
-                        conn.commit()
                     updateBalance = None
                     if coin in ENABLE_COIN:
                         updateBalance = await wallet.get_balance_address(user_from_wallet['balance_wallet_address'],
@@ -414,7 +351,6 @@ async def sql_send_tip(user_from: str, user_to: str, amount: int, coin: str = No
                                       `lastUpdate`=%s WHERE `balance_wallet_address`=%s """
                             cur.execute(sql, (updateBalance['unlocked'], updateBalance['locked'],
                                               updateTime, user_from_wallet['balance_wallet_address'],))
-                            conn.commit()
                             updateBalance = await wallet.get_balance_address(user_to_wallet['balance_wallet_address'],
                                                                              coin)
                     if updateBalance:
@@ -423,11 +359,8 @@ async def sql_send_tip(user_from: str, user_to: str, amount: int, coin: str = No
                                       `locked_balance`=%s, `lastUpdate`=%s WHERE `balance_wallet_address`=%s """
                             cur.execute(sql, (updateBalance['unlocked'], updateBalance['locked'],
                                         updateTime, user_to_wallet['balance_wallet_address'],))
-                            conn.commit()
             except Exception as e:
                 print(e)
-            finally:
-                conn.close()
         return tx_hash
     else:
         return None
@@ -455,14 +388,12 @@ async def sql_send_tipall(user_from: str, user_tos, amount: int, amount_div: int
                 print(e)
         if tx_hash:
             try:
-                openConnection()
                 with conn.cursor() as cur:
                     timestamp = int(time.time())
                     if coin in ENABLE_COIN:
                         sql = """ INSERT INTO """+coin.lower()+"""_tipall (`from_user`, `amount_total`, `date`, `tx_hash`, `numb_receivers`) 
                                   VALUES (%s, %s, %s, %s, %s) """
                         cur.execute(sql, (user_from, amount, timestamp, tx_hash, len(user_tos),))
-                        conn.commit()
 
                         values_str = []
                         for item in user_ids:
@@ -471,11 +402,8 @@ async def sql_send_tipall(user_from: str, user_tos, amount: int, amount_div: int
                         sql = """ INSERT INTO """+coin.lower()+"""_tip (`from_user`, `to_user`, `amount`, `date`, `tx_hash`, `tip_tips_tipall`) 
                                   """+values_sql+""" """
                         cur.execute(sql,)
-                        conn.commit()
             except Exception as e:
                 print(e)
-            finally:
-                conn.close()
         return tx_hash
     else:
         return None
@@ -498,7 +426,6 @@ async def sql_send_tip_Ex(user_from: str, address_to: str, amount: int, coin: st
         if tx_hash is not None:
             updateTime = int(time.time())
             try:
-                openConnection()
                 with conn.cursor() as cur:
                     timestamp = int(time.time())
                     updateBalance = None
@@ -506,7 +433,6 @@ async def sql_send_tip_Ex(user_from: str, address_to: str, amount: int, coin: st
                         sql = """ INSERT INTO """+coin.lower()+"""_send (`from_user`, `to_address`, `amount`, `date`, 
                                   `tx_hash`) VALUES (%s, %s, %s, %s, %s) """
                         cur.execute(sql, (user_from, address_to, amount, timestamp, tx_hash,))
-                        conn.commit()
                         updateBalance = await wallet.get_balance_address(user_from_wallet['balance_wallet_address'], 
                                                                       coin)
                     if updateBalance:
@@ -515,11 +441,8 @@ async def sql_send_tip_Ex(user_from: str, address_to: str, amount: int, coin: st
                                       `locked_balance`=%s, `lastUpdate`=%s WHERE `balance_wallet_address`=%s """
                             cur.execute(sql, (updateBalance['unlocked'], updateBalance['locked'],
                                         updateTime, user_from_wallet['balance_wallet_address'],))
-                            conn.commit()
             except Exception as e:
                 print(e)
-            finally:
-                conn.close()
         return tx_hash
     else:
         return None
@@ -542,7 +465,6 @@ async def sql_send_tip_Ex_id(user_from: str, address_to: str, amount: int, payme
         if tx_hash:
             updateTime = int(time.time())
             try:
-                openConnection()
                 updateBalance = None
                 with conn.cursor() as cur:
                     timestamp = int(time.time())
@@ -550,7 +472,6 @@ async def sql_send_tip_Ex_id(user_from: str, address_to: str, amount: int, payme
                         sql = """ INSERT INTO """+coin.lower()+"""_send (`from_user`, `to_address`, `amount`, `date`, 
                                   `tx_hash`, `paymentid`) VALUES (%s, %s, %s, %s, %s, %s) """
                         cur.execute(sql, (user_from, address_to, amount, timestamp, tx_hash, paymentid, ))
-                        conn.commit()
                         updateBalance = await wallet.get_balance_address(user_from_wallet['balance_wallet_address'], coin)
                     if updateBalance:
                         if coin in ENABLE_COIN:
@@ -558,11 +479,8 @@ async def sql_send_tip_Ex_id(user_from: str, address_to: str, amount: int, payme
                                       `locked_balance`=%s, `lastUpdate`=%s WHERE `balance_wallet_address`=%s """
                             cur.execute(sql, (updateBalance['unlocked'], updateBalance['locked'], 
                                         updateTime, user_from_wallet['balance_wallet_address'],))
-                            conn.commit()
             except Exception as e:
                 print(e)
-            finally:
-                conn.close()
         return tx_hash
     else:
         return None
@@ -583,7 +501,6 @@ async def sql_withdraw(user_from: str, amount: int, coin: str=None):
         if tx_hash:
             updateTime = int(time.time())
             try:
-                openConnection()
                 with conn.cursor() as cur:
                     timestamp = int(time.time())
                     updateBalance = None
@@ -591,7 +508,6 @@ async def sql_withdraw(user_from: str, amount: int, coin: str=None):
                         sql = """ INSERT INTO """+coin.lower()+"""_withdraw (`user_id`, `to_address`, `amount`, 
                                   `date`, `tx_hash`) VALUES (%s, %s, %s, %s, %s) """
                         cur.execute(sql, (user_from, user_from_wallet['user_wallet_address'], amount, timestamp, tx_hash,))
-                        conn.commit()
                         updateBalance = await wallet.get_balance_address(user_from_wallet['balance_wallet_address'], coin)
                     if updateBalance:
                         if coin in ENABLE_COIN:
@@ -599,11 +515,8 @@ async def sql_withdraw(user_from: str, amount: int, coin: str=None):
                                       `locked_balance`=%s, `lastUpdate`=%s WHERE `balance_wallet_address`=%s """
                             cur.execute(sql, (updateBalance['unlocked'], updateBalance['locked'], 
                                         updateTime, user_from_wallet['balance_wallet_address'],))
-                            conn.commit()
             except Exception as e:
                 print(e)
-            finally:
-                conn.close()
         return tx_hash
     else:
         return None
@@ -625,7 +538,6 @@ async def sql_donate(user_from: str, address_to: str, amount: int, coin: str = N
         if tx_hash is not None:
             updateTime = int(time.time())
             try:
-                openConnection()
                 with conn.cursor() as cur:
                     timestamp = int(time.time())
                     updateBalance = None
@@ -633,7 +545,6 @@ async def sql_donate(user_from: str, address_to: str, amount: int, coin: str = N
                         sql = """ INSERT INTO """+coin.lower()+"""_donate (`from_user`, `to_address`, `amount`, 
                                   `date`, `tx_hash`) VALUES (%s, %s, %s, %s, %s) """
                         cur.execute(sql, (user_from, address_to, amount, timestamp, tx_hash,))
-                        conn.commit()
                         updateBalance = await wallet.get_balance_address(user_from_wallet['balance_wallet_address'], coin)
                     if updateBalance:
                         if coin in ENABLE_COIN:
@@ -641,11 +552,8 @@ async def sql_donate(user_from: str, address_to: str, amount: int, coin: str = N
                                       `locked_balance`=%s, `lastUpdate`=%s WHERE `balance_wallet_address`=%s """
                             cur.execute(sql, (updateBalance['unlocked'], updateBalance['locked'], 
                                         updateTime, user_from_wallet['balance_wallet_address'],))
-                            conn.commit()
             except Exception as e:
                 print(e)
-            finally:
-                conn.close()
         return tx_hash
     else:
         return None
@@ -655,7 +563,6 @@ def sql_get_donate_list():
     global conn
     donate_list = {}
     try:
-        openConnection()
         sql = None
         with conn.cursor() as cur:
             for coin in ENABLE_COIN:
@@ -678,16 +585,12 @@ def sql_get_donate_list():
         return donate_list
     except Exception as e:
         print(e)
-    finally:
-        conn.close()
-
 
 def sql_optimize_check(coin: str = None):
     global conn
     if coin is None:
         coin = "WRKZ"
     try:
-        openConnection()
         with conn.cursor() as cur:
             timeNow = int(time.time()) - 600
             if coin in ENABLE_COIN:
@@ -697,16 +600,12 @@ def sql_optimize_check(coin: str = None):
                 return result[0]
     except Exception as e:
         print(e)
-    finally:
-        conn.close()
-
 
 async def sql_optimize_do(userID: str, coin: str = None):
     global conn
     if coin is None:
         coin = "WRKZ"
-    else:
-        coin = coin
+        
     user_from_wallet = None
     if coin in ENABLE_COIN:
         user_from_wallet = await sql_get_userwallet(userID, coin)
@@ -738,7 +637,6 @@ async def sql_optimize_do(userID: str, coin: str = None):
             if coin in ENABLE_COIN:
                 sql_optimize_update(str(userID), coin)
             try:
-                openConnection()
                 with conn.cursor() as cur:
                     updateBalance = None
                     if coin in ENABLE_COIN:
@@ -750,11 +648,8 @@ async def sql_optimize_do(userID: str, coin: str = None):
                                      `locked_balance`=%s, `lastUpdate`=%s WHERE `balance_wallet_address`=%s """
                         cur.execute(sql, (updateBalance['unlocked'], updateBalance['locked'], 
                                     updateTime, user_from_wallet['balance_wallet_address'],))
-                        conn.commit()
             except Exception as e:
                 print(e)
-            finally:
-                conn.close()
         return OptimizeCount
 
 
@@ -763,18 +658,13 @@ def sql_optimize_update(userID: str, coin: str = None):
     if coin is None:
         coin = "WRKZ"
     try:
-        openConnection()
         with conn.cursor() as cur:
             timeNow = int(time.time())
             if coin in ENABLE_COIN:
                 sql = """ UPDATE """+coin.lower()+"""_user SET `lastOptimize`=%s WHERE `user_id`=%s LIMIT 1 """
                 cur.execute(sql, (timeNow, str(userID),))
-                conn.commit()
     except Exception as e:
         print(e)
-    finally:
-        conn.close()
-
 
 async def sql_optimize_admin_do(coin: str, opt_num: int = None):
     global conn
@@ -814,8 +704,7 @@ async def sql_send_to_voucher(user_id: str, user_name: str, message_creating: st
     global conn
     if coin is None:
         coin = "WRKZ"
-    else:
-        coin = coin
+
     user_from_wallet = None
     if coin in ENABLE_COIN:
         user_from_wallet = await sql_get_userwallet(user_id, coin)
@@ -826,7 +715,6 @@ async def sql_send_to_voucher(user_id: str, user_name: str, message_creating: st
                                                     amount + reserved_fee, coin)
         if tx_hash:
             try:
-                openConnection()
                 with conn.cursor() as cur:
                     timestamp = int(time.time())
                     updateBalance = None
@@ -835,7 +723,6 @@ async def sql_send_to_voucher(user_id: str, user_name: str, message_creating: st
                                   `reserved_fee`, `date_create`, `secret_string`, `voucher_image_name`, `tx_hash_deposit`) 
                                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s) """
                         cur.execute(sql, (user_id, user_name, message_creating, amount, reserved_fee, int(time.time()), secret_string, voucher_image_name, tx_hash,))
-                        conn.commit()
                         updateBalance = await wallet.get_balance_address(user_from_wallet['balance_wallet_address'], 
                                                                          coin)
                     if updateBalance:
@@ -844,11 +731,8 @@ async def sql_send_to_voucher(user_id: str, user_name: str, message_creating: st
                                       `locked_balance`=%s, `lastUpdate`=%s WHERE `balance_wallet_address`=%s """
                             cur.execute(sql, (updateBalance['unlocked'], updateBalance['locked'],
                                         int(time.time()), user_from_wallet['balance_wallet_address'],))
-                            conn.commit()
             except Exception as e:
                 print(e)
-            finally:
-                conn.close()
         return tx_hash
     else:
         return None
@@ -857,7 +741,6 @@ async def sql_send_to_voucher(user_id: str, user_name: str, message_creating: st
 def sql_tag_by_server(server_id: str, tag_id: str = None):
     global conn
     try:
-        openConnection()
         with conn.cursor() as cur:
             if tag_id is None: 
                 sql = """ SELECT tag_id, tag_desc, date_added, tag_serverid, added_byname, 
@@ -885,18 +768,13 @@ def sql_tag_by_server(server_id: str, tag_id: str = None):
                     tag['num_trigger'] = result[6]
                     sql = """ UPDATE wrkz_tag SET num_trigger=num_trigger+1 WHERE tag_serverid = %s AND tag_id=%s """
                     cur.execute(sql, (server_id, tag_id,))
-                    conn.commit()
                     return tag
     except Exception as e:
         print(e)
-    finally:
-        conn.close()
-
 
 def sql_tag_by_server_add(server_id: str, tag_id: str, tag_desc: str, added_byname: str, added_byuid: str):
     global conn
     try:
-        openConnection()
         with conn.cursor() as cur:
             sql = """ SELECT COUNT(tag_serverid) FROM wrkz_tag WHERE tag_serverid=%s """
             cur.execute(sql, (server_id,))
@@ -914,20 +792,15 @@ def sql_tag_by_server_add(server_id: str, tag_id: str, tag_desc: str, added_byna
                           `added_byname`, `added_byuid`) 
                           VALUES (%s, %s, %s, %s, %s, %s) """
                 cur.execute(sql, (tag_id.upper(), tag_desc, int(time.time()), server_id, added_byname, added_byuid,))
-                conn.commit()
                 return tag_id.upper()
             else:
                 return None
     except Exception as e:
         print(e)
-    finally:
-        conn.close()
-
 
 def sql_tag_by_server_del(server_id: str, tag_id: str):
     global conn
     try:
-        openConnection()
         with conn.cursor() as cur:
             sql = """ SELECT `tag_id`, `tag_desc`, `date_added`, `tag_serverid`, `added_byname`, 
                       `added_byuid`, `num_trigger` 
@@ -939,18 +812,13 @@ def sql_tag_by_server_del(server_id: str, tag_id: str):
             else:
                 sql = """ DELETE FROM wrkz_tag WHERE `tag_id`=%s AND `tag_serverid`=%s """
                 cur.execute(sql, (tag_id.upper(), server_id,))
-                conn.commit()
                 return tag_id.upper()
     except Exception as e:
         print(e)
-    finally:
-        conn.close()
-
 
 def sql_info_by_server(server_id: str):
     global conn
     try:
-        openConnection()
         with conn.cursor() as cur: 
             sql = """ SELECT serverid, servername, prefix, default_coin, numb_user, numb_bot, tiponly 
                       FROM discord_server WHERE serverid = %s """
@@ -970,50 +838,36 @@ def sql_info_by_server(server_id: str):
                 return serverinfo
     except Exception as e:
         print(e)
-    finally:
-        conn.close()
-
 
 def sql_addinfo_by_server(server_id: str, servername: str, prefix: str, default_coin: str):
     global conn
     try:
-        openConnection()
         with conn.cursor() as cur:
             sql = """ INSERT INTO `discord_server` (`serverid`, `servername`, `prefix`, `default_coin`)
                       VALUES (%s, %s, %s, %s) ON DUPLICATE KEY UPDATE 
                       servername = %s, prefix = %s, default_coin = %s"""
             cur.execute(sql, (server_id, servername[:28], prefix, default_coin, servername[:28], prefix, default_coin,))
-            conn.commit()
     except Exception as e:
         print(e)
-    finally:
-        conn.close()
-
 
 def sql_add_messages(list_messages):
     if len(list_messages) == 0:
         return 0
     global conn
     try:
-        openConnection()
         with conn.cursor() as cur:
             sql = """ INSERT IGNORE INTO `discord_messages` (`serverid`, `server_name`, `channel_id`, `channel_name`, `user_id`, 
                       `message_author`, `message_id`, `message_content`, `message_time`)
                       VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s) """
             cur.executemany(sql, list_messages)
-            conn.commit()
             return cur.rowcount
     except Exception as e:
         print(e)
-    finally:
-        conn.close()
-
 
 def sql_get_messages(server_id: str, channel_id: str, time_int: int):
     global conn
     lapDuration = int(time.time()) - time_int
     try:
-        openConnection()
         with conn.cursor() as cur:
             sql = """ SELECT DISTINCT `user_id` FROM discord_messages 
                       WHERE `serverid` = %s AND `channel_id` = %s AND `message_time`>%s """
@@ -1027,8 +881,6 @@ def sql_get_messages(server_id: str, channel_id: str, time_int: int):
             return list_talker
     except Exception as e:
         print(e)
-    finally:
-        conn.close()
     return None
 
 
@@ -1037,22 +889,16 @@ def sql_changeinfo_by_server(server_id: str, what: str, value: str):
     if what.lower() in ["servername", "prefix", "default_coin", "tiponly"]:
         try:
             #print(f"ok try to change {what} to {value}")
-            openConnection()
             with conn.cursor() as cur:
                 sql = """ UPDATE discord_server SET `""" + what.lower() + """` = %s WHERE `serverid` = %s """
                 cur.execute(sql, (value, server_id,))
-                conn.commit()
         except Exception as e:
             print(e)
-        finally:
-            conn.close()
-
 
 def sql_discord_userinfo_get(user_id: str):
-    global conn_cursors
+    global conn
     try:
-        openConnection_cursors()
-        with conn_cursors.cursor() as cur:
+        with conn.cursor() as cur:
             # select first
             sql = """ SELECT * FROM discord_userinfo 
                       WHERE `user_id` = %s """
@@ -1061,18 +907,15 @@ def sql_discord_userinfo_get(user_id: str):
             return result
     except Exception as e:
         print(e)
-    finally:
-        conn_cursors.close()
     return None
 
 
 def sql_userinfo_locked(user_id: str, locked: str, locked_reason: str, locked_by: str):
-    global conn_cursors
+    global conn
     if locked.upper() not in ["YES", "NO"]:
         return
     try:
-        openConnection_cursors()
-        with conn_cursors.cursor() as cur:
+        with conn.cursor() as cur:
             # select first
             sql = """ SELECT `user_id` FROM discord_userinfo 
                       WHERE `user_id` = %s """
@@ -1082,24 +925,18 @@ def sql_userinfo_locked(user_id: str, locked: str, locked_reason: str, locked_by
                 sql = """ INSERT INTO `discord_userinfo` (`user_id`, `locked`, `locked_reason`, `locked_by`, `locked_date`)
                       VALUES (%s, %s, %s, %s, %s) """
                 cur.execute(sql, (user_id, locked.upper(), locked_reason, locked_by, int(time.time())))
-                conn_cursors.commit()
             else:
                 sql = """ UPDATE `discord_userinfo` SET `locked`= %s, `locked_reason` = %s, `locked_by` = %s, `locked_date` = %s
                       WHERE `user_id` = %s """
                 cur.execute(sql, (locked.upper(), locked_reason, locked_by, int(time.time()), user_id))
-                conn_cursors.commit()
             return True
     except Exception as e:
         print(e)
-    finally:
-        conn_cursors.close()
-
 
 def sql_userinfo_2fa_insert(user_id: str, twofa_secret: str):
-    global conn_cursors
+    global conn
     try:
-        openConnection_cursors()
-        with conn_cursors.cursor() as cur:
+        with conn.cursor() as cur:
             # select first
             sql = """ SELECT `user_id` FROM discord_userinfo 
                       WHERE `user_id` = %s """
@@ -1109,19 +946,14 @@ def sql_userinfo_2fa_insert(user_id: str, twofa_secret: str):
                 sql = """ INSERT INTO `discord_userinfo` (`user_id`, `twofa_secret`, `twofa_activate_ts`)
                       VALUES (%s, %s, %s) """
                 cur.execute(sql, (user_id, encrypt_string(twofa_secret), int(time.time())))
-                conn_cursors.commit()
                 return True
     except Exception as e:
         print(e)
-    finally:
-        conn_cursors.close()
-
 
 def sql_userinfo_2fa_update(user_id: str, twofa_secret: str):
-    global conn_cursors
+    global conn
     try:
-        openConnection_cursors()
-        with conn_cursors.cursor() as cur:
+        with conn.cursor() as cur:
             # select first
             sql = """ SELECT `user_id` FROM discord_userinfo 
                       WHERE `user_id` = %s """
@@ -1131,21 +963,16 @@ def sql_userinfo_2fa_update(user_id: str, twofa_secret: str):
                 sql = """ UPDATE `discord_userinfo` SET `twofa_secret` = %s, `twofa_activate_ts` = %s 
                       WHERE `user_id`=%s """
                 cur.execute(sql, (encrypt_string(twofa_secret), int(time.time()), user_id))
-                conn_cursors.commit()
                 return True
     except Exception as e:
         print(e)
-    finally:
-        conn_cursors.close()
-
 
 def sql_userinfo_2fa_verify(user_id: str, verify: str):
     if verify.upper() not in ["YES", "NO"]:
         return
-    global conn_cursors
+    global conn
     try:
-        openConnection_cursors()
-        with conn_cursors.cursor() as cur:
+        with conn.cursor() as cur:
             # select first
             sql = """ SELECT `user_id` FROM discord_userinfo 
                       WHERE `user_id` = %s """
@@ -1160,22 +987,16 @@ def sql_userinfo_2fa_verify(user_id: str, verify: str):
                           `twofa_onoff` = %s, `twofa_active` = %s
                           WHERE `user_id`=%s """
                     cur.execute(sql, (verify.upper(), int(time.time()), '', int(time.time()), 'OFF', 'NO', user_id))
-                    conn_cursors.commit()
                 else:
                     cur.execute(sql, (verify.upper(), int(time.time()), user_id))
-                    conn_cursors.commit()
                 return True
     except Exception as e:
         print(e)
-    finally:
-        conn_cursors.close()
-
 
 def sql_change_userinfo_single(user_id: str, what: str, value: str):
-    global conn_cursors
+    global conn
     try:
-        openConnection_cursors()
-        with conn_cursors.cursor() as cur:
+        with conn.cursor() as cur:
             # select first
             sql = """ SELECT `user_id` FROM discord_userinfo 
                       WHERE `user_id` = %s """
@@ -1184,51 +1005,35 @@ def sql_change_userinfo_single(user_id: str, what: str, value: str):
             if result:
                 sql = """ UPDATE discord_userinfo SET `""" + what.lower() + """` = %s WHERE `user_id` = %s """
                 cur.execute(sql, (value, user_id))
-                conn_cursors.commit()
             else:
                 sql = """ INSERT INTO `discord_userinfo` (`user_id`, `""" + what.lower() + """`)
                       VALUES (%s, %s) """
                 cur.execute(sql, (user_id, value))
-                conn_cursors.commit()
     except Exception as e:
         print(e)
-    finally:
-        conn_cursors.close()
-
 
 def sql_addignorechan_by_server(server_id: str, ignorechan: str, by_userid: str, by_name: str):
     global conn
     try:
-        openConnection()
         with conn.cursor() as cur:
             sql = """ INSERT IGNORE INTO `discord_ignorechan` (`serverid`, `ignorechan`, `set_by_userid`, `by_author`, `set_when`)
                       VALUES (%s, %s, %s, %s, %s) """
             cur.execute(sql, (server_id, ignorechan, by_userid, by_name, int(time.time())))
-            conn.commit()
     except Exception as e:
         print(e)
-    finally:
-        conn.close()
-
 
 def sql_delignorechan_by_server(server_id: str, ignorechan: str):
     global conn
     try:
-        openConnection()
         with conn.cursor() as cur:
             sql = """ DELETE FROM `discord_ignorechan` WHERE `serverid` = %s AND `ignorechan` = %s """
             cur.execute(sql, (server_id, ignorechan,))
-            conn.commit()
     except Exception as e:
         print(e)
-    finally:
-        conn.close()
-
 
 def sql_listignorechan():
     global conn
     try:
-        openConnection()
         with conn.cursor() as cur:
             sql = """ SELECT `serverid`, `ignorechan`, `set_by_userid`, `by_author`, `set_when` FROM discord_ignorechan """
             cur.execute(sql)
@@ -1244,8 +1049,6 @@ def sql_listignorechan():
                 return ignore_chan
     except Exception as e:
         print(e)
-    finally:
-        conn.close()
     return None
 
 
@@ -1254,22 +1057,16 @@ def sql_add_failed_tx(coin: str, user_id: str, user_author: str, amount: int, tx
     if tx_type.upper() not in ['TIP','TIPS','TIPALL','DONATE','WITHDRAW','SEND']:
         return None
     try:
-        openConnection()
         with conn.cursor() as cur:
             sql = """ INSERT IGNORE INTO `discord_txfail` (`coin_name`, `user_id`, `tx_author`, `amount`, `tx_type`, `fail_time`)
                       VALUES (%s, %s, %s, %s, %s, %s) """
             cur.execute(sql, (coin, user_id, user_author, amount, tx_type.upper(), int(time.time())))
-            conn.commit()
     except Exception as e:
         print(e)
-    finally:
-        conn.close()
-
 
 def sql_get_tipnotify():
     global conn
     try:
-        openConnection()
         with conn.cursor() as cur:
             sql = """ SELECT `user_id`, `date` FROM bot_tipnotify_user """
             cur.execute(sql,)
@@ -1280,9 +1077,6 @@ def sql_get_tipnotify():
             return ignorelist
     except Exception as e:
         print(e)
-    finally:
-        conn.close()
-
 
 def sql_toggle_tipnotify(user_id: str, onoff: str):
     # Bot will add user_id if it failed to DM
@@ -1290,34 +1084,24 @@ def sql_toggle_tipnotify(user_id: str, onoff: str):
     onoff = onoff.upper()
     if onoff == "OFF":
         try:
-            openConnection()
             with conn.cursor() as cur:
                 sql = """ INSERT IGNORE INTO `bot_tipnotify_user` (`user_id`, `date`)
                           VALUES (%s, %s) """
                 cur.execute(sql, (user_id, int(time.time())))
-                conn.commit()
         except Exception as e:
             print(e)
-        finally:
-            conn.close()
     elif onoff == "ON":
         try:
-            openConnection()
             with conn.cursor() as cur:
                 sql = """ DELETE FROM `bot_tipnotify_user` WHERE `user_id` = %s """
                 cur.execute(sql, str(user_id))
-                conn.commit()
         except Exception as e:
             print(e)
-        finally:
-            conn.close()
-
 
 # not use anywhere
 def sql_updateinfo_by_server(server_id: str, what: str, value: str):
     global conn
     try:
-        openConnection()
         with conn.cursor() as cur: 
             sql = """ SELECT serverid, servername, prefix, default_coin, numb_user, numb_bot, tiponly 
                       FROM discord_server WHERE serverid = %s """
@@ -1329,14 +1113,10 @@ def sql_updateinfo_by_server(server_id: str, what: str, value: str):
                 if what in ["servername", "prefix", "default_coin", "tiponly"]:
                     sql = """ UPDATE discord_server SET """+what+"""=%s WHERE serverid=%s """
                     cur.execute(sql, (what, value, server_id,))
-                    conn.commit()
                 else:
                     return None
     except Exception as e:
         print(e)
-    finally:
-        conn.close()
-
 
 def sql_mv_doge_single(user_from: str, to_user: str, amount: float, coin: str, tiptype: str):
     global conn
@@ -1345,17 +1125,13 @@ def sql_mv_doge_single(user_from: str, to_user: str, amount: float, coin: str, t
     if tiptype.upper() not in ["TIP", "DONATE"]:
         return False
     try:
-        openConnection()
         with conn.cursor() as cur: 
             sql = """ INSERT INTO """+coin.lower()+"""_mv_tx (`from_userid`, `to_userid`, `amount`, `type`, `date`) 
                       VALUES (%s, %s, %s, %s, %s) """
             cur.execute(sql, (user_from, to_user, amount, tiptype.upper(), int(time.time()),))
-            conn.commit()
         return True
     except Exception as e:
         print(e)
-    finally:
-        conn.close()
     return False
 
 
@@ -1372,17 +1148,13 @@ def sql_mv_doge_multiple(user_from: str, user_tos, amount_each: float, coin: str
         values_str.append(f"('{user_from}', '{item}', {amount_each}, '{tiptype.upper()}', {currentTs})\n")
     values_sql = "VALUES " + ",".join(values_str)
     try:
-        openConnection()
         with conn.cursor() as cur: 
             sql = """ INSERT INTO """+coin.lower()+"""_mv_tx (`from_userid`, `to_userid`, `amount`, `type`, `date`) 
                       """+values_sql+""" """
             cur.execute(sql,)
-            conn.commit()
         return True
     except Exception as e:
         print(e)
-    finally:
-        conn.close()
     return False
 
 
@@ -1393,7 +1165,6 @@ async def sql_external_doge_single(user_from: str, amount: float, fee: float, to
     if tiptype.upper() not in ["SEND", "WITHDRAW"]:
         return False
     try:
-        openConnection()
         txHash = await wallet.DOGE_LTC_sendtoaddress(to_address, amount, user_from, coin)
         #print(txHash)
         with conn.cursor() as cur: 
@@ -1401,12 +1172,9 @@ async def sql_external_doge_single(user_from: str, amount: float, fee: float, to
                       `type`, `date`, `tx_hash`) 
                       VALUES (%s, %s, %s, %s, %s, %s, %s) """
             cur.execute(sql, (user_from, amount, fee, to_address, tiptype.upper(), int(time.time()), txHash,))
-            conn.commit()
         return txHash
     except Exception as e:
         print(e)
-    finally:
-        conn.close()
     return False
 
 
@@ -1415,7 +1183,6 @@ def sql_doge_balance(userID: str, coin: str):
     if coin not in ENABLE_COIN_DOGE:
         return False
     try:
-        openConnection()
         with conn.cursor() as cur: 
             sql = """ SELECT SUM(amount) AS Expense FROM """+coin.lower()+"""_mv_tx WHERE `from_userid`=%s """
             cur.execute(sql, userID)
@@ -1461,8 +1228,6 @@ def sql_doge_balance(userID: str, coin: str):
             return balance
     except Exception as e:
         print(e)
-    finally:
-        conn.close()
     return False
 
 
@@ -1472,21 +1237,15 @@ def sql_set_forwardtip(userID: str, coin: str, option: str):
         return None
     if coin in ENABLE_COIN:
         try:
-            openConnection()
             with conn.cursor() as cur: 
                 sql = """ UPDATE """+coin.lower()+"""_user SET forwardtip='"""+option.upper()+"""' WHERE user_id=%s """
                 cur.execute(sql, (str(userID),))
-                conn.commit()
         except Exception as e:
             print(e)
-        finally:
-            conn.close()
-
 
 def sql_get_nodeinfo():
     global conn
     try:
-        openConnection()
         with conn.cursor() as cur:
             sql = """ SELECT `url`, `fee`, `lastUpdate`, `alt_blocks_count`, `difficulty`, `incoming_connections_count`,
                   `last_known_block_index`, `network_height`, `outgoing_connections_count`, `start_time`, `tx_count`, 
@@ -1497,14 +1256,10 @@ def sql_get_nodeinfo():
             return result
     except Exception as e:
         print(e)
-    finally:
-        conn.close()
-
 
 def sql_get_poolinfo():
     global conn
     try:
-        openConnection()
         with conn.cursor() as cur:
             sql = """ SELECT `name`, `url_api`, `fee`, `minPaymentThreshold`, `pool_stats_lastBlockFound`, 
                   `pool_stats_totalBlocks`,
@@ -1517,9 +1272,6 @@ def sql_get_poolinfo():
             return result
     except Exception as e:
         print(e)
-    finally:
-        conn.close()
-
 
 # Steal from https://nitratine.net/blog/post/encryption-and-decryption-in-python/
 def encrypt_string(to_encrypt: str):
