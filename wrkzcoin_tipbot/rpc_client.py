@@ -31,7 +31,7 @@ async def call_aiohttp_wallet_original(method_name: str, coin: str, payload: Dic
                 await session.close()
                 decoded_data = json.loads(res_data)
                 result = decoded_data['result']
-                print(method_name+" RPC Original finished : "+res_data);
+                print(coin+" "+method_name+" RPC Result Original : "+json.dumps(result))
                 return result
             else:
                 print(" RPC Original Error status : "+response.status);
@@ -86,7 +86,7 @@ async def call_aiohttp_wallet(method_name: str, coin: str, payload: Dict = None)
                 await session.close()
                 decoded_data = json.loads(res_data)
                 result = decoded_data['result']
-                print(coin +" "+method_name+ " RPC finished : "+res_data);
+                # print(coin +" "+method_name+ " RPC finished : "+res_data);
                 if coin_family == "XMR" and method_name == "get_balance":
                     result['availableBalance'] = result["per_subaddress"][0]['unlocked_balance']
                     result['lockedAmount'] = result["per_subaddress"][0]['balance']-result["per_subaddress"][0]['unlocked_balance']
