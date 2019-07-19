@@ -96,7 +96,8 @@ async def call_aiohttp_wallet(method_name: str, coin: str, payload: Dict = None)
                         resultReformat['addresses'].append(address["base_address"])
                     result = resultReformat
                 if coin_family == "XMR" and method_name == "transfer":
-                    getattr(config,"daemon"+coin).fee = result["fee"]
+                    if getattr(config,"daemon"+coin) is not None:
+                        config["daemon"+coin].fee = result["fee"]
                     result["transactionHash"] = result["tx_hash"]
                 if coin_family == "XMR":
                     print(coin+" "+method_name+" RPC Result from XMR family: "+json.dumps(result))
