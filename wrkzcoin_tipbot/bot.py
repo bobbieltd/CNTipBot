@@ -1,5 +1,5 @@
 import click
-
+import traceback, pdb
 import discord
 from discord.ext import commands
 from discord.ext.commands import Bot, AutoShardedBot, when_mentioned_or, CheckFailure

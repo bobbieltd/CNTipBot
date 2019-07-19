@@ -99,7 +99,7 @@ async def call_aiohttp_wallet(method_name: str, coin: str, payload: Dict = None)
                     if hasattr(config,"daemon"+coin):
                         newCoinConfig = getattr(config,"daemon"+coin)
                         newCoinConfig.fee = result["fee"]
-                        setattr(config["daemon"+coin],newCoinConfig)
+                        setattr(config,"daemon"+coin,newCoinConfig)
                     result["transactionHash"] = result["tx_hash"]
                 if coin_family == "XMR":
                     print(coin+" "+method_name+" RPC Result from XMR family: "+json.dumps(result))
