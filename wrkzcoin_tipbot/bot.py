@@ -1764,9 +1764,9 @@ async def tip(ctx, amount: str, *args):
     # end of check if account locked
 
     # botLogChan = bot.get_channel(id=LOG_CHAN)
-    amount = amount.replace(",", "")
 
     try:
+        amount = amount.replace(",", "")
         amount = float(amount)
     except ValueError:
         await ctx.message.add_reaction(EMOJI_ERROR)
@@ -3800,6 +3800,7 @@ async def alert_if_userlock(ctx, cmd: str):
     if get_discord_userinfo is None:
         return None
     else:
+        print("Checking if user is locked")
         if get_discord_userinfo['locked'].upper() == "YES":
             if botLogChan is not None:
                 await botLogChan.send(f'{ctx.message.author.name} / {ctx.message.author.id} locked but is commanding `{cmd}`')
@@ -4511,6 +4512,8 @@ async def _tip_talker(ctx, amount, list_talker, coin: str = None):
         print(e)
     if tip:
         servername = serverinfo['servername']
+        userfrom = await store.sql_get_userwallet(str(ctx.message.author.id), COIN_NAME)
+        addresses.append(userfrom)
         await store.sql_update_some_balances(addresses, COIN_NAME)
         await ctx.message.add_reaction(EMOJI_TIP)
         if has_forwardtip:
