@@ -79,7 +79,7 @@ EMOJI_COIN = {\
 "IRD" : "\U0001F538",\
 "HITC" : "\U0001F691",\
 "NACA" : "\U0001F355",\
-"LOK" : "\U0001F52B",\
+"LOKI" : "\U0001F52B",\
 "XTRI" : "\U0001F538",\
 "XTOR" : "\U0001F346",\
 "BLOG" : "\U0000270D",\
@@ -3869,7 +3869,7 @@ def get_cn_coin_from_address(CoinAddress: str):
     elif CoinAddress.startswith("TRTL"):
         COIN_NAME = "TRTL"
     elif CoinAddress.startswith("L"):
-        COIN_NAME = "LOK"
+        COIN_NAME = "LOKI"
     elif CoinAddress.startswith("T"):
         COIN_NAME = "XTRI"
     elif CoinAddress.startswith("bit"):
