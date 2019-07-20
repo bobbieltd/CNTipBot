@@ -1321,7 +1321,7 @@ def sql_xmr_balance(userID: str, coin: str):
             sql = """ SELECT SUM(amount) AS Expense FROM """+coin.lower()+"""_mv_tx WHERE `from_userid`=%s AND `coin_name` = %s """
             cur.execute(sql, (userID, COIN_NAME))
             result = cur.fetchone()
-            if result:
+            if result and result['Expense']:
                 Expense = result['Expense']
             else:
                 Expense = 0
@@ -1329,7 +1329,7 @@ def sql_xmr_balance(userID: str, coin: str):
             sql = """ SELECT SUM(amount) AS Income FROM """+coin.lower()+"""_mv_tx WHERE `to_userid`=%s AND `coin_name` = %s """
             cur.execute(sql, (userID, COIN_NAME))
             result = cur.fetchone()
-            if result:
+            if result and result['Income']:
                 Income = result['Income']
             else:
                 Income = 0
@@ -1337,7 +1337,7 @@ def sql_xmr_balance(userID: str, coin: str):
             sql = """ SELECT SUM(amount) AS TxExpense FROM """+coin.lower()+"""_external_tx WHERE `user_id`=%s AND `coin_name` = %s """
             cur.execute(sql, (userID, COIN_NAME))
             result = cur.fetchone()
-            if result:
+            if result and result['TxExpense']:
                 TxExpense = result['TxExpense']
             else:
                 TxExpense = 0
@@ -1345,17 +1345,17 @@ def sql_xmr_balance(userID: str, coin: str):
             sql = """ SELECT SUM(fee) AS FeeExpense FROM """+coin.lower()+"""_external_tx WHERE `user_id`=%s AND `coin_name` = %s """
             cur.execute(sql, (userID, COIN_NAME))
             result = cur.fetchone()
-            if result:
+            if result and result['FeeExpense']:
                 FeeExpense = result['FeeExpense']
             else:
                 FeeExpense = 0
 
             balance = {}
-            balance['Expense'] = int(Expense) or 0
-            balance['Income'] = int(Income) or 0
-            balance['TxExpense'] = int(TxExpense) or 0
-            balance['FeeExpense'] = int(FeeExpense) or 0
-            balance['Adjust'] = int(balance['Income'] - balance['Expense'] - balance['TxExpense'] - balance['FeeExpense'])
+            balance['Expense'] = int(Expense)
+            balance['Income'] = int(Income)
+            balance['TxExpense'] = int(TxExpense)
+            balance['FeeExpense'] = int(FeeExpense)
+            balance['Adjust'] = balance['Income'] - balance['Expense'] - balance['TxExpense'] - balance['FeeExpense']
             print("store.sql_xmr_balance:"+json.dumps(balance))
             return balance
     except Exception as e:
