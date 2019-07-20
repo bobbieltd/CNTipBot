@@ -51,7 +51,7 @@ def sql_get_walletinfo():
                         'tipall_enable': row[23], 'donate_enable': row[24], 'maintenance': row[25]}
                 return wallet_service
     except Exception as e:
-        print(e)
+        traceback.print_exc(file=sys.stdout)
 
 async def sql_update_balances(coin: str = None):
     global conn
@@ -91,7 +91,7 @@ async def sql_update_some_balances(wallet_addresses: List[str], coin: str = None
                     cur.execute(sql, (details['address'], details['unlocked'], details['locked'], updateTime,
                                       details['unlocked'], details['locked'], updateTime,))
         except Exception as e:
-            print(e)
+            traceback.print_exc(file=sys.stdout)
 
 async def sql_register_user(userID, coin: str = None):
     global conn
@@ -194,7 +194,7 @@ async def sql_update_user(userID, user_wallet_address, coin: str = None):
                 result2['user_wallet_address'] = user_wallet_address
                 return result2  # return userwallet
     except Exception as e:
-        print(e)
+        traceback.print_exc(file=sys.stdout)
 
 async def sql_get_userwallet(userID, coin: str = None):
     global conn
@@ -308,7 +308,7 @@ def sql_get_countLastTip(userID, lastDuration: int, coin: str = None):
             else:
                 return len(result)
     except Exception as e:
-        print(e)
+        traceback.print_exc(file=sys.stdout)
 
 async def sql_send_tip(user_from: str, user_to: str, amount: int, coin: str = None):
     global conn
@@ -361,7 +361,7 @@ async def sql_send_tip(user_from: str, user_to: str, amount: int, coin: str = No
                             cur.execute(sql, (updateBalance['unlocked'], updateBalance['locked'],
                                         updateTime, user_to_wallet['balance_wallet_address'],))
             except Exception as e:
-                print(e)
+                traceback.print_exc(file=sys.stdout)
         return tx_hash
     else:
         return None
@@ -386,7 +386,7 @@ async def sql_send_tipall(user_from: str, user_tos, amount: int, amount_div: int
                 print('tx_hash: ')
                 print(tx_hash)
             except Exception as e:
-                print(e)
+                traceback.print_exc(file=sys.stdout)
         if tx_hash:
             try:
                 with conn.cursor() as cur:
@@ -404,7 +404,7 @@ async def sql_send_tipall(user_from: str, user_tos, amount: int, amount_div: int
                                   """+values_sql+""" """
                         cur.execute(sql,)
             except Exception as e:
-                print(e)
+                traceback.print_exc(file=sys.stdout)
         return tx_hash
     else:
         return None
@@ -443,7 +443,7 @@ async def sql_send_tip_Ex(user_from: str, address_to: str, amount: int, coin: st
                             cur.execute(sql, (updateBalance['unlocked'], updateBalance['locked'],
                                         updateTime, user_from_wallet['balance_wallet_address'],))
             except Exception as e:
-                print(e)
+                traceback.print_exc(file=sys.stdout)
         return tx_hash
     else:
         return None
@@ -481,7 +481,7 @@ async def sql_send_tip_Ex_id(user_from: str, address_to: str, amount: int, payme
                             cur.execute(sql, (updateBalance['unlocked'], updateBalance['locked'], 
                                         updateTime, user_from_wallet['balance_wallet_address'],))
             except Exception as e:
-                print(e)
+                traceback.print_exc(file=sys.stdout)
         return tx_hash
     else:
         return None
@@ -554,7 +554,7 @@ async def sql_donate(user_from: str, address_to: str, amount: int, coin: str = N
                             cur.execute(sql, (updateBalance['unlocked'], updateBalance['locked'], 
                                         updateTime, user_from_wallet['balance_wallet_address'],))
             except Exception as e:
-                print(e)
+                traceback.print_exc(file=sys.stdout)
         return tx_hash
     else:
         return None
@@ -585,7 +585,7 @@ def sql_get_donate_list():
                 donate_list[coin] = result[0]
         return donate_list
     except Exception as e:
-        print(e)
+        traceback.print_exc(file=sys.stdout)
 
 def sql_optimize_check(coin: str = None):
     global conn
@@ -600,7 +600,7 @@ def sql_optimize_check(coin: str = None):
                 result = cur.fetchone()
                 return result[0]
     except Exception as e:
-        print(e)
+        traceback.print_exc(file=sys.stdout)
 
 async def sql_optimize_do(userID: str, coin: str = None):
     global conn
@@ -650,7 +650,7 @@ async def sql_optimize_do(userID: str, coin: str = None):
                         cur.execute(sql, (updateBalance['unlocked'], updateBalance['locked'], 
                                     updateTime, user_from_wallet['balance_wallet_address'],))
             except Exception as e:
-                print(e)
+                traceback.print_exc(file=sys.stdout)
         return OptimizeCount
 
 
@@ -665,7 +665,7 @@ def sql_optimize_update(userID: str, coin: str = None):
                 sql = """ UPDATE """+coin.lower()+"""_user SET `lastOptimize`=%s WHERE `user_id`=%s LIMIT 1 """
                 cur.execute(sql, (timeNow, str(userID),))
     except Exception as e:
-        print(e)
+        traceback.print_exc(file=sys.stdout)
 
 async def sql_optimize_admin_do(coin: str, opt_num: int = None):
     global conn
@@ -692,7 +692,7 @@ async def sql_optimize_admin_do(coin: str, opt_num: int = None):
                         try:
                             OptimizeCount = await wallet.wallet_optimize_single(address['address'], int(round(address['unlocked']/2)), coin)
                         except Exception as e:
-                            print(e)
+                            traceback.print_exc(file=sys.stdout)
                         if OptimizeCount > 0:
                             AccumOpt = AccumOpt + 1
                         if AccumOpt >= opt_num:
@@ -733,7 +733,7 @@ async def sql_send_to_voucher(user_id: str, user_name: str, message_creating: st
                             cur.execute(sql, (updateBalance['unlocked'], updateBalance['locked'],
                                         int(time.time()), user_from_wallet['balance_wallet_address'],))
             except Exception as e:
-                print(e)
+                traceback.print_exc(file=sys.stdout)
         return tx_hash
     else:
         return None
@@ -771,7 +771,7 @@ def sql_tag_by_server(server_id: str, tag_id: str = None):
                     cur.execute(sql, (server_id, tag_id,))
                     return tag
     except Exception as e:
-        print(e)
+        traceback.print_exc(file=sys.stdout)
 
 def sql_tag_by_server_add(server_id: str, tag_id: str, tag_desc: str, added_byname: str, added_byuid: str):
     global conn
@@ -797,7 +797,7 @@ def sql_tag_by_server_add(server_id: str, tag_id: str, tag_desc: str, added_byna
             else:
                 return None
     except Exception as e:
-        print(e)
+        traceback.print_exc(file=sys.stdout)
 
 def sql_tag_by_server_del(server_id: str, tag_id: str):
     global conn
@@ -815,7 +815,7 @@ def sql_tag_by_server_del(server_id: str, tag_id: str):
                 cur.execute(sql, (tag_id.upper(), server_id,))
                 return tag_id.upper()
     except Exception as e:
-        print(e)
+        traceback.print_exc(file=sys.stdout)
 
 def sql_info_by_server(server_id: str):
     global conn
@@ -838,7 +838,7 @@ def sql_info_by_server(server_id: str):
                 serverinfo["tiponly"] = result[6]
                 return serverinfo
     except Exception as e:
-        print(e)
+        traceback.print_exc(file=sys.stdout)
 
 def sql_addinfo_by_server(server_id: str, servername: str, prefix: str, default_coin: str):
     global conn
@@ -849,7 +849,7 @@ def sql_addinfo_by_server(server_id: str, servername: str, prefix: str, default_
                       servername = %s, prefix = %s, default_coin = %s"""
             cur.execute(sql, (server_id, servername[:28], prefix, default_coin, servername[:28], prefix, default_coin,))
     except Exception as e:
-        print(e)
+        traceback.print_exc(file=sys.stdout)
 
 def sql_add_messages(list_messages):
     if len(list_messages) == 0:
@@ -863,7 +863,7 @@ def sql_add_messages(list_messages):
             cur.executemany(sql, list_messages)
             return cur.rowcount
     except Exception as e:
-        print(e)
+        traceback.print_exc(file=sys.stdout)
 
 def sql_get_messages(server_id: str, channel_id: str, time_int: int):
     global conn
@@ -881,7 +881,7 @@ def sql_get_messages(server_id: str, channel_id: str, time_int: int):
                         list_talker.append(int(item[0]))
             return list_talker
     except Exception as e:
-        print(e)
+        traceback.print_exc(file=sys.stdout)
     return None
 
 
@@ -894,7 +894,7 @@ def sql_changeinfo_by_server(server_id: str, what: str, value: str):
                 sql = """ UPDATE discord_server SET `""" + what.lower() + """` = %s WHERE `serverid` = %s """
                 cur.execute(sql, (value, server_id,))
         except Exception as e:
-            print(e)
+            traceback.print_exc(file=sys.stdout)
 
 def sql_discord_userinfo_get(user_id: str):
     global conn
@@ -907,7 +907,7 @@ def sql_discord_userinfo_get(user_id: str):
             result = cur.fetchone()
             return result
     except Exception as e:
-        print(e)
+        traceback.print_exc(file=sys.stdout)
     return None
 
 
@@ -932,7 +932,7 @@ def sql_userinfo_locked(user_id: str, locked: str, locked_reason: str, locked_by
                 cur.execute(sql, (locked.upper(), locked_reason, locked_by, int(time.time()), user_id))
             return True
     except Exception as e:
-        print(e)
+        traceback.print_exc(file=sys.stdout)
 
 def sql_userinfo_2fa_insert(user_id: str, twofa_secret: str):
     global conn
@@ -949,7 +949,7 @@ def sql_userinfo_2fa_insert(user_id: str, twofa_secret: str):
                 cur.execute(sql, (user_id, encrypt_string(twofa_secret), int(time.time())))
                 return True
     except Exception as e:
-        print(e)
+        traceback.print_exc(file=sys.stdout)
 
 def sql_userinfo_2fa_update(user_id: str, twofa_secret: str):
     global conn
@@ -966,7 +966,7 @@ def sql_userinfo_2fa_update(user_id: str, twofa_secret: str):
                 cur.execute(sql, (encrypt_string(twofa_secret), int(time.time()), user_id))
                 return True
     except Exception as e:
-        print(e)
+        traceback.print_exc(file=sys.stdout)
 
 def sql_userinfo_2fa_verify(user_id: str, verify: str):
     if verify.upper() not in ["YES", "NO"]:
@@ -992,7 +992,7 @@ def sql_userinfo_2fa_verify(user_id: str, verify: str):
                     cur.execute(sql, (verify.upper(), int(time.time()), user_id))
                 return True
     except Exception as e:
-        print(e)
+        traceback.print_exc(file=sys.stdout)
 
 def sql_change_userinfo_single(user_id: str, what: str, value: str):
     global conn
@@ -1011,7 +1011,7 @@ def sql_change_userinfo_single(user_id: str, what: str, value: str):
                       VALUES (%s, %s) """
                 cur.execute(sql, (user_id, value))
     except Exception as e:
-        print(e)
+        traceback.print_exc(file=sys.stdout)
 
 def sql_addignorechan_by_server(server_id: str, ignorechan: str, by_userid: str, by_name: str):
     global conn
@@ -1021,7 +1021,7 @@ def sql_addignorechan_by_server(server_id: str, ignorechan: str, by_userid: str,
                       VALUES (%s, %s, %s, %s, %s) """
             cur.execute(sql, (server_id, ignorechan, by_userid, by_name, int(time.time())))
     except Exception as e:
-        print(e)
+        traceback.print_exc(file=sys.stdout)
 
 def sql_delignorechan_by_server(server_id: str, ignorechan: str):
     global conn
@@ -1030,7 +1030,7 @@ def sql_delignorechan_by_server(server_id: str, ignorechan: str):
             sql = """ DELETE FROM `discord_ignorechan` WHERE `serverid` = %s AND `ignorechan` = %s """
             cur.execute(sql, (server_id, ignorechan,))
     except Exception as e:
-        print(e)
+        traceback.print_exc(file=sys.stdout)
 
 def sql_listignorechan():
     global conn
@@ -1049,7 +1049,7 @@ def sql_listignorechan():
                         ignore_chan[str(row[0])].append(str(row[1]))
                 return ignore_chan
     except Exception as e:
-        print(e)
+        traceback.print_exc(file=sys.stdout)
     return None
 
 
@@ -1063,7 +1063,7 @@ def sql_add_failed_tx(coin: str, user_id: str, user_author: str, amount: int, tx
                       VALUES (%s, %s, %s, %s, %s, %s) """
             cur.execute(sql, (coin, user_id, user_author, amount, tx_type.upper(), int(time.time())))
     except Exception as e:
-        print(e)
+        traceback.print_exc(file=sys.stdout)
 
 def sql_get_tipnotify():
     global conn
@@ -1077,7 +1077,7 @@ def sql_get_tipnotify():
                 ignorelist.append(row[0])
             return ignorelist
     except Exception as e:
-        print(e)
+        traceback.print_exc(file=sys.stdout)
 
 def sql_toggle_tipnotify(user_id: str, onoff: str):
     # Bot will add user_id if it failed to DM
@@ -1090,14 +1090,14 @@ def sql_toggle_tipnotify(user_id: str, onoff: str):
                           VALUES (%s, %s) """
                 cur.execute(sql, (user_id, int(time.time())))
         except Exception as e:
-            print(e)
+            traceback.print_exc(file=sys.stdout)
     elif onoff == "ON":
         try:
             with conn.cursor() as cur:
                 sql = """ DELETE FROM `bot_tipnotify_user` WHERE `user_id` = %s """
                 cur.execute(sql, str(user_id))
         except Exception as e:
-            print(e)
+            traceback.print_exc(file=sys.stdout)
 
 # not use anywhere
 def sql_updateinfo_by_server(server_id: str, what: str, value: str):
@@ -1117,7 +1117,7 @@ def sql_updateinfo_by_server(server_id: str, what: str, value: str):
                 else:
                     return None
     except Exception as e:
-        print(e)
+        traceback.print_exc(file=sys.stdout)
 
 def sql_mv_doge_single(user_from: str, to_user: str, amount: float, coin: str, tiptype: str):
     global conn
@@ -1132,7 +1132,7 @@ def sql_mv_doge_single(user_from: str, to_user: str, amount: float, coin: str, t
             cur.execute(sql, (user_from, to_user, amount, tiptype.upper(), int(time.time()),))
         return True
     except Exception as e:
-        print(e)
+        traceback.print_exc(file=sys.stdout)
     return False
 
 
@@ -1155,7 +1155,7 @@ def sql_mv_doge_multiple(user_from: str, user_tos, amount_each: float, coin: str
             cur.execute(sql,)
         return True
     except Exception as e:
-        print(e)
+        traceback.print_exc(file=sys.stdout)
     return False
 
 
@@ -1175,7 +1175,7 @@ async def sql_external_doge_single(user_from: str, amount: float, fee: float, to
             cur.execute(sql, (user_from, amount, fee, to_address, tiptype.upper(), int(time.time()), txHash,))
         return txHash
     except Exception as e:
-        print(e)
+        traceback.print_exc(file=sys.stdout)
     return False
 
 
@@ -1228,7 +1228,7 @@ def sql_doge_balance(userID: str, coin: str):
             #print(balance['Adjust'])
             return balance
     except Exception as e:
-        print(e)
+        traceback.print_exc(file=sys.stdout)
     return False
 
 
@@ -1242,7 +1242,7 @@ def sql_set_forwardtip(userID: str, coin: str, option: str):
                 sql = """ UPDATE """+coin.lower()+"""_user SET forwardtip='"""+option.upper()+"""' WHERE user_id=%s """
                 cur.execute(sql, (str(userID),))
         except Exception as e:
-            print(e)
+            traceback.print_exc(file=sys.stdout)
 
 def sql_get_nodeinfo():
     global conn
@@ -1256,7 +1256,7 @@ def sql_get_nodeinfo():
             result = cur.fetchall()
             return result
     except Exception as e:
-        print(e)
+        traceback.print_exc(file=sys.stdout)
 
 def sql_get_poolinfo():
     global conn
@@ -1272,7 +1272,7 @@ def sql_get_poolinfo():
             result = cur.fetchall()
             return result
     except Exception as e:
-        print(e)
+        traceback.print_exc(file=sys.stdout)
 
 # Steal from https://nitratine.net/blog/post/encryption-and-decryption-in-python/
 def encrypt_string(to_encrypt: str):
