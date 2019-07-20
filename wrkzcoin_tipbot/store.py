@@ -200,6 +200,7 @@ async def sql_get_userwallet(userID, coin: str = None):
         coin = "WRKZ"
     try:
         sql = None
+        result['pseudo'] = False
         with conn.cursor(pymysql.cursors.DictCursor) as cur:
             if coin in ENABLE_COIN:
                 sql = """ SELECT * FROM """+coin.lower()+"""_user_paymentid WHERE `user_id`=%s AND `coin_name` = %s LIMIT 1 """
