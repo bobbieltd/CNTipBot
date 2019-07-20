@@ -214,7 +214,7 @@ async def sql_get_userwallet(userID, coin: str = None):
                     result['forwardtip'] = False
                     result['actual_balance'] = 0
                     result['locked_balance'] = 0
-                    result['lastUpdate'] = int(datetime.now())
+                    result['lastUpdate'] = int(time.time())
                     
             elif coin in ENABLE_COIN_DOGE:
                 sql = """ SELECT user_id, balance_wallet_address, user_wallet_address, balance_wallet_address_ts, 
