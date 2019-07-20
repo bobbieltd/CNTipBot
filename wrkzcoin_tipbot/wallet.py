@@ -32,6 +32,7 @@ async def registerOTHER(coin: str) -> str:
     reg_address = {}
     reg_address['privateSpendKey'] = await getSpendKey(result['address'], coin)
     reg_address['address'] = result['address']
+    reg_address['payment_id'] = None
     
     # Avoid any crash and nothing to restore or import
     print('Wallet register: '+reg_address['address']+'=>privateSpendKey: '+reg_address['privateSpendKey']+" ,family: "+coin_family)

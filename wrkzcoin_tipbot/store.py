@@ -104,15 +104,14 @@ async def sql_register_user(userID, coin: str = None):
         with conn.cursor() as cur:
             COIN_NAME = None
             if coin in ENABLE_COIN:
-                sql = """ SELECT user_id, balance_wallet_address, user_wallet_address FROM """+coin.lower()+"""_user 
-                          WHERE `user_id`=%s LIMIT 1 """
-                COIN_NAME = coin
+                sql = """ SELECT * FROM """+coin.lower()+"""_user_paymentid WHERE `user_id`=%s AND `coin_name` = %s LIMIT 1 """
+                cur.execute(sql, (str(userID), COIN_NAME))
+                result = cur.fetchone()
             elif coin in ENABLE_COIN_DOGE:
                 sql = """ SELECT user_id, balance_wallet_address, user_wallet_address FROM """+coin.lower()+"""_user
                           WHERE `user_id`=%s LIMIT 1 """
-                COIN_NAME = coin
-            cur.execute(sql, userID)
-            result = cur.fetchone()
+                cur.execute(sql, userID)
+                result = cur.fetchone()
             if result is None:
                 if coin in ENABLE_COIN:
                     print(coin+" - Creating wallet for "+str(userID))
@@ -137,11 +136,10 @@ async def sql_register_user(userID, coin: str = None):
                         elif coin in ENABLE_COIN_DOGE:
                             chainHeight = int(walletStatus['blocks'])
                     if coin in ENABLE_COIN:
-                        sql = """ INSERT INTO """+coin.lower()+"""_user (`user_id`, `balance_wallet_address`, 
-                                  `balance_wallet_address_ts`, `balance_wallet_address_ch`, `privateSpendKey`) 
-                                  VALUES (%s, %s, %s, %s, %s) """
-                        cur.execute(sql, (str(userID), balance_address['address'], int(time.time()), chainHeight,
-                                          encrypt_string(balance_address['privateSpendKey']), ))
+                        sql = """ INSERT INTO """+coin.lower()+"""_user_paymentid (`coin_name`, `user_id`, `main_address`, `paymentid`, 
+                                  `int_address`, `paymentid_ts`, `extrainfo`) 
+                                  VALUES (%s, %s, %s, %s, %s, %s %s) """
+                        cur.execute(sql, (COIN_NAME, str(userID), main_address, balance_address['payment_id'], balance_address['integrated_address'], int(time.time()), balance_address['privateSpendKey']))
                     elif coin in ENABLE_COIN_DOGE:
                         sql = """ INSERT INTO """+coin.lower()+"""_user (`user_id`, `balance_wallet_address`, 
                                   `balance_wallet_address_ts`, `balance_wallet_address_ch`, `privateKey`) 
