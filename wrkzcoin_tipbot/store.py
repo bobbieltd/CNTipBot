@@ -100,9 +100,9 @@ async def sql_register_user(userID, coin: str = None):
     chainHeight = 0
     if coin is None:
         coin = "WRKZ"
+    COIN_NAME = coin.upper()
     try:
         with conn.cursor() as cur:
-            COIN_NAME = None
             if coin in ENABLE_COIN:
                 sql = """ SELECT * FROM """+coin.lower()+"""_user_paymentid WHERE `user_id`=%s AND `coin_name` = %s LIMIT 1 """
                 cur.execute(sql, (str(userID), COIN_NAME))
