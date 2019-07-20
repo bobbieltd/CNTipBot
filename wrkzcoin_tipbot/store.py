@@ -71,15 +71,15 @@ async def sql_update_balances(coin: str = None):
                         ON DUPLICATE KEY UPDATE `actual_balance`=%s, `locked_balance`=%s, `lastUpdate`=%s """
                         cur.execute(sql, (details['address'], details['unlocked'], details['locked'], updateTime,
                                           details['unlocked'], details['locked'], updateTime))
-                sql = """ SELECT * FROM """+coin.lower()+"""_user_paymentid WHERE `main_address`=%s AND `coin_name` = %s LIMIT 1 """
-                cur.execute(sql, (str(details['address']), coin.upper()))
-                result = cur.fetchone()
-                if result:
-                    print('SQL: Update user_paymentid '+details['address'])
-                    sql = """ UPDATE """+coin.lower()+"""_user_paymentid SET `actual_balance`=%s, 
-                                      `locked_balance`=%s, `lastUpdate`=%s WHERE `main_address`=%s """
-                    cur.execute(sql, (details['unlocked'], details['locked'],
-                                        updateTime, details['address'],))
+                    sql = """ SELECT * FROM """+coin.lower()+"""_user_paymentid WHERE `main_address`=%s AND `coin_name` = %s LIMIT 1 """
+                    cur.execute(sql, (str(details['address']), coin.upper()))
+                    result = cur.fetchone()
+                    if result:
+                        print('SQL: Update user_paymentid '+details['address'])
+                        sql = """ UPDATE """+coin.lower()+"""_user_paymentid SET `actual_balance`=%s, 
+                                          `locked_balance`=%s, `lastUpdate`=%s WHERE `main_address`=%s """
+                        cur.execute(sql, (details['unlocked'], details['locked'],
+                                            updateTime, details['address'],))
         except Exception as e:
             traceback.print_exc(file=sys.stdout)
 

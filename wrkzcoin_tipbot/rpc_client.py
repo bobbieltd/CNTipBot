@@ -39,7 +39,7 @@ async def call_aiohttp_wallet_original(method_name: str, coin: str, payload: Dic
                 return None
                 
 async def call_aiohttp_wallet(method_name: str, coin: str, payload: Dict = None) -> Dict:
-    coin_family = getattr(getattr(config,"daemon"+coin),"coin_family","TRTL")
+    coin_family = getattr(getattr(config,"daemon"+coin,"daemonWRKZ"),"coin_family","TRTL")
     indexMajor = 0
 
     if coin_family == "XMR" and method_name == "getBalance":
