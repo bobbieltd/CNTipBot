@@ -1315,8 +1315,6 @@ def sql_xmr_balance(userID: str, coin: str):
     print('store.sql_xmr_balance')
     COIN_NAME = coin.upper()
     coin_family = getattr(getattr(config,"daemon"+COIN_NAME,"daemonWRKZ"),"coin_family","TRTL")
-    if coin_family != "XMR":
-        return False
     try:
         with conn.cursor() as cur: 
             sql = """ SELECT SUM(amount) AS Expense FROM """+coin.lower()+"""_mv_tx WHERE `from_userid`=%s AND `coin_name` = %s """
