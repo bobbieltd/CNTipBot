@@ -207,7 +207,7 @@ async def sql_get_userwallet(userID, coin: str = None):
                 sql = """ SELECT * FROM """+coin.lower()+"""_user_paymentid WHERE `user_id`=%s AND `coin_name` = %s LIMIT 1 """
                 cur.execute(sql, (str(userID),coin))
                 result = cur.fetchone()
-                if result is None:
+                if not result:
                     result = {}
                     result['balance_wallet_address'] = userID
                     result['int_address'] = userID
