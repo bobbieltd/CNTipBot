@@ -672,8 +672,10 @@ async def unlockuser(ctx, user_id: str):
 
 @bot.command(pass_context=True, name='info', aliases=['wallet','address'], help=bot_help_info)
 async def info(ctx, coin: str = None):
+    COIN_NAME = None
     if coin is not None:
         coin = coin.upper()
+        COIN_NAME = coin.upper()
     # check if account locked
     account_lock = await alert_if_userlock(ctx, 'info')
     if account_lock:
@@ -777,7 +779,7 @@ async def info(ctx, coin: str = None):
         await ctx.message.author.send(f'**[ACCOUNT INFO]**\n\n'
                                     f'{EMOJI_SCALE} Registered Wallet: `'
                                     ''+ wallet['user_wallet_address'] + '`\n'
-                                    f'{get_notice_txt(coin.upper())}'
+                                    f'{get_notice_txt(COIN_NAME)}'
                                     f'{EMOJI_MONEYBAG} Deposit Address: `' + '`\n')
         await ctx.message.author.send(wallet['balance_wallet_address'])
     else:
@@ -786,7 +788,7 @@ async def info(ctx, coin: str = None):
                                     file=discord.File(config.qrsettings.path + wallet['balance_wallet_address'] + ".png"))
         await ctx.message.author.send(f'**[ACCOUNT INFO]**\n\n'
                                f'{EMOJI_SCALE} Registered Wallet: `NONE, Please register.`\n'
-                               f'{get_notice_txt(coin.upper())}'
+                               f'{get_notice_txt(COIN_NAME)}'
                                f'{EMOJI_MONEYBAG} Deposit Address: `' + '`\n')
         await ctx.message.author.send(wallet['balance_wallet_address'])
     return
