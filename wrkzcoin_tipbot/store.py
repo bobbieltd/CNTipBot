@@ -1351,13 +1351,13 @@ def sql_xmr_balance(userID: str, coin: str):
                 FeeExpense = 0
 
             balance = {}
+            print("Expense:"+Expense)
             balance['Expense'] = Expense or 0
-            balance['Expense'] = round(balance['Expense'], 4)
             balance['Income'] = Income or 0
             balance['TxExpense'] = TxExpense or 0
             balance['FeeExpense'] = FeeExpense or 0
-            balance['Adjust'] = float(balance['Income']) - float(balance['Expense']) - float(balance['TxExpense']) - float(balance['FeeExpense'])
-            print('store.sql_xmr_balance:'+json.dumps(balance))
+            balance['Adjust'] = int(balance['Income'] - balance['Expense'] - balance['TxExpense'] - balance['FeeExpense'])
+            print("store.sql_xmr_balance:"+json.dumps(balance))
             return balance
     except Exception as e:
         traceback.print_exc(file=sys.stdout)
