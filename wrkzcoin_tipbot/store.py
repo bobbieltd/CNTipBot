@@ -1276,7 +1276,7 @@ def sql_mv_xmr_multiple(user_from: str, user_tos, amount_each: float, coin: str,
         values_str.append(f"('{COIN_NAME}', '{user_from}', '{item}', {amount_each}, {wallet.get_decimal(COIN_NAME)}, '{tiptype.upper()}', {currentTs})\n")
     values_sql = "VALUES " + ",".join(values_str)
     try:
-        with conn.cursor() as cur: 
+        with conn.cursor(pymysql.cursors.DictCursor) as cur: 
             sql = """ INSERT INTO """+coin.lower()+"""_mv_tx (`coin_name`, `from_userid`, `to_userid`, `amount`, `decimal`, `type`, `date`) 
                       """+values_sql+""" """
             cur.execute(sql,)
@@ -1300,7 +1300,7 @@ async def sql_external_xmr_single(user_from: str, amount: float, to_address: str
                                                     amount, COIN_NAME, 0)
             if tx_hash:
                 updateTime = int(time.time())
-                with conn.cursor() as cur: 
+                with conn.cursor(pymysql.cursors.DictCursor) as cur: 
                     sql = """ INSERT INTO """+coin.lower()+"""_external_tx (`coin_name`, `user_id`, `amount`, `fee`, `decimal`, `to_address`, 
                               `type`, `date`, `tx_hash`, `tx_key`) 
                               VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s) """
@@ -1316,7 +1316,7 @@ def sql_xmr_balance(userID: str, coin: str):
     COIN_NAME = coin.upper()
     coin_family = getattr(getattr(config,"daemon"+COIN_NAME,"daemonWRKZ"),"coin_family","TRTL")
     try:
-        with conn.cursor() as cur: 
+        with conn.cursor(pymysql.cursors.DictCursor) as cur: 
             sql = """ SELECT SUM(amount) AS Expense FROM """+coin.lower()+"""_mv_tx WHERE `from_userid`=%s AND `coin_name` = %s """
             cur.execute(sql, (userID, COIN_NAME))
             result = cur.fetchone()
