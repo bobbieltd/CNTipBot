@@ -772,7 +772,7 @@ async def info(ctx, coin: str = None):
         img = img.resize((256, 256))
         img.save(config.qrsettings.path + wallet['balance_wallet_address'] + ".png")
 
-    if 'user_wallet_address' in wallet:
+    if 'user_wallet_address' in wallet and wallet['user_wallet_address']:
         await ctx.message.add_reaction(EMOJI_OK)
         await ctx.message.author.send("**QR for your Deposit**", 
                                     file=discord.File(config.qrsettings.path + wallet['balance_wallet_address'] + ".png"))
