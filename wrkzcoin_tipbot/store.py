@@ -1277,27 +1277,22 @@ def sql_mv_xmr_multiple(user_from: str, user_tos, amount_each: float, coin: str,
     coin_family = getattr(getattr(config,"daemon"+COIN_NAME,"daemonWRKZ"),"coin_family","TRTL")
     if tiptype.upper() not in ["TIPS", "TIPALL"]:
         return False
-    values_str = []
     currentTs = int(time.time())
-    for item in user_tos:
-        values_str.append(f"('{COIN_NAME}', '{user_from}', '{item}', {amount_each}, {wallet.get_decimal(COIN_NAME)}, '{tiptype.upper()}', {currentTs})\n")
-    values_sql = "VALUES " + ",".join(values_str)
-    try:
-        with conn.cursor(pymysql.cursors.DictCursor) as cur: 
-            sql = """ INSERT INTO """+coin.lower()+"""_mv_tx (`coin_name`, `from_userid`, `to_userid`, `amount`, `decimal`, `type`, `date`) 
-                      """+values_sql+""" """
-            cur.execute(sql,)
-        return True
-    except Exception as e:
-        traceback.print_exc(file=sys.stdout)
+    for to_user in user_tos:
+        try:
+            with conn.cursor(pymysql.cursors.DictCursor) as cur: 
+                sql = """ INSERT INTO """+coin.lower()+"""_mv_tx (`coin_name`, `from_userid`, `to_userid`, `amount`, `decimal`, `type`, `date`) 
+                          VALUES (%s, %s, %s, %s, %s, %s, %s) """
+                cur.execute(sql, (COIN_NAME, user_from, to_user, amount, wallet.get_decimal(COIN_NAME), tiptype.upper(), currentTs,))
+        except Exception as e:
+            traceback.print_exc(file=sys.stdout)
+            return False
     return False
 
 async def sql_external_xmr_single(user_from: str, amount: float, to_address: str, coin: str, tiptype: str):
     global conn
     COIN_NAME = coin.upper()
     coin_family = getattr(getattr(config,"daemon"+COIN_NAME,"daemonWRKZ"),"coin_family","TRTL")
-    if coin_family != "XMR":
-        return False
     if tiptype.upper() not in ["SEND", "WITHDRAW"]:
         return False
     try:
