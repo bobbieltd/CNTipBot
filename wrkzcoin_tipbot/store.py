@@ -1314,7 +1314,6 @@ async def sql_external_xmr_single(user_from: str, amount: float, to_address: str
 
 def sql_xmr_balance(userID: str, coin: str):
     global conn
-    print('store.sql_xmr_balance')
     COIN_NAME = coin.upper()
     coin_family = getattr(getattr(config,"daemon"+COIN_NAME,"daemonWRKZ"),"coin_family","TRTL")
     try:
@@ -1358,6 +1357,7 @@ def sql_xmr_balance(userID: str, coin: str):
             balance['TxExpense'] = TxExpense or 0
             balance['FeeExpense'] = FeeExpense or 0
             balance['Adjust'] = float(balance['Income']) - float(balance['Expense']) - float(balance['TxExpense']) - float(balance['FeeExpense'])
+            print('store.sql_xmr_balance:'+json.dumps(balance))
             return balance
     except Exception as e:
         traceback.print_exc(file=sys.stdout)
