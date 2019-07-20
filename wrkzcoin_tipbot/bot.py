@@ -1011,12 +1011,12 @@ async def botbalance(ctx, member: discord.Member = None, *args):
         return
 
     walletStatus = None
-    if COIN_NAME.upper() in MAINTENANCE_COIN:
+    if COIN_NAME in MAINTENANCE_COIN:
         await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} {COIN_NAME} in maintenance.')
         return
-    if COIN_NAME.upper() in ENABLE_COIN:
+    if COIN_NAME in ENABLE_COIN:
         walletStatus = await daemonrpc_client.getWalletStatus(COIN_NAME)
-    elif COIN_NAME.upper() in ENABLE_COIN_DOGE:
+    elif COIN_NAME in ENABLE_COIN_DOGE:
         walletStatus = await daemonrpc_client.getDaemonRPCStatus(COIN_NAME)
 
     if walletStatus is None:
@@ -1386,10 +1386,8 @@ async def withdraw(ctx, amount: str, coin: str = None):
         netFee = get_tx_fee(COIN_NAME)
         MinTx = get_min_tx_amount(COIN_NAME)
         MaxTX = get_max_tx_amount(COIN_NAME)
-        EMOJI_TIP = get_emoji(COIN_NAME)
     elif coin.upper() == "DOGE" or coin.upper() == "DOGECOIN":
         COIN_NAME = "DOGE"
-        EMOJI_TIP = EMOJI_DOGE
         MinTx = config.daemonDOGE.min_tx_amount
         MaxTX = config.daemonDOGE.max_tx_amount
         netFee = config.daemonDOGE.tx_fee
@@ -1424,7 +1422,7 @@ async def withdraw(ctx, amount: str, coin: str = None):
                                                               COIN_NAME, "WITHDRAW")
         if withdrawTx:
             withdrawAddress = wallet['user_wallet_address']
-            await ctx.message.add_reaction(EMOJI_TIP)
+            await ctx.message.add_reaction(get_emoji(COIN_NAME))
             await ctx.message.author.send(
                                    f'{EMOJI_ARROW_RIGHTHOOK} You have withdrawn {num_format_coin(real_amount, COIN_NAME)} '
                                    f'{COIN_NAME} to `{withdrawAddress}`.\n'
@@ -1494,7 +1492,7 @@ async def withdraw(ctx, amount: str, coin: str = None):
     withdrawal = await store.sql_withdraw(ctx.message.author.id, real_amount, COIN_NAME)
 
     if withdrawal:
-        await ctx.message.add_reaction(EMOJI_TIP)
+        await ctx.message.add_reaction(get_emoji(COIN_NAME))
         if botLogChan is not None:
             await botLogChan.send(f'A user successfully executed `.withdraw {num_format_coin(real_amount, COIN_NAME)} {COIN_NAME}`')
         await ctx.message.author.send(
@@ -1601,10 +1599,8 @@ async def donate(ctx, amount: str, coin: str = None):
         netFee = get_tx_fee(COIN_NAME)
         MinTx = get_min_tx_amount(COIN_NAME)
         MaxTX = get_max_tx_amount(COIN_NAME)
-        EMOJI_TIP = get_emoji(COIN_NAME)
     elif coin.upper() == "DOGE" or coin.upper() == "DOGECOIN":
         COIN_NAME = "DOGE"
-        EMOJI_TIP = EMOJI_DOGE
         MinTx = config.daemonDOGE.min_mv_amount
         MaxTX = config.daemonDOGE.max_mv_amount
         user_from = {}
@@ -1634,7 +1630,7 @@ async def donate(ctx, amount: str, coin: str = None):
         donateTx = store.sql_mv_doge_single(ctx.message.author.id, config.daemonDOGE.DonateAccount, real_amount,
                                             COIN_NAME, "DONATE")
         if donateTx:
-            await ctx.message.add_reaction(EMOJI_TIP)
+            await ctx.message.add_reaction(get_emoji(COIN_NAME))
             if botLogChan is not None:
                 await botLogChan.send(f'{EMOJI_MONEYFACE} TipBot got donation: {num_format_coin(real_amount, COIN_NAME)}{COIN_NAME}')
             await ctx.message.author.send(
@@ -1701,7 +1697,7 @@ async def donate(ctx, amount: str, coin: str = None):
     tip = await store.sql_donate(ctx.message.author.id, CoinAddress, real_amount, COIN_NAME)
 
     if tip:
-        await ctx.message.add_reaction(EMOJI_TIP)
+        await ctx.message.add_reaction(get_emoji(COIN_NAME))
         if botLogChan is not None:
             await botLogChan.send(f'{EMOJI_MONEYFACE} TipBot got donation: {num_format_coin(real_amount, COIN_NAME)}{COIN_NAME}')
         await ctx.message.author.send(
@@ -1797,14 +1793,14 @@ async def tip(ctx, amount: str, *args):
     tiponly_coins = serverinfo['tiponly'].split(",")
     if COIN_NAME == serverinfo['default_coin'].upper() or serverinfo['tiponly'].upper() == "ALLCOIN":
         pass
-    elif COIN_NAME.upper() not in tiponly_coins:
+    elif COIN_NAME not in tiponly_coins:
         await ctx.message.add_reaction(EMOJI_ERROR)
-        await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} {COIN_NAME.upper()} not in allowed coins set by server manager.')
+        await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} {COIN_NAME} not in allowed coins set by server manager.')
         return
     # End of checking allowed coins
     
-    if COIN_NAME.upper() in MAINTENANCE_COIN:
-        await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} {COIN_NAME.upper()} in maintenance.')
+    if COIN_NAME in MAINTENANCE_COIN:
+        await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} {COIN_NAME} in maintenance.')
         return
 
     if len(ctx.message.mentions) == 0:
@@ -1895,22 +1891,62 @@ async def tip(ctx, amount: str, *args):
     has_forwardtip = None
     address_to = None
     if COIN_NAME in ENABLE_COIN:
-        user_from = await store.sql_get_userwallet(str(ctx.message.author.id), COIN_NAME)
-        user_to = await store.sql_get_userwallet(str(member.id), COIN_NAME)
-        if user_to is None:
-            userregister = await store.sql_register_user(str(member.id), COIN_NAME)
-            user_to = await store.sql_get_userwallet(str(member.id), COIN_NAME)
         if user_to['forwardtip'] == "ON":
             has_forwardtip = True
         COIN_DEC = get_decimal(COIN_NAME)
         real_amount = int(amount * COIN_DEC)
-        netFee = get_tx_fee(COIN_NAME)
+        netFee = 0 # get_tx_fee(COIN_NAME)
         MinTx = get_min_tx_amount(COIN_NAME)
         MaxTX = get_max_tx_amount(COIN_NAME)
-        EMOJI_TIP = get_emoji(COIN_NAME)
-    elif COIN_NAME.upper() == "DOGE" or COIN_NAME.upper() == "DOGECOIN":
+        
+        user_from = await store.sql_get_userwallet(str(ctx.message.author.id), COIN_NAME)
+        userdata_balance = store.sql_xmr_balance(str(ctx.message.author.id), COIN_NAME)
+        if real_amount > float(user_from['actual_balance']) + float(userdata_balance['Adjust']):
+            await ctx.message.add_reaction(EMOJI_ERROR)
+            await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} Insufficient balance to send tip of '
+                            f'{num_format_coin(real_amount, COIN_NAME)} '
+                            f'{COIN_NAME} to {member.name}.')
+            return
+        if real_amount < MinTx:
+            await ctx.message.add_reaction(EMOJI_ERROR)
+            await ctx.send(f'{EMOJI_RED_NO} Transactions cannot be smaller than '
+                           f'{num_format_coin(MinTx, COIN_NAME)} '
+                           f'{COIN_NAME}.')
+            return
+        if real_amount > MaxTX:
+            await ctx.message.add_reaction(EMOJI_ERROR)
+            await ctx.send(f'{EMOJI_RED_NO} Transactions cannot be bigger than '
+                           f'{num_format_coin(MaxTX, COIN_NAME)} '
+                           f'{COIN_NAME}.')
+            return
+        tip = store.sql_mv_xmr_multiple(str(ctx.message.author.id), [str(member.id)], real_amount, COIN_NAME, "TIP")
+        if tip:
+            await ctx.message.add_reaction(get_emoji(COIN_NAME))
+            servername = serverinfo['servername']
+            # tipper shall always get DM. Ignore notifyList
+            try:
+                await ctx.message.author.send(
+                    f'{EMOJI_ARROW_RIGHTHOOK} Tip of {num_format_coin(real_amount, COIN_NAME)} '
+                    f'{COIN_NAME} '
+                    f'was sent to `{member.name}` in server `{servername}`\n')
+            except discord.Forbidden:
+                print('Adding: ' + str(ctx.message.author.id) + ' not to receive DM tip')
+                store.sql_toggle_tipnotify(str(ctx.message.author.id), "OFF")
+            if str(member.id) not in notifyList:
+                try:
+                    await member.send(
+                        f'{EMOJI_MONEYFACE} You got a tip of {num_format_coin(real_amount, COIN_NAME)} '
+                        f'{COIN_NAME} from `{ctx.message.author.name}` in server `{servername}`\n'
+                        f'{NOTIFICATION_OFF_CMD}')
+                except discord.Forbidden:
+                    print('Adding: ' + str(ctx.message.author.id) + ' not to receive DM tip')
+                    store.sql_toggle_tipnotify(str(member.id), "OFF")
+            return
+        else:
+            await ctx.message.add_reaction(EMOJI_ERROR)
+        return
+    elif COIN_NAME == "DOGE" or COIN_NAME == "DOGECOIN":
         COIN_NAME = "DOGE"
-        EMOJI_TIP = EMOJI_DOGE
         MinTx = config.daemonDOGE.min_mv_amount
         MaxTX = config.daemonDOGE.max_mv_amount
         user_from = {}
@@ -1945,7 +1981,7 @@ async def tip(ctx, amount: str, *args):
             if has_forwardtip:
                 await ctx.message.add_reaction(EMOJI_FORWARD)
             else:
-                await ctx.message.add_reaction(EMOJI_TIP)
+                await ctx.message.add_reaction(get_emoji(COIN_NAME))
             # tipper shall always get DM. Ignore notifyList
             try:
                 await ctx.message.author.send(
@@ -1967,26 +2003,6 @@ async def tip(ctx, amount: str, *args):
             return
         else:
             await ctx.message.add_reaction(EMOJI_ERROR)
-        return
-
-    if real_amount + netFee >= user_from['actual_balance']:
-        await ctx.message.add_reaction(EMOJI_ERROR)
-        await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} Insufficient balance to send tip of '
-                        f'{num_format_coin(real_amount, COIN_NAME)} '
-                        f'{COIN_NAME} to {member.name}.')
-        return
-
-    if real_amount > MaxTX:
-        await ctx.message.add_reaction(EMOJI_ERROR)
-        await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} Transactions cannot be bigger than '
-                       f'{num_format_coin(MaxTX, COIN_NAME)} '
-                       f'{COIN_NAME}.')
-        return
-    elif real_amount < MinTx:
-        await ctx.message.add_reaction(EMOJI_ERROR)
-        await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} Transactions cannot be smaller than '
-                       f'{num_format_coin(MinTx, COIN_NAME)} '
-                       f'{COIN_NAME}.')
         return
 
     # Get wallet status
@@ -2022,7 +2038,7 @@ async def tip(ctx, amount: str, *args):
         if has_forwardtip:
             await ctx.message.add_reaction(EMOJI_FORWARD)
         else:
-            await ctx.message.add_reaction(EMOJI_TIP)
+            await ctx.message.add_reaction(get_emoji(COIN_NAME))
         # tipper shall always get DM. Ignore notifyList
         try:
             await ctx.message.author.send(
@@ -2100,14 +2116,14 @@ async def tipall(ctx, amount: str, *args):
     tiponly_coins = serverinfo['tiponly'].split(",")
     if COIN_NAME == serverinfo['default_coin'].upper() or serverinfo['tiponly'].upper() == "ALLCOIN":
         pass
-    elif COIN_NAME.upper() not in tiponly_coins:
+    elif COIN_NAME not in tiponly_coins:
         await ctx.message.add_reaction(EMOJI_ERROR)
-        await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} {COIN_NAME.upper()} not in allowed coins set by server manager.')
+        await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} {COIN_NAME} not in allowed coins set by server manager.')
         return
     # End of checking allowed coins
 
-    if COIN_NAME.upper() in MAINTENANCE_COIN:
-        await ctx.send(f'{EMOJI_RED_NO} {COIN_NAME.upper()} in maintenance.')
+    if COIN_NAME in MAINTENANCE_COIN:
+        await ctx.send(f'{EMOJI_RED_NO} {COIN_NAME} in maintenance.')
         return
 
     # Check flood of tip
@@ -2143,14 +2159,12 @@ async def tipall(ctx, amount: str, *args):
         netFee = get_tx_fee(COIN_NAME)
         MinTx = get_min_tx_amount(COIN_NAME)
         MaxTX = get_max_tx_amount(COIN_NAME)
-        EMOJI_TIP = get_emoji(COIN_NAME)
-    elif COIN_NAME.upper() == "DOGE" or COIN_NAME.upper() == "DOGECOIN":
+    elif COIN_NAME == "DOGE" or COIN_NAME == "DOGECOIN":
         COIN_NAME = "DOGE"
-        EMOJI_TIP = EMOJI_DOGE
         MinTx = config.daemonDOGE.min_mv_amount
         MaxTX = config.daemonDOGE.max_mv_amount
         user_from = {}
-        user_from['address'] = await DOGE_LTC_getaccountaddress(ctx.message.author.id, COIN_NAME.upper())
+        user_from['address'] = await DOGE_LTC_getaccountaddress(ctx.message.author.id, COIN_NAME)
         user_from['actual_balance'] = float(await DOGE_LTC_getbalance_acc(ctx.message.author.id, COIN_NAME, 6))
         real_amount = float(amount)
         userdata_balance = store.sql_doge_balance(ctx.message.author.id, COIN_NAME)
@@ -2202,7 +2216,7 @@ async def tipall(ctx, amount: str, *args):
             tipAmount = num_format_coin(real_amount, COIN_NAME)
             ActualSpend_str = num_format_coin(amountDiv * len(memids), COIN_NAME)
             amountDiv_str = num_format_coin(amountDiv, COIN_NAME)
-            await ctx.message.add_reaction(EMOJI_TIP)
+            await ctx.message.add_reaction(get_emoji(COIN_NAME))
             # tipper shall always get DM. Ignore notifyList
             try:
                 await ctx.message.author.send(
@@ -2331,7 +2345,7 @@ async def tipall(ctx, amount: str, *args):
         traceback.print_exc(file=sys.stdout)
     if tip:
         servername = serverinfo['servername']
-        await ctx.message.add_reaction(EMOJI_TIP)
+        await ctx.message.add_reaction(get_emoji(COIN_NAME))
         if has_forwardtip:
             await ctx.message.add_reaction(EMOJI_FORWARD)
         await store.sql_update_some_balances(addresses, COIN_NAME)
@@ -2434,7 +2448,7 @@ async def send(ctx, amount: str, CoinAddress: str):
         if (len(CoinAddress) == 34) and CoinAddress.startswith("D"):
             COIN_NAME = "DOGE"
             addressLength = config.daemonDOGE.AddrLen
-            EMOJI_TIP = EMOJI_DOGE
+            get_emoji(COIN_NAME) = EMOJI_DOGE
             MinTx = config.daemonDOGE.min_tx_amount
             MaxTX = config.daemonDOGE.max_tx_amount
             netFee = config.daemonDOGE.tx_fee
@@ -2475,7 +2489,7 @@ async def send(ctx, amount: str, CoinAddress: str):
             SendTx = await store.sql_external_doge_single(ctx.message.author.id, real_amount, config.daemonDOGE.tx_fee,
                                                           CoinAddress, COIN_NAME, "SEND")
             if SendTx:
-                await ctx.message.add_reaction(EMOJI_TIP)
+                await ctx.message.add_reaction(get_emoji(COIN_NAME))
                 if botLogChan is not None:
                     await botLogChan.send(f'A user successfully executed `.send {num_format_coin(real_amount, COIN_NAME)} {COIN_NAME}`.')
                 await ctx.message.author.send(f'{EMOJI_ARROW_RIGHTHOOK} You have sent {num_format_coin(real_amount, COIN_NAME)} '
@@ -2502,9 +2516,8 @@ async def send(ctx, amount: str, CoinAddress: str):
     real_amount = int(amount * COIN_DEC)
     addressLength = get_addrlen(COIN_NAME)
     IntaddressLength = get_intaddrlen(COIN_NAME)
-    EMOJI_TIP = get_emoji(COIN_NAME)
 
-    if COIN_NAME.upper() in MAINTENANCE_COIN:
+    if COIN_NAME in MAINTENANCE_COIN:
         await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} {COIN_NAME} in maintenance.')
         return
 
@@ -2634,7 +2647,7 @@ async def send(ctx, amount: str, CoinAddress: str):
         except Exception as e:
             traceback.print_exc(file=sys.stdout)
         if tip:
-            await ctx.message.add_reaction(EMOJI_TIP)
+            await ctx.message.add_reaction(get_emoji(COIN_NAME))
             if botLogChan is not None:
                 await botLogChan.send(f'A user successfully executed `.send {num_format_coin(real_amount, COIN_NAME)} {COIN_NAME}` with paymentid.')
             await ctx.message.author.send(
@@ -2658,7 +2671,7 @@ async def send(ctx, amount: str, CoinAddress: str):
         except Exception as e:
             traceback.print_exc(file=sys.stdout)
         if tip:
-            await ctx.message.add_reaction(EMOJI_TIP)
+            await ctx.message.add_reaction(get_emoji(COIN_NAME))
             if botLogChan is not None:
                 await botLogChan.send(f'A user successfully executed `.send {num_format_coin(real_amount, COIN_NAME)} {COIN_NAME}`.')
             await ctx.message.author.send(f'{EMOJI_ARROW_RIGHTHOOK} You have sent {num_format_coin(real_amount, COIN_NAME)} '
@@ -2688,18 +2701,18 @@ async def address(ctx, *args):
                     args = []
                     args[0] = serverinfo['default_coin'].upper()
                 COIN_NAME = args[0]
-                if COIN_NAME.upper() not in ENABLE_COIN:
-                    if COIN_NAME.upper() in ENABLE_COIN_DOGE:
-                        COIN_NAME = COIN_NAME.upper()
+                if COIN_NAME not in ENABLE_COIN:
+                    if COIN_NAME in ENABLE_COIN_DOGE:
+                        COIN_NAME = COIN_NAME
                     elif 'default_coin' in serverinfo:
                         COIN_NAME = serverinfo['default_coin'].upper()
                 else:
-                    COIN_NAME = COIN_NAME.upper()
+                    COIN_NAME = COIN_NAME
             except:
                 if 'default_coin' in serverinfo:
                     COIN_NAME = serverinfo['default_coin'].upper()
             print("COIN_NAME: " + COIN_NAME)
-        donateAddress = get_donate_address(COIN_NAME.upper()) or 'WrkzRNDQDwFCBynKPc459v3LDa1gEGzG3j962tMUBko1fw9xgdaS9mNiGMgA9s1q7hS1Z8SGRVWzcGc8Sh8xsvfZ6u2wJEtoZB'
+        donateAddress = get_donate_address(COIN_NAME) or 'WrkzRNDQDwFCBynKPc459v3LDa1gEGzG3j962tMUBko1fw9xgdaS9mNiGMgA9s1q7hS1Z8SGRVWzcGc8Sh8xsvfZ6u2wJEtoZB'
         await ctx.send('**[ ADDRESS CHECKING EXAMPLES ]**\n\n'
                        f'`.address {donateAddress}`\n'
                        'That will check if the address is valid. Integrated address is also supported. '
@@ -3246,13 +3259,13 @@ async def height(ctx, coin: str = None):
             serverinfo = store.sql_info_by_server(str(ctx.guild.id))
             try:
                 COIN_NAME = args[0]
-                if COIN_NAME.upper() not in ENABLE_COIN:
-                    if COIN_NAME.upper() in ENABLE_COIN_DOGE:
-                        COIN_NAME = COIN_NAME.upper()
+                if COIN_NAME not in ENABLE_COIN:
+                    if COIN_NAME in ENABLE_COIN_DOGE:
+                        COIN_NAME = COIN_NAME
                     elif 'default_coin' in serverinfo:
                         COIN_NAME = serverinfo['default_coin'].upper()
                 else:
-                    COIN_NAME = COIN_NAME.upper()
+                    COIN_NAME = COIN_NAME
             except:
                 if 'default_coin' in serverinfo:
                     COIN_NAME = serverinfo['default_coin'].upper()
@@ -3446,18 +3459,18 @@ async def addressqr(ctx, *args):
             serverinfo = store.sql_info_by_server(str(ctx.guild.id))
             try:
                 COIN_NAME = args[0]
-                if COIN_NAME.upper() not in ENABLE_COIN:
-                    if COIN_NAME.upper() in ENABLE_COIN_DOGE:
-                        COIN_NAME = COIN_NAME.upper()
+                if COIN_NAME not in ENABLE_COIN:
+                    if COIN_NAME in ENABLE_COIN_DOGE:
+                        COIN_NAME = COIN_NAME
                     elif 'default_coin' in serverinfo:
                         COIN_NAME = serverinfo['default_coin'].upper()
                 else:
-                    COIN_NAME = COIN_NAME.upper()
+                    COIN_NAME = COIN_NAME
             except:
                 if 'default_coin' in serverinfo:
                     COIN_NAME = serverinfo['default_coin'].upper()
             print("COIN_NAME: " + COIN_NAME)
-        donateAddress = get_donate_address(COIN_NAME.upper()) or 'WrkzRNDQDwFCBynKPc459v3LDa1gEGzG3j962tMUBko1fw9xgdaS9mNiGMgA9s1q7hS1Z8SGRVWzcGc8Sh8xsvfZ6u2wJEtoZB'
+        donateAddress = get_donate_address(COIN_NAME) or 'WrkzRNDQDwFCBynKPc459v3LDa1gEGzG3j962tMUBko1fw9xgdaS9mNiGMgA9s1q7hS1Z8SGRVWzcGc8Sh8xsvfZ6u2wJEtoZB'
         await ctx.send('**[ QR ADDRESS EXAMPLES ]**\n\n'
                        f'```.qr {donateAddress}\n'
                        'This will generate a QR address.'
@@ -4073,14 +4086,12 @@ async def _tip(ctx, amount, coin: str = None):
         netFee = get_tx_fee(COIN_NAME)
         MinTx = get_min_tx_amount(COIN_NAME)
         MaxTX = get_max_tx_amount(COIN_NAME)
-        EMOJI_TIP = get_emoji(COIN_NAME)
-    elif COIN_NAME.upper() == "DOGE" or COIN_NAME.upper() == "DOGECOIN":
+    elif COIN_NAME == "DOGE" or COIN_NAME == "DOGECOIN":
         COIN_NAME = "DOGE"
-        EMOJI_TIP = EMOJI_DOGE
         MinTx = config.daemonDOGE.min_mv_amount
         MaxTX = config.daemonDOGE.max_mv_amount
         user_from = {}
-        user_from['address'] = await DOGE_LTC_getaccountaddress(ctx.message.author.id, COIN_NAME.upper())
+        user_from['address'] = await DOGE_LTC_getaccountaddress(ctx.message.author.id, COIN_NAME)
         user_from['actual_balance'] = float(await DOGE_LTC_getbalance_acc(ctx.message.author.id, COIN_NAME, 6))
         real_amount = float(amount)
         userdata_balance = store.sql_doge_balance(ctx.message.author.id, COIN_NAME)
@@ -4128,7 +4139,7 @@ async def _tip(ctx, amount, coin: str = None):
             servername = serverinfo['servername']
             tipAmount = num_format_coin(TotalAmount, COIN_NAME)
             amountDiv_str = num_format_coin(real_amount, COIN_NAME)
-            await ctx.message.add_reaction(EMOJI_TIP)
+            await ctx.message.add_reaction(get_emoji(COIN_NAME))
             # tipper shall always get DM. Ignore notifyList
             try:
                 await ctx.message.author.send(
@@ -4268,7 +4279,7 @@ async def _tip(ctx, amount, coin: str = None):
             await store.sql_update_some_balances(addresses, COIN_NAME)
         except Exception as e:
             traceback.print_exc(file=sys.stdout)
-        await ctx.message.add_reaction(EMOJI_TIP)
+        await ctx.message.add_reaction(get_emoji(COIN_NAME))
         if has_forwardtip:
             await ctx.message.add_reaction(EMOJI_FORWARD)
         # tipper shall always get DM. Ignore notifyList
@@ -4324,14 +4335,12 @@ async def _tip_talker(ctx, amount, list_talker, coin: str = None):
         netFee = get_tx_fee(COIN_NAME)
         MinTx = get_min_tx_amount(COIN_NAME)
         MaxTX = get_max_tx_amount(COIN_NAME)
-        EMOJI_TIP = get_emoji(COIN_NAME)
-    elif COIN_NAME.upper() == "DOGE" or COIN_NAME.upper() == "DOGECOIN":
+    elif COIN_NAME == "DOGE" or COIN_NAME == "DOGECOIN":
         COIN_NAME = "DOGE"
-        EMOJI_TIP = EMOJI_DOGE
         MinTx = config.daemonDOGE.min_mv_amount
         MaxTX = config.daemonDOGE.max_mv_amount
         user_from = {}
-        user_from['address'] = await DOGE_LTC_getaccountaddress(ctx.message.author.id, COIN_NAME.upper())
+        user_from['address'] = await DOGE_LTC_getaccountaddress(ctx.message.author.id, COIN_NAME)
         user_from['actual_balance'] = float(await DOGE_LTC_getbalance_acc(ctx.message.author.id, COIN_NAME, 6))
         real_amount = float(amount)
         userdata_balance = store.sql_doge_balance(ctx.message.author.id, COIN_NAME)
@@ -4376,7 +4385,7 @@ async def _tip_talker(ctx, amount, list_talker, coin: str = None):
             traceback.print_exc(file=sys.stdout)
         if tips:
             servername = serverinfo['servername']
-            await ctx.message.add_reaction(EMOJI_TIP)
+            await ctx.message.add_reaction(get_emoji(COIN_NAME))
             # tipper shall always get DM. Ignore notifyList
             try:
                 await ctx.message.author.send(
@@ -4520,7 +4529,7 @@ async def _tip_talker(ctx, amount, list_talker, coin: str = None):
         userfrom = await store.sql_get_userwallet(str(ctx.message.author.id), COIN_NAME)
         addresses.append(userfrom['balance_wallet_address'])
         await store.sql_update_some_balances(addresses, COIN_NAME)
-        await ctx.message.add_reaction(EMOJI_TIP)
+        await ctx.message.add_reaction(get_emoji(COIN_NAME))
         if has_forwardtip:
             await ctx.message.add_reaction(EMOJI_FORWARD)
         # tipper shall always get DM. Ignore notifyList
