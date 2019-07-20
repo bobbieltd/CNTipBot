@@ -1283,3 +1283,109 @@ def decrypt_string(decrypted: str):
 
     return decrypted
 
+# XMR Based Offchain
+def sql_mv_xmr_multiple(user_from: str, user_tos, amount_each: float, coin: str, tiptype: str):
+    # user_tos is array "account1", "account2", ....
+    global conn_cursors
+    COIN_NAME = coin.upper()
+    coin_family = getattr(getattr(config,"daemon"+COIN_NAME),"coin_family","TRTL")
+    if coin_family != "XMR":
+        return False
+    if tiptype.upper() not in ["TIPS", "TIPALL"]:
+        return False
+    values_str = []
+    currentTs = int(time.time())
+    for item in user_tos:
+        values_str.append(f"('{COIN_NAME}', '{user_from}', '{item}', {amount_each}, {wallet.get_decimal(COIN_NAME)}, '{tiptype.upper()}', {currentTs})\n")
+    values_sql = "VALUES " + ",".join(values_str)
+    try:
+        openConnection_cursors()
+        with conn_cursors.cursor() as cur: 
+            sql = """ INSERT INTO """+coin.lower()+"""_mv_tx (`coin_name`, `from_userid`, `to_userid`, `amount`, `decimal`, `type`, `date`) 
+                      """+values_sql+""" """
+            cur.execute(sql,)
+            conn_cursors.commit()
+        return True
+    except Exception as e:
+        traceback.print_exc(file=sys.stdout)
+    return False
+
+async def sql_external_xmr_single(user_from: str, amount: float, to_address: str, coin: str, tiptype: str):
+    global conn_cursors
+    COIN_NAME = coin.upper()
+    coin_family = getattr(getattr(config,"daemon"+COIN_NAME),"coin_family","TRTL")
+    if coin_family != "XMR":
+        return False
+    if tiptype.upper() not in ["SEND", "WITHDRAW"]:
+        return False
+    try:
+        openConnection_cursors()
+        tx_hash = None
+        if coin_family == "XMR":
+            tx_hash = await wallet.send_transaction('TIPBOT', to_address, 
+                                                    amount, COIN_NAME, 0)
+            if tx_hash:
+                updateTime = int(time.time())
+                with conn_cursors.cursor() as cur: 
+                    sql = """ INSERT INTO """+coin.lower()+"""_external_tx (`coin_name`, `user_id`, `amount`, `fee`, `decimal`, `to_address`, 
+                              `type`, `date`, `tx_hash`, `tx_key`) 
+                              VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s) """
+                    cur.execute(sql, (COIN_NAME, user_from, amount, tx_hash['fee'], wallet.get_decimal(COIN_NAME), to_address, tiptype.upper(), int(time.time()), tx_hash['tx_hash'], tx_hash['tx_key'],))
+                    conn_cursors.commit()
+        return tx_hash
+    except Exception as e:
+        traceback.print_exc(file=sys.stdout)
+    return False
+
+def sql_xmr_balance(userID: str, coin: str):
+    global conn_cursors
+    print('store.sql_xmr_balance')
+    COIN_NAME = coin.upper()
+    coin_family = getattr(getattr(config,"daemon"+COIN_NAME),"coin_family","TRTL")
+    if coin_family != "XMR":
+        return False
+    try:
+        openConnection_cursors()
+        with conn_cursors.cursor() as cur: 
+            sql = """ SELECT SUM(amount) AS Expense FROM """+coin.lower()+"""_mv_tx WHERE `from_userid`=%s AND `coin_name` = %s """
+            cur.execute(sql, (userID, COIN_NAME))
+            result = cur.fetchone()
+            if result:
+                Expense = result['Expense']
+            else:
+                Expense = 0
+
+            sql = """ SELECT SUM(amount) AS Income FROM """+coin.lower()+"""_mv_tx WHERE `to_userid`=%s AND `coin_name` = %s """
+            cur.execute(sql, (userID, COIN_NAME))
+            result = cur.fetchone()
+            if result:
+                Income = result['Income']
+            else:
+                Income = 0
+
+            sql = """ SELECT SUM(amount) AS TxExpense FROM """+coin.lower()+"""_external_tx WHERE `user_id`=%s AND `coin_name` = %s """
+            cur.execute(sql, (userID, COIN_NAME))
+            result = cur.fetchone()
+            if result:
+                TxExpense = result['TxExpense']
+            else:
+                TxExpense = 0
+
+            sql = """ SELECT SUM(fee) AS FeeExpense FROM """+coin.lower()+"""_external_tx WHERE `user_id`=%s AND `coin_name` = %s """
+            cur.execute(sql, (userID, COIN_NAME))
+            result = cur.fetchone()
+            if result:
+                FeeExpense = result['FeeExpense']
+            else:
+                FeeExpense = 0
+
+            balance = {}
+            balance['Expense'] = Expense or 0
+            balance['Expense'] = round(balance['Expense'], 4)
+            balance['Income'] = Income or 0
+            balance['TxExpense'] = TxExpense or 0
+            balance['FeeExpense'] = FeeExpense or 0
+            balance['Adjust'] = float(balance['Income']) - float(balance['Expense']) - float(balance['TxExpense']) - float(balance['FeeExpense'])
+            return balance
+    except Exception as e:
+        traceback.print_exc(file=sys.stdout)
