@@ -1283,7 +1283,7 @@ def sql_mv_xmr_multiple(user_from: str, user_tos, amount_each: float, coin: str,
             with conn.cursor(pymysql.cursors.DictCursor) as cur: 
                 sql = """ INSERT INTO """+coin.lower()+"""_mv_tx (`coin_name`, `from_userid`, `to_userid`, `amount`, `decimal`, `type`, `date`) 
                           VALUES (%s, %s, %s, %s, %s, %s, %s) """
-                cur.execute(sql, (COIN_NAME, user_from, to_user, amount, wallet.get_decimal(COIN_NAME), tiptype.upper(), currentTs,))
+                cur.execute(sql, (COIN_NAME, user_from, to_user, amount_each, wallet.get_decimal(COIN_NAME), tiptype.upper(), currentTs,))
         except Exception as e:
             traceback.print_exc(file=sys.stdout)
             return False
