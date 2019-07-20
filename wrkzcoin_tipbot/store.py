@@ -1351,7 +1351,6 @@ def sql_xmr_balance(userID: str, coin: str):
                 FeeExpense = 0
 
             balance = {}
-            print("Expense:"+Expense)
             balance['Expense'] = Expense or 0
             balance['Income'] = Income or 0
             balance['TxExpense'] = TxExpense or 0
