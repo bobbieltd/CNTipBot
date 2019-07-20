@@ -794,8 +794,9 @@ async def info(ctx, coin: str = None):
 
 @bot.command(pass_context=True, name='balance', aliases=['bal'], help=bot_help_balance)
 async def balance(ctx, coin: str = None):
+    COIN_NAME = None
     if coin is not None:
-        coin = coin.upper()
+        COIN_NAME = coin.upper()
     # check if account locked
     account_lock = await alert_if_userlock(ctx, 'balance')
     if account_lock:
@@ -827,33 +828,31 @@ async def balance(ctx, coin: str = None):
         prefixChar = server_prefix
     # Get wallet status
     walletStatus = None
-    if (coin is None) or (PUBMSG == "PUB"):
+    if COIN_NAME is None:
         table_data = [
             ['TICKER', 'Available', 'Locked']
         ]
-        for coinItem in ENABLE_COIN:
-            if coinItem not in MAINTENANCE_COIN:
-                COIN_DEC = get_decimal(coinItem.upper())
-                wallet = await store.sql_get_userwallet(str(ctx.message.author.id), coinItem.upper())
+        for COIN_NAME in [coinItem.upper() for coinItem in ENABLE_COIN]:
+            if COIN_NAME not in MAINTENANCE_COIN:
+                wallet = await store.sql_get_userwallet(str(ctx.message.author.id), COIN_NAME)
                 if wallet is None:
-                    userregister = await store.sql_register_user(str(ctx.message.author.id), coinItem.upper())
-                    wallet = await store.sql_get_userwallet(str(ctx.message.author.id), coinItem.upper())
-                if wallet is None:
-                    await ctx.send(f'{ctx.author.mention} Internal Error for `{prefixChar}balance` during {coinItem.upper()}')
-                    return
-                else:
-                    balance_actual = num_format_coin(wallet['actual_balance'], coinItem.upper())
-                    balance_locked = num_format_coin(wallet['locked_balance'], coinItem.upper())
-                    balance_total = num_format_coin((wallet['actual_balance'] + wallet['locked_balance']), coinItem.upper())
-                    coinName = coinItem.upper()
-                    if 'user_wallet_address' not in wallet:
-                        coinName += '*'
-                    if wallet['forwardtip'] == "ON":
-                        coinName += ' >>'
-                    table_data.append([coinName, balance_actual, balance_locked])
-                    pass
+                    userregister = await store.sql_register_user(str(ctx.message.author.id), COIN_NAME)
+                    wallet = await store.sql_get_userwallet(str(ctx.message.author.id), COIN_NAME)
+                if wallet:
+                    actual = wallet['actual_balance']
+                    locked = wallet['locked_balance']
+                    userdata_balance = store.sql_xmr_balance(str(ctx.message.author.id), COIN_NAME)
+                    balance_actual = num_format_coin(actual + float(userdata_balance['Adjust']), COIN_NAME)
+                    if actual == locked:
+                        balance_locked = num_format_coin(0, COIN_NAME)
+                    else:
+                        if locked - actual + float(userdata_balance['Adjust']) < 0:
+                            balance_locked =  num_format_coin(0, COIN_NAME)
+                        else:
+                            balance_locked =  num_format_coin(locked - actual + float(userdata_balance['Adjust']), COIN_NAME)
+                    table_data.append([COIN_NAME, balance_actual, balance_locked])
             else:
-                table_data.append([coinItem.upper(), "***", "***"])
+                table_data.append([COIN_NAME, "***", "***"])
         # Add DOGE
         COIN_NAME = "DOGE"
         if COIN_NAME not in MAINTENANCE_COIN:
@@ -892,16 +891,26 @@ async def balance(ctx, coin: str = None):
                             f'Related command: `{prefixChar}balance TICKER` or `{prefixChar}info TICKER`\n'
                             f'{get_notice_txt(COIN_NAME)}')
         return
-    elif coin.upper() in MAINTENANCE_COIN:
+    elif COIN_NAME in MAINTENANCE_COIN:
         await ctx.send(f'{EMOJI_RED_NO} {coin.upper()} in maintenance.')
         return
-    elif coin.upper() in ENABLE_COIN:
-        walletStatus = await daemonrpc_client.getWalletStatus(coin.upper())
-        COIN_NAME = coin.upper()
-        COIN_DEC = get_decimal(COIN_NAME)
+    elif COIN_NAME in ENABLE_COIN:
+        wallet = await store.sql_get_userwallet(str(ctx.message.author.id), COIN_NAME)
+        if wallet:
+            actual = wallet['actual_balance']
+            locked = wallet['locked_balance']
+            userdata_balance = store.sql_xmr_balance(str(ctx.message.author.id), COIN_NAME)
+            balance_actual = num_format_coin(actual + float(userdata_balance['Adjust']), COIN_NAME)
+            if actual == locked:
+                balance_locked = num_format_coin(0, COIN_NAME)
+            else:
+                if locked - actual + float(userdata_balance['Adjust']) < 0:
+                    balance_locked =  num_format_coin(0, COIN_NAME)
+                else:
+                    balance_locked =  num_format_coin(locked - actual + float(userdata_balance['Adjust']), COIN_NAME)
+            table_data.append([COIN_NAME, balance_actual, balance_locked])
         pass
-    elif coin.upper() == "DOGE":
-        COIN_NAME = "DOGE"
+    elif COIN_NAME == "DOGE":
         depositAddress = await DOGE_LTC_getaccountaddress(ctx.message.author.id, COIN_NAME)
         actual = float(await DOGE_LTC_getbalance_acc(ctx.message.author.id, COIN_NAME, 6))
         locked = float(await DOGE_LTC_getbalance_acc(ctx.message.author.id, COIN_NAME, 1))
@@ -926,31 +935,10 @@ async def balance(ctx, coin: str = None):
                                f'{get_notice_txt(COIN_NAME)}')
         return
 
-    if coin.upper() not in ENABLE_COIN:
+    # Check if enable
+    if COIN_NAME not in ENABLE_COIN:
         await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} There is no such ticker {coin.upper()}.')
         return
-
-    if walletStatus is None:
-        await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} {coin.upper()} Wallet service hasn\'t started.')
-        return
-    else:
-        localDaemonBlockCount = int(walletStatus['blockCount'])
-        networkBlockCount = int(walletStatus['knownBlockCount'])
-        if networkBlockCount - localDaemonBlockCount >= 20:
-            # if height is different by 20
-            t_percent = '{:,.2f}'.format(truncate(localDaemonBlockCount / networkBlockCount * 100, 2))
-            t_localDaemonBlockCount = '{:,}'.format(localDaemonBlockCount)
-            t_networkBlockCount = '{:,}'.format(networkBlockCount)
-            await ctx.message.add_reaction(EMOJI_WARNING)
-            await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} {COIN_NAME} Wallet service hasn\'t sync fully with network or being re-sync. More info:\n```'
-                           f'networkBlockCount:     {t_networkBlockCount}\n'
-                           f'localDaemonBlockCount: {t_localDaemonBlockCount}\n'
-                           f'Progress %:            {t_percent}\n```'
-                           )
-            return
-        else:
-            pass
-    # End of wallet status
 
     # Check if maintenance
     if IS_MAINTENANCE == 1:

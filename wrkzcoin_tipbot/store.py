@@ -211,9 +211,10 @@ async def sql_get_userwallet(userID, coin: str = None):
                     result = {}
                     result['balance_wallet_address'] = userID
                     result['int_address'] = userID
+                    result['forwardtip'] = False
                     result['actual_balance'] = 0
                     result['locked_balance'] = 0
-                    result['lastUpdate'] = int(time.time())
+                    result['lastUpdate'] = int(datetime.now())
                     
             elif coin in ENABLE_COIN_DOGE:
                 sql = """ SELECT user_id, balance_wallet_address, user_wallet_address, balance_wallet_address_ts, 
@@ -1216,7 +1217,7 @@ def sql_set_forwardtip(userID: str, coin: str, option: str):
     if coin in ENABLE_COIN:
         try:
             with conn.cursor() as cur: 
-                sql = """ UPDATE """+coin.lower()+"""_user SET forwardtip='"""+option.upper()+"""' WHERE user_id=%s """
+                sql = """ UPDATE """+coin.lower()+"""_user_paymentid SET forwardtip='"""+option.upper()+"""' WHERE user_id=%s """
                 cur.execute(sql, (str(userID),))
         except Exception as e:
             traceback.print_exc(file=sys.stdout)
