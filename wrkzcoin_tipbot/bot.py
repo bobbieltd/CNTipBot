@@ -2450,7 +2450,6 @@ async def send(ctx, amount: str, CoinAddress: str):
         if (len(CoinAddress) == 34) and CoinAddress.startswith("D"):
             COIN_NAME = "DOGE"
             addressLength = config.daemonDOGE.AddrLen
-            get_emoji(COIN_NAME) = EMOJI_DOGE
             MinTx = config.daemonDOGE.min_tx_amount
             MaxTX = config.daemonDOGE.max_tx_amount
             netFee = config.daemonDOGE.tx_fee
