@@ -1288,7 +1288,7 @@ def sql_mv_xmr_multiple(user_from: str, user_tos, amount_each: float, coin: str,
     # user_tos is array "account1", "account2", ....
     global conn_cursors
     COIN_NAME = coin.upper()
-    coin_family = getattr(getattr(config,"daemon"+COIN_NAME),"coin_family","TRTL")
+    coin_family = getattr(getattr(config,"daemon"+COIN_NAME,"daemonWRKZ"),"coin_family","TRTL")
     if coin_family != "XMR":
         return False
     if tiptype.upper() not in ["TIPS", "TIPALL"]:
@@ -1313,7 +1313,7 @@ def sql_mv_xmr_multiple(user_from: str, user_tos, amount_each: float, coin: str,
 async def sql_external_xmr_single(user_from: str, amount: float, to_address: str, coin: str, tiptype: str):
     global conn_cursors
     COIN_NAME = coin.upper()
-    coin_family = getattr(getattr(config,"daemon"+COIN_NAME),"coin_family","TRTL")
+    coin_family = getattr(getattr(config,"daemon"+COIN_NAME,"daemonWRKZ"),"coin_family","TRTL")
     if coin_family != "XMR":
         return False
     if tiptype.upper() not in ["SEND", "WITHDRAW"]:
@@ -1341,7 +1341,7 @@ def sql_xmr_balance(userID: str, coin: str):
     global conn_cursors
     print('store.sql_xmr_balance')
     COIN_NAME = coin.upper()
-    coin_family = getattr(getattr(config,"daemon"+COIN_NAME),"coin_family","TRTL")
+    coin_family = getattr(getattr(config,"daemon"+COIN_NAME,"daemonWRKZ"),"coin_family","TRTL")
     if coin_family != "XMR":
         return False
     try:
