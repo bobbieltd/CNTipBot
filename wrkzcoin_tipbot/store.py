@@ -204,15 +204,24 @@ async def sql_get_userwallet(userID, coin: str = None):
         sql = None
         with conn.cursor() as cur:
             if coin in ENABLE_COIN:
-                sql = """ SELECT user_id, balance_wallet_address, user_wallet_address, balance_wallet_address_ts, 
-                          balance_wallet_address_ch, lastOptimize, forwardtip 
-                          FROM """+coin.lower()+"""_user WHERE `user_id`=%s LIMIT 1 """
+                sql = """ SELECT * FROM """+coin.lower()+"""_user_paymentid WHERE `user_id`=%s AND `coin_name` = %s LIMIT 1 """
+                cur.execute(sql, (str(userID),))
+                result = cur.fetchone()
+                if result is None:
+                    result = {}
+                    result['balance_wallet_address'] = userID
+                    result['int_address'] = userID
+                    result['actual_balance'] = 0
+                    result['locked_balance'] = 0
+                    result['lastUpdate'] = int(time.time())
+                    
             elif coin in ENABLE_COIN_DOGE:
                 sql = """ SELECT user_id, balance_wallet_address, user_wallet_address, balance_wallet_address_ts, 
                           balance_wallet_address_ch, lastUpdate 
                           FROM """+coin.lower()+"""_user WHERE `user_id`=%s LIMIT 1 """
-            cur.execute(sql, (str(userID),))
-            result = cur.fetchone()
+
+                cur.execute(sql, (str(userID),))
+                result = cur.fetchone()
             if result is None:
                 if coin in ENABLE_COIN_DOGE:
                     # Sometimes balance account exists
@@ -227,43 +236,11 @@ async def sql_get_userwallet(userID, coin: str = None):
                 else:
                     return None
             else:
-                userwallet = {}
-                if result[1]:
-                    userwallet['balance_wallet_address'] = result[1] 
-
+                userwallet = result
+                userwallet['balance_wallet_address'] = userwallet['int_address']
                 if coin in ENABLE_COIN_DOGE:
                     depositAddress = await wallet.DOGE_LTC_getaccountaddress(str(userID), coin)
                     userwallet['balance_wallet_address'] = depositAddress
-              
-                if result[2] is not None:
-                    userwallet['user_wallet_address'] = result[2]
-                if result[3] is not None:
-                    userwallet['balance_wallet_address_ts'] = result[3]
-                if result[4] is not None:
-                    userwallet['balance_wallet_address_ch'] = result[4]
-                if coin in ENABLE_COIN:
-                    if result[5]:
-                        userwallet['lastOptimize'] = result[5]
-                    if result[6]:
-                        userwallet['forwardtip'] = result[6]
-                with conn.cursor() as cur:
-                    result2 = None
-                    if coin in ENABLE_COIN:
-                        sql = """ SELECT balance_wallet_address, actual_balance, locked_balance, lastUpdate 
-                                  FROM """+coin.lower()+"""_walletapi 
-                                  WHERE `balance_wallet_address`=%s LIMIT 1 """
-                        cur.execute(sql, (userwallet['balance_wallet_address'],))
-                        result2 = cur.fetchone()
-                if coin in ENABLE_COIN:
-                    if result2:
-                        userwallet['actual_balance'] = int(result2[1])
-                        userwallet['locked_balance'] = int(result2[2])
-                        userwallet['lastUpdate'] = int(result2[3])
-                    else:
-                        userwallet['actual_balance'] = 0
-                        userwallet['locked_balance'] = 0
-                        userwallet['lastUpdate'] = int(time.time())
-                if coin in ENABLE_COIN_DOGE:
                     # Call to API instead
                     actual = float(await wallet.DOGE_LTC_getbalance_acc(str(userID), coin, 6))
                     locked = float(await wallet.DOGE_LTC_getbalance_acc(str(userID), coin, 1))
@@ -279,7 +256,7 @@ async def sql_get_userwallet(userID, coin: str = None):
                 #print(userwallet)
                 return userwallet
     except Exception as e:
-        print("Error sql_get_userwallet: "+str(e))
+        traceback.print_exc(file=sys.stdout)
 
 def sql_get_countLastTip(userID, lastDuration: int, coin: str = None):
     global conn
