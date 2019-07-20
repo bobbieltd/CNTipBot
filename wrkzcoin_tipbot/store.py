@@ -1275,7 +1275,7 @@ def sql_mv_xmr_multiple(user_from: str, user_tos, amount_each: float, coin: str,
     global conn
     COIN_NAME = coin.upper()
     coin_family = getattr(getattr(config,"daemon"+COIN_NAME,"daemonWRKZ"),"coin_family","TRTL")
-    if tiptype.upper() not in ["TIPS", "TIPALL"]:
+    if tiptype.upper() not in ["TIP","TIPS", "TIPALL"]:
         return False
     currentTs = int(time.time())
     for to_user in user_tos:
