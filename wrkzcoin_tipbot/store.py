@@ -1351,10 +1351,10 @@ def sql_xmr_balance(userID: str, coin: str):
                 FeeExpense = 0
 
             balance = {}
-            balance['Expense'] = Expense or 0
-            balance['Income'] = Income or 0
-            balance['TxExpense'] = TxExpense or 0
-            balance['FeeExpense'] = FeeExpense or 0
+            balance['Expense'] = int(Expense) or 0
+            balance['Income'] = int(Income) or 0
+            balance['TxExpense'] = int(TxExpense) or 0
+            balance['FeeExpense'] = int(FeeExpense) or 0
             balance['Adjust'] = int(balance['Income'] - balance['Expense'] - balance['TxExpense'] - balance['FeeExpense'])
             print("store.sql_xmr_balance:"+json.dumps(balance))
             return balance
