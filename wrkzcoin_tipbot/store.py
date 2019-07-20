@@ -1287,7 +1287,7 @@ def sql_mv_xmr_multiple(user_from: str, user_tos, amount_each: float, coin: str,
         except Exception as e:
             traceback.print_exc(file=sys.stdout)
             return False
-    return False
+    return True
 
 async def sql_external_xmr_single(user_from: str, amount: float, to_address: str, coin: str, tiptype: str):
     global conn
