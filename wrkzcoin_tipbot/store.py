@@ -205,7 +205,7 @@ async def sql_get_userwallet(userID, coin: str = None):
         with conn.cursor() as cur:
             if coin in ENABLE_COIN:
                 sql = """ SELECT * FROM """+coin.lower()+"""_user_paymentid WHERE `user_id`=%s AND `coin_name` = %s LIMIT 1 """
-                cur.execute(sql, (str(userID),))
+                cur.execute(sql, (str(userID),coin))
                 result = cur.fetchone()
                 if result is None:
                     result = {}
