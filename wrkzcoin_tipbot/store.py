@@ -136,10 +136,10 @@ async def sql_register_user(userID, coin: str = None):
                         elif coin in ENABLE_COIN_DOGE:
                             chainHeight = int(walletStatus['blocks'])
                     if coin in ENABLE_COIN:
-                        sql = """ INSERT INTO """+coin.lower()+"""_user_paymentid (`coin_name`, `user_id`, `main_address`, `paymentid`, 
+                        sql = """ INSERT INTO """+coin.lower()+"""_user_paymentid (`coin_name`, `user_id`, `main_address`, 
                                   `int_address`, `paymentid_ts`, `extrainfo`) 
                                   VALUES (%s, %s, %s, %s, %s, %s %s) """
-                        cur.execute(sql, (COIN_NAME, str(userID), main_address, balance_address['payment_id'], balance_address['integrated_address'], int(time.time()), balance_address['privateSpendKey']))
+                        cur.execute(sql, (COIN_NAME, str(userID), main_address, balance_address['integrated_address'], int(time.time()), balance_address['privateSpendKey']))
                     elif coin in ENABLE_COIN_DOGE:
                         sql = """ INSERT INTO """+coin.lower()+"""_user (`user_id`, `balance_wallet_address`, 
                                   `balance_wallet_address_ts`, `balance_wallet_address_ch`, `privateKey`) 
@@ -160,7 +160,7 @@ async def sql_register_user(userID, coin: str = None):
                     result2['user_wallet_address'] = ''
                 return result2
     except Exception as e:
-        print("MySQL e=",str(e),", sql=",sql,str(userID),balance_address['address'],str(time.time()),str(chainHeight),balance_address['privateSpendKey'])
+        traceback.print_exc(file=sys.stdout)
 
 async def sql_update_user(userID, user_wallet_address, coin: str = None):
     if coin is None:
