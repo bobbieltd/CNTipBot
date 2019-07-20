@@ -4085,7 +4085,9 @@ async def _tip(ctx, amount, coin: str = None):
         MaxTX = get_max_tx_amount(COIN_NAME)
         user_from = await store.sql_get_userwallet(str(ctx.message.author.id), COIN_NAME)
         real_amount = int(round(float(amount) * COIN_DEC))
+        print("user_from:"+json.dumps(user_from))
         userdata_balance = store.sql_xmr_balance(str(ctx.message.author.id), COIN_NAME)
+        print("userdata_balance:"+json.dumps(userdata_balance))
         if real_amount > user_from['actual_balance'] + userdata_balance['Adjust']:
             await ctx.message.add_reaction(EMOJI_ERROR)
             await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} Insufficient balance to send tip of '
