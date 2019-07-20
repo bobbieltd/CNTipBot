@@ -1,5 +1,5 @@
-import click
 import traceback, pdb
+import click
 import discord
 from discord.ext import commands
 from discord.ext.commands import Bot, AutoShardedBot, when_mentioned_or, CheckFailure
@@ -250,7 +250,7 @@ async def on_message(message):
         else:
             pass
     except Exception as e:
-        print(e)
+        traceback.print_exc(file=sys.stdout)
         pass
 
     if message.content.upper().startswith('.HELP') or message.content.upper().startswith('.STAT'):
@@ -289,7 +289,7 @@ async def about(ctx):
         await ctx.send(embed=botdetails)
     except Exception as e:
         await ctx.message.author.send(embed=botdetails)
-        print(e)
+        traceback.print_exc(file=sys.stdout)
 
 
 @bot.group(hidden = True, help=bot_help_account)
@@ -349,7 +349,7 @@ async def twofa(ctx):
         try:
             verified = userinfo['twofa_verified']
         except Exception as e:
-            print(e)
+            traceback.print_exc(file=sys.stdout)
         if verified and verified.upper() == "YES":
             await ctx.send(f'{ctx.author.mention} You already verified 2FA.')
             return
@@ -357,7 +357,7 @@ async def twofa(ctx):
         try:
             secret_code = store.decrypt_string(userinfo['twofa_secret'])
         except Exception as e:
-            print(e)
+            traceback.print_exc(file=sys.stdout)
         if secret_code and len(secret_code) > 0:
             if os.path.exists(config.qrsettings.path + secret_code + ".png"):
                 pass

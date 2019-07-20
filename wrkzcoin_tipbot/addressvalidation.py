@@ -1,4 +1,5 @@
 ## For random paymentid
+import traceback, pdb
 import secrets, sha3
 import sys, re
 from binascii import hexlify, unhexlify
@@ -12,7 +13,7 @@ try:
     from io import BytesIO
 except ImportError:
     from StringIO import StringIO as BytesIO
-
+    traceback.print_exc(file=sys.stdout)
 
 b = ed25519.b
 q = ed25519.q
@@ -326,6 +327,7 @@ def validate_address(wallet_address, coin: str):
         else:
             return None
     except Exception as e:
+        traceback.print_exc(file=sys.stdout)
         return None
         pass
 
@@ -364,6 +366,7 @@ def validate_integrated(wallet_address, coin: str):
             else:
                 return 'invalid'
     except Exception as e:
+        traceback.print_exc(file=sys.stdout)
         return None
     return result
 
@@ -403,6 +406,7 @@ def make_integrated(wallet_address, coin: str, integrated_id=None):
         else:
             return None
     except Exception as e:
+        traceback.print_exc(file=sys.stdout)
         return None
         pass
 

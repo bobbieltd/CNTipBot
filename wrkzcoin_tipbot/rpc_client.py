@@ -1,3 +1,4 @@
+import traceback, pdb
 from typing import Dict
 from uuid import uuid4
 
@@ -85,7 +86,11 @@ async def call_aiohttp_wallet(method_name: str, coin: str, payload: Dict = None)
                 res_data = res_data.decode('utf-8')
                 await session.close()
                 decoded_data = json.loads(res_data)
-                result = decoded_data['result']
+                if 'result' in decoded_data:
+                    result = decoded_data['result']
+                else:
+                    print(coin+" "+method_name+" RPC Error: "+json.dumps(decoded_data))
+                    return None
                 # print(coin +" "+method_name+ " RPC finished : "+res_data);
                 if coin_family == "XMR" and method_name == "get_balance":
                     result['availableBalance'] = result["per_subaddress"][0]['unlocked_balance']

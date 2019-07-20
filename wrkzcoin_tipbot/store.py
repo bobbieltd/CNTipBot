@@ -1,3 +1,4 @@
+import traceback, pdb
 from typing import List
 from datetime import datetime
 import time
@@ -516,7 +517,7 @@ async def sql_withdraw(user_from: str, amount: int, coin: str=None):
                             cur.execute(sql, (updateBalance['unlocked'], updateBalance['locked'], 
                                         updateTime, user_from_wallet['balance_wallet_address'],))
             except Exception as e:
-                print(e)
+                traceback.print_exc(file=sys.stdout)
         return tx_hash
     else:
         return None
