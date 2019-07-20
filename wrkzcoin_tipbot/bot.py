@@ -906,7 +906,7 @@ async def balance(ctx, coin: str = None):
             if actual == locked:
                 balance_locked = num_format_coin(0, COIN_NAME)
             else:
-                if locked - actual + float(userdata_balance['Adjust']) < 0:
+                if locked - actual + userdata_balance['Adjust'] < 0:
                     balance_locked =  num_format_coin(0, COIN_NAME)
                 else:
                     balance_locked =  num_format_coin(locked - actual +serdata_balance['Adjust'], COIN_NAME)
@@ -952,6 +952,16 @@ async def balance(ctx, coin: str = None):
     else:
         pass
     # End Check if maintenance
+
+    ago = None
+    if 'lastUpdate' in wallet:
+        await ctx.message.add_reaction(EMOJI_OK)
+        try:
+            update = datetime.fromtimestamp(int(wallet['lastUpdate'])).strftime('%Y-%m-%d %H:%M:%S')
+            ago = timeago.format(update, datetime.now())
+            print(ago)
+        except:
+            pass
 
     await ctx.message.author.send(f'**[YOUR {COIN_NAME} BALANCE]**\n\n'
         f'{EMOJI_MONEYBAG} Available: {balance_actual} '
