@@ -1275,8 +1275,6 @@ def sql_mv_xmr_multiple(user_from: str, user_tos, amount_each: float, coin: str,
     global conn
     COIN_NAME = coin.upper()
     coin_family = getattr(getattr(config,"daemon"+COIN_NAME,"daemonWRKZ"),"coin_family","TRTL")
-    if coin_family != "XMR":
-        return False
     if tiptype.upper() not in ["TIPS", "TIPALL"]:
         return False
     values_str = []
