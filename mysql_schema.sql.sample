@@ -624,7 +624,7 @@ CREATE TABLE `xtor_external_tx` (
   `type` enum('SEND','WITHDRAW') NOT NULL DEFAULT 'WITHDRAW',
   `date` int(11) NOT NULL,
   `tx_hash` varchar(64) NOT NULL,
-  `tx_key` varchar(256) NOT NULL
+  `tx_key` varchar(1024) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=ascii;
 
 
