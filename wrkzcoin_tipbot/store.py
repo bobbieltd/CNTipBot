@@ -200,7 +200,6 @@ async def sql_get_userwallet(userID, coin: str = None):
         coin = "WRKZ"
     try:
         sql = None
-        result['pseudo'] = False
         with conn.cursor(pymysql.cursors.DictCursor) as cur:
             if coin in ENABLE_COIN:
                 sql = """ SELECT * FROM """+coin.lower()+"""_user_paymentid WHERE `user_id`=%s AND `coin_name` = %s LIMIT 1 """
@@ -214,7 +213,6 @@ async def sql_get_userwallet(userID, coin: str = None):
                     result['actual_balance'] = 0
                     result['locked_balance'] = 0
                     result['lastUpdate'] = int(time.time())
-                    result['pseudo'] = True # This is not real address
                     
             elif coin in ENABLE_COIN_DOGE:
                 sql = """ SELECT user_id, balance_wallet_address, user_wallet_address, balance_wallet_address_ts, 
