@@ -1891,8 +1891,6 @@ async def tip(ctx, amount: str, *args):
     has_forwardtip = None
     address_to = None
     if COIN_NAME in ENABLE_COIN:
-        if user_to['forwardtip'] == "ON":
-            has_forwardtip = True
         COIN_DEC = get_decimal(COIN_NAME)
         real_amount = int(amount * COIN_DEC)
         netFee = 0 # get_tx_fee(COIN_NAME)
