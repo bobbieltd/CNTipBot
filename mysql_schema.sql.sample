@@ -665,7 +665,7 @@ CREATE TABLE `xtor_user_paymentid` (
   `coin_name` varchar(16) NOT NULL,
   `user_id` varchar(32) NOT NULL,
   `main_address` varchar(128) NOT NULL,
-  `paymentid` varchar(64) DEFAULT NULL,,
+  `paymentid` varchar(64) DEFAULT NULL,
   `int_address` varchar(128) NOT NULL,
   `paymentid_ts` int(11) DEFAULT NULL,
   `user_wallet_address` varchar(128) DEFAULT NULL,
@@ -675,5 +675,5 @@ CREATE TABLE `xtor_user_paymentid` (
   `lastUpdate` int(11) NOT NULL DEFAULT '0',
   `extrainfo` varchar(512) CHARACTER SET utf8,
   `user_server` enum('DISCORD','TELEGRAM') NOT NULL DEFAULT 'DISCORD',
-  UNIQUE KEY `user_id` (`user_id`),
+  UNIQUE KEY `user_id` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=ascii;

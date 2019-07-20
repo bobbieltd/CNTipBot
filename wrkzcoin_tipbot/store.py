@@ -200,7 +200,7 @@ async def sql_get_userwallet(userID, coin: str = None):
         coin = "WRKZ"
     try:
         sql = None
-        with conn.cursor() as cur:
+        with conn.cursor(pymysql.cursors.DictCursor) as cur:
             if coin in ENABLE_COIN:
                 sql = """ SELECT * FROM """+coin.lower()+"""_user_paymentid WHERE `user_id`=%s AND `coin_name` = %s LIMIT 1 """
                 cur.execute(sql, (str(userID),coin))
@@ -237,7 +237,7 @@ async def sql_get_userwallet(userID, coin: str = None):
                     return None
             else:
                 userwallet = result
-                userwallet['balance_wallet_address'] = userwallet['int_address']
+                userwallet['balance_wallet_address'] = result['int_address']
                 if coin in ENABLE_COIN_DOGE:
                     depositAddress = await wallet.DOGE_LTC_getaccountaddress(str(userID), coin)
                     userwallet['balance_wallet_address'] = depositAddress
