@@ -64,13 +64,6 @@ async def sql_update_balances(coin: str = None):
         try:
             with conn.cursor() as cur:
                 for details in balances:
-                    if details['unlocked'] > 0:
-                        # print('SQL: Update walletapi '+details['address'])
-                        sql = """ INSERT INTO """+coin.lower()+"""_walletapi (`balance_wallet_address`, `actual_balance`, 
-                        `locked_balance`, `lastUpdate`) VALUES (%s, %s, %s, %s) 
-                        ON DUPLICATE KEY UPDATE `actual_balance`=%s, `locked_balance`=%s, `lastUpdate`=%s """
-                        cur.execute(sql, (details['address'], details['unlocked'], details['locked'], updateTime,
-                                          details['unlocked'], details['locked'], updateTime))
                     sql = """ SELECT * FROM """+coin.lower()+"""_user_paymentid WHERE `main_address`=%s AND `coin_name` = %s LIMIT 1 """
                     cur.execute(sql, (str(details['address']), coin.upper()))
                     result = cur.fetchone()
