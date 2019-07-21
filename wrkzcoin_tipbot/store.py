@@ -1256,21 +1256,18 @@ def sql_mv_xmr_multiple(user_from: str, user_tos, amount_each: float, coin: str,
 async def sql_external_xmr_single(user_from: str, amount: int, to_address: str, coin: str, tiptype: str):
     global conn
     COIN_NAME = coin.upper()
-    coin_family = getattr(getattr(config,"daemon"+COIN_NAME,"daemonWRKZ"),"coin_family","TRTL")
     if tiptype.upper() not in ["SEND", "WITHDRAW"]:
         return False
     try:
-        tx_hash = None
-        if coin_family == "XMR":
-            tx_hash = await wallet.send_transaction('TIPBOT', to_address, 
-                                                    amount, COIN_NAME, 0)
-            if tx_hash:
-                updateTime = int(time.time())
-                with conn.cursor(pymysql.cursors.DictCursor) as cur: 
-                    sql = """ INSERT INTO """+coin.lower()+"""_external_tx (`coin_name`, `user_id`, `amount`, `fee`, `decimal`, `to_address`, 
-                              `type`, `date`, `tx_hash`, `tx_key`) 
-                              VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s) """
-                    cur.execute(sql, (COIN_NAME, user_from, amount, tx_hash['fee'], wallet.get_decimal(COIN_NAME), to_address, tiptype.upper(), int(time.time()), tx_hash['tx_hash'], tx_hash['tx_key'],))
+        tx_hash = await wallet.send_transaction('TIPBOT', to_address, 
+                                                amount, COIN_NAME, 0)
+        if tx_hash:
+            updateTime = int(time.time())
+            with conn.cursor(pymysql.cursors.DictCursor) as cur: 
+                sql = """ INSERT INTO """+coin.lower()+"""_external_tx (`coin_name`, `user_id`, `amount`, `fee`, `decimal`, `to_address`, 
+                          `type`, `date`, `tx_hash`, `tx_key`) 
+                          VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s) """
+                cur.execute(sql, (COIN_NAME, user_from, amount, tx_hash['fee'], wallet.get_decimal(COIN_NAME), to_address, tiptype.upper(), int(time.time()), tx_hash['transactionHash'], tx_hash['tx_key'],))
         return tx_hash
     except Exception as e:
         traceback.print_exc(file=sys.stdout)
