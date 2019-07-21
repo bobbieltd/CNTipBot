@@ -76,7 +76,7 @@ async def send_transaction_donate(from_address: str, to_address: str, amount: in
     return result
 
 
-async def send_transaction(from_address: str, to_address: str, amount: int, coin: str) -> str:
+async def send_transaction(from_address: str, to_address: str, amount: int, coin: str, acc_index: int = 0) -> str:
     COIN_NAME = coin.upper()
     coin_family = getattr(getattr(config,"daemon"+COIN_NAME),"coin_family","TRTL")
 
