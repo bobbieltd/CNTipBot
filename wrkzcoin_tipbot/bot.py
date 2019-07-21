@@ -1925,7 +1925,7 @@ async def send(ctx, amount: str, CoinAddress: str):
         MaxTX = get_max_tx_amount(COIN_NAME)
         real_amount = int(amount * COIN_DEC)
         addressLength = get_addrlen(COIN_NAME)
-        IntaddressLength = get_intaddrlen(COIN_NAME)
+        # IntaddressLength = get_intaddrlen(COIN_NAME)
 
         valid_address = addressvalidation.validate_address_cn(CoinAddress, COIN_NAME)
         if valid_address is None:
@@ -1963,7 +1963,7 @@ async def send(ctx, amount: str, CoinAddress: str):
         SendTx = await store.sql_external_xmr_single(str(ctx.message.author.id), real_amount,
                                                      CoinAddress, COIN_NAME, "SEND")
         if SendTx:
-            SendTx_hash = SendTx['tx_hash']
+            SendTx_hash = SendTx['transactionHash']
             await ctx.message.add_reaction(get_emoji(COIN_NAME))
             await botLogChan.send(f'A user successfully executed `.send {num_format_coin(real_amount, COIN_NAME)} {COIN_NAME}`.')
             await ctx.message.author.send(f'{EMOJI_ARROW_RIGHTHOOK} You have sent {num_format_coin(real_amount, COIN_NAME)} '

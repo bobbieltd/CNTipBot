@@ -77,7 +77,10 @@ async def send_transaction_donate(from_address: str, to_address: str, amount: in
 
 
 async def send_transaction(from_address: str, to_address: str, amount: int, coin: str) -> str:
-    coin = coin.upper()
+    COIN_NAME = coin.upper() = coin.upper()
+    coin_family = getattr(getattr(config,"daemon"+COIN_NAME),"coin_family","TRTL")
+
+    if from_address.upper() == "TIPBOT" from_address = getattr(getattr(config,"daemon"+COIN_NAME),"DonateAddress")
     payload = {
         'addresses': [from_address],
         'transfers': [{
@@ -87,7 +90,7 @@ async def send_transaction(from_address: str, to_address: str, amount: int, coin
         'fee': get_tx_fee(coin),
         'anonymity': get_mixin(coin)
     }
-    result = None
+
     result = await rpc_client.call_aiohttp_wallet('sendTransaction', coin, payload=payload)
     if result:
         if 'transactionHash' in result:
