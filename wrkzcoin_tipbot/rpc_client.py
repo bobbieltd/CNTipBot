@@ -50,7 +50,7 @@ async def call_aiohttp_wallet(method_name: str, coin: str, payload: Dict = None)
         method_name = "get_balance"
         payload["account_index"] = 0
         payload["address_indices"] = [0]
-        if payload is not None and payload['address'] is not None:
+        if payload is not None and 'address' in payload:
             indices = await call_aiohttp_wallet_original('get_address_index', coin, payload=payload)
             indexMajor = indices['index']['major']
             if int(indexMajor) != 0:
