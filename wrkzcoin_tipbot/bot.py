@@ -111,7 +111,6 @@ bot_description = f"Tip {COIN_REPR} to other users on your server."
 bot_help_about = "About TipBot"
 bot_help_register = "Register or change your deposit address."
 bot_help_info = "Get your account's info."
-bot_help_withdraw = f"Withdraw {COIN_REPR} from your balance."
 bot_help_balance = f"Check your {COIN_REPR} balance."
 bot_help_botbalance = f"Check (only) bot {COIN_REPR} balance."
 bot_help_donate = f"Donate {COIN_REPR} to a Bot Owner."
@@ -119,7 +118,7 @@ bot_help_tip = f"Give {COIN_REPR} to a user from your balance."
 bot_help_forwardtip = f"Forward all your received tip of {COIN_REPR} to registered wallet."
 bot_help_tipall = f"Spread a tip amount of {COIN_REPR} to all online members."
 bot_help_send = f"Send {COIN_REPR} to a {COIN_REPR} address from your balance (supported integrated address)."
-bot_help_optimize = f"Optimize your tip balance of {COIN_REPR} for large tip, send, tipall, withdraw"
+bot_help_optimize = f"Optimize your tip balance of {COIN_REPR} for large tip, send, tipall"
 bot_help_address = f"Check {COIN_REPR} address | Generate {COIN_REPR} integrated address."
 bot_help_paymentid = "Make a random payment ID with 64 chars length."
 bot_help_address_qr = "Show an input address in QR code image."
@@ -1182,314 +1181,6 @@ async def forwardtip(ctx, coin: str, option: str):
         await ctx.send(f'{ctx.author.mention} You set forwardtip of {COIN_NAME} to: **{option.upper()}**')
         return
 
-
-@bot.command(pass_context=True, name='register', aliases=['registerwallet', 'reg', 'updatewallet'],
-             help=bot_help_register)
-async def register(ctx, wallet_address: str):
-    # check if account locked
-    account_lock = await alert_if_userlock(ctx, 'register')
-    if account_lock:
-        await ctx.message.add_reaction(EMOJI_LOCKED) 
-        await ctx.send(f'{EMOJI_RED_NO} {MSG_LOCKED_ACCOUNT}')
-        return
-    # end of check if account locked
-
-    # Check if maintenance
-    if IS_MAINTENANCE == 1:
-        if int(ctx.message.author.id) in MAINTENANCE_OWNER:
-            pass
-        else:
-            await ctx.message.add_reaction(EMOJI_WARNING)
-            await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} {config.maintenance_msg}')
-            return
-    else:
-        pass
-    # End Check if maintenance
-
-    if wallet_address.isalnum() == False:
-        await ctx.message.add_reaction(EMOJI_ERROR)
-        await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} Invalid address:\n'
-                       f'`{wallet_address}`')
-        return
-
-    COIN_NAME = get_cn_coin_from_address(wallet_address)
-    if COIN_NAME:
-        pass
-    else:
-        if (len(wallet_address) == 34) and wallet_address.startswith("D"):
-            COIN_NAME = "DOGE"
-            pass
-        else:
-            await ctx.message.add_reaction(EMOJI_WARNING)
-            await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} Unknown Ticker.')
-            return
-
-    if COIN_NAME in MAINTENANCE_COIN:
-        await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} {COIN_NAME} in maintenance.')
-        return
-
-    user_id = ctx.message.author.id
-    user = await store.sql_get_userwallet(ctx.message.author.id, COIN_NAME)
-    if user:
-        existing_user = user
-        pass
-
-    valid_address = None
-    if COIN_NAME in ENABLE_COIN_DOGE:
-        depositAddress = await DOGE_LTC_getaccountaddress(ctx.message.author.id, COIN_NAME)
-        user['balance_wallet_address'] = depositAddress
-        if COIN_NAME == "DOGE":
-            valid_address = await DOGE_LTC_validaddress(str(wallet_address), COIN_NAME)
-            if ('isvalid' in valid_address):
-                if str(valid_address['isvalid']) == "True":
-                    valid_address = wallet_address
-                else:
-                    valid_address = None
-                pass
-            pass
-    else:
-        if COIN_NAME in ENABLE_COIN:
-            valid_address = addressvalidation.validate_address_cn(wallet_address, COIN_NAME)
-    # correct print(valid_address)
-    if valid_address is None:
-        await ctx.message.add_reaction(EMOJI_ERROR)
-        await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} Invalid {COIN_NAME} address:\n'
-                       f'`{wallet_address}`')
-        return
-
-    if valid_address != wallet_address:
-        await ctx.message.add_reaction(EMOJI_ERROR)
-        await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} Invalid {COIN_NAME} address:\n'
-                       f'`{wallet_address}`')
-        return
-
-    # if they want to register with tipjar address
-    try:
-        if user['balance_wallet_address'] == wallet_address:
-            await ctx.message.add_reaction(EMOJI_ERROR)
-            await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} You can not register with your {COIN_NAME} tipjar\'s address.\n'
-                           f'`{wallet_address}`')
-            return
-        else:
-            pass
-    except Exception as e:
-        await ctx.message.add_reaction(EMOJI_ERROR)
-        print('Error during register user address:' + str(e))
-        return
-
-    serverinfo = get_info_pref_coin(ctx)
-    server_prefix = serverinfo['server_prefix']
-    if 'user_wallet_address' in existing_user:
-        prev_address = existing_user['user_wallet_address']
-        await store.sql_update_user(user_id, wallet_address, COIN_NAME)
-        if prev_address:
-            await ctx.message.add_reaction(EMOJI_OK)
-            await ctx.send(f'Your {COIN_NAME} {ctx.author.mention} withdraw address has changed from:\n'
-                           f'`{prev_address}`\n to\n '
-                           f'`{wallet_address}`')
-            return
-        pass
-    else:
-        user = await store.sql_update_user(user_id, wallet_address, COIN_NAME)
-        await ctx.message.add_reaction(EMOJI_OK)
-        await ctx.send(f'{ctx.author.mention} You have registered {COIN_NAME} withdraw address.\n'
-                       f'You can use `{server_prefix}withdraw AMOUNT {COIN_NAME}` anytime.')
-        return
-
-
-@bot.command(pass_context=True, help=bot_help_withdraw)
-async def withdraw(ctx, amount: str, coin: str = None):
-    if coin is not None:
-        coin = coin.upper()
-    # check if account locked
-    account_lock = await alert_if_userlock(ctx, 'withdraw')
-    if account_lock:
-        await ctx.message.add_reaction(EMOJI_LOCKED) 
-        await ctx.send(f'{EMOJI_RED_NO} {MSG_LOCKED_ACCOUNT}')
-        return
-    # end of check if account locked
-
-    # botLogChan = bot.get_channel(id=LOG_CHAN)
-    amount = amount.replace(",", "")
-
-    # Check flood of tip
-    repeatTx = 0
-    for itemCoin in ENABLE_COIN:
-        floodTip = store.sql_get_countLastTip(str(ctx.message.author.id), config.floodTipDuration, itemCoin.upper())
-        repeatTx = repeatTx + floodTip
-    if repeatTx >= config.floodTip:
-        await ctx.message.add_reaction(EMOJI_ERROR)
-        await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} Cool down your tip or TX. or increase your amount next time.')
-        if botLogChan is not None:
-            await botLogChan.send(f'{ctx.message.author.name} / {ctx.message.author.id} reached max. TX threshold. Currently halted: `.withdraw`')
-        return
-    # End of Check flood of tip
-
-    # Check if maintenance
-    if IS_MAINTENANCE == 1:
-        if int(ctx.message.author.id) in MAINTENANCE_OWNER:
-            pass
-        else:
-            await ctx.message.add_reaction(EMOJI_WARNING)
-            await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} {config.maintenance_msg}')
-            return
-    else:
-        pass
-    # End Check if maintenance
-    if isinstance(ctx.channel, discord.DMChannel):
-        server_prefix = '.'
-    else:
-        serverinfo = get_info_pref_coin(ctx)
-        server_prefix = serverinfo['server_prefix']
-
-    try:
-        amount = float(amount)
-    except ValueError:
-        await ctx.message.add_reaction(EMOJI_ERROR)
-        await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} Invalid given amount.')
-        return
-
-    if coin is None:
-        await ctx.message.add_reaction(EMOJI_ERROR)
-        await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} Please have **ticker** (coin name) after amount.')
-        return
-
-    if coin.upper() in MAINTENANCE_COIN:
-        await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} {coin.upper()} in maintenance.')
-        return
-    user = None
-    if coin.upper() in ENABLE_COIN:
-        COIN_NAME = coin.upper()
-        COIN_DEC = get_decimal(coin.upper())
-        real_amount = int(amount * COIN_DEC)
-        user = await store.sql_get_userwallet(ctx.message.author.id, COIN_NAME)
-        netFee = get_tx_fee(COIN_NAME)
-        MinTx = get_min_tx_amount(COIN_NAME)
-        MaxTX = get_max_tx_amount(COIN_NAME)
-    elif coin.upper() == "DOGE" or coin.upper() == "DOGECOIN":
-        COIN_NAME = "DOGE"
-        MinTx = config.daemonDOGE.min_tx_amount
-        MaxTX = config.daemonDOGE.max_tx_amount
-        netFee = config.daemonDOGE.tx_fee
-        user_from = {}
-        user_from['address'] = await DOGE_LTC_getaccountaddress(ctx.message.author.id, COIN_NAME)
-        user_from['actual_balance'] = float(await DOGE_LTC_getbalance_acc(ctx.message.author.id, COIN_NAME, 6))
-        real_amount = float(amount)
-        userdata_balance = store.sql_doge_balance(ctx.message.author.id, COIN_NAME)
-        if real_amount + netFee > float(user_from['actual_balance']) + float(userdata_balance['Adjust']):
-            await ctx.message.add_reaction(EMOJI_ERROR)
-            await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} Insufficient balance to withdraw '
-                           f'{num_format_coin(real_amount, COIN_NAME)} '
-                           f'{COIN_NAME}.')
-            return
-        if real_amount < MinTx:
-            await ctx.message.add_reaction(EMOJI_ERROR)
-            await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} Transaction cannot be smaller than '
-                           f'{num_format_coin(MinTx, COIN_NAME)} '
-                           f'{COIN_NAME}.')
-            return
-        if real_amount > MaxTX:
-            await ctx.message.add_reaction(EMOJI_ERROR)
-            await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} Transaction cannot be bigger than '
-                           f'{num_format_coin(MaxTX, COIN_NAME)} '
-                           f'{COIN_NAME}.')
-            return
-        wallet = await store.sql_get_userwallet(ctx.message.author.id, "DOGE")
-        withdrawTx = None
-        if 'user_wallet_address' in wallet:
-            withdrawTx = await store.sql_external_doge_single(ctx.message.author.id, real_amount,
-                                                              config.daemonDOGE.tx_fee, wallet['user_wallet_address'],
-                                                              COIN_NAME, "WITHDRAW")
-        if withdrawTx:
-            withdrawAddress = wallet['user_wallet_address']
-            await ctx.message.add_reaction(get_emoji(COIN_NAME))
-            await ctx.message.author.send(
-                                   f'{EMOJI_ARROW_RIGHTHOOK} You have withdrawn {num_format_coin(real_amount, COIN_NAME)} '
-                                   f'{COIN_NAME} to `{withdrawAddress}`.\n'
-                                   f'Transaction hash: `{withdrawTx}`\n'
-                                   'Network fee deducted from the amount.')
-            return
-        else:
-            await ctx.message.add_reaction(EMOJI_ERROR)
-            return
-        return
-    else:
-        await ctx.message.add_reaction(EMOJI_ERROR)
-        await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} INVALID TICKER!')
-        return
-
-    if 'user_wallet_address' not in user:
-        await ctx.message.add_reaction(EMOJI_ERROR)
-        await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} You do not have a withdrawal address, please use '
-                       f'`{server_prefix}register wallet_address` to register.')
-        return
-
-    if real_amount + netFee >= user['actual_balance']:
-        await ctx.message.add_reaction(EMOJI_ERROR)
-        await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} Insufficient balance to withdraw '
-                       f'{num_format_coin(real_amount, COIN_NAME)} '
-                       f'{COIN_NAME}.')
-        return
-
-    if real_amount > MaxTX:
-        await ctx.message.add_reaction(EMOJI_ERROR)
-        await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} Transactions cannot be bigger than '
-                       f'{num_format_coin(MaxTX, COIN_NAME)} '
-                       f'{COIN_NAME}')
-        return
-    elif real_amount < MinTx:
-        await ctx.message.add_reaction(EMOJI_ERROR)
-        await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} Transactions cannot be lower than '
-                       f'{num_format_coin(MinTx, COIN_NAME)} '
-                       f'{COIN_NAME}')
-        return
-
-    # Get wallet status
-    walletStatus = await daemonrpc_client.getWalletStatus(COIN_NAME)
-
-    if walletStatus is None:
-        await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} {COIN_NAME} Wallet service hasn\'t started.')
-        return
-    else:
-        localDaemonBlockCount = int(walletStatus['blockCount'])
-        networkBlockCount = int(walletStatus['knownBlockCount'])
-        if networkBlockCount - localDaemonBlockCount >= 20:
-            # if height is different by 20
-            t_percent = '{:,.2f}'.format(truncate(localDaemonBlockCount / networkBlockCount * 100, 2))
-            t_localDaemonBlockCount = '{:,}'.format(localDaemonBlockCount)
-            t_networkBlockCount = '{:,}'.format(networkBlockCount)
-            await ctx.message.add_reaction(EMOJI_WARNING)
-            await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} {COIN_NAME} Wallet service hasn\'t sync fully with network or being re-sync. More info:\n```'
-                           f'networkBlockCount:     {t_networkBlockCount}\n'
-                           f'localDaemonBlockCount: {t_localDaemonBlockCount}\n'
-                           f'Progress %:            {t_percent}\n```'
-                           )
-            return
-        else:
-            pass
-    # End of wallet status
-
-    withdrawal = await store.sql_withdraw(ctx.message.author.id, real_amount, COIN_NAME)
-
-    if withdrawal:
-        await ctx.message.add_reaction(get_emoji(COIN_NAME))
-        if botLogChan is not None:
-            await botLogChan.send(f'A user successfully executed `.withdraw {num_format_coin(real_amount, COIN_NAME)} {COIN_NAME}`')
-        await ctx.message.author.send(
-            f'{EMOJI_ARROW_RIGHTHOOK} You have withdrawn {num_format_coin(real_amount, COIN_NAME)} '
-            f'{COIN_NAME}.\n'
-            f'Transaction hash: `{withdrawal}`')
-        return
-    else:
-        await ctx.message.add_reaction(EMOJI_ERROR)
-        if botLogChan is not None:
-            await botLogChan.send(f'A user failed to execute `.withdraw {num_format_coin(real_amount, COIN_NAME)} {COIN_NAME}`')
-        await ctx.send(f'{ctx.author.mention} You may need to `optimize` or try again.')
-        # add to failed tx table
-        store.sql_add_failed_tx(COIN_NAME, str(ctx.message.author.id), ctx.message.author.name, real_amount, "WITHDRAW")
-        return
-
-
 @bot.command(pass_context=True, help=bot_help_donate)
 async def donate(ctx, amount: str, coin: str = None):
     if coin is not None:
@@ -2274,8 +1965,68 @@ async def send(ctx, amount: str, CoinAddress: str):
 
     # Check which coinname is it.
     COIN_NAME = get_cn_coin_from_address(CoinAddress)
-    if COIN_NAME:
-        pass
+    if COIN_NAME in MAINTENANCE_COIN:
+        await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} {COIN_NAME} in maintenance.')
+        return
+
+    if COIN_NAME in ENABLE_COIN:
+        COIN_DEC = get_decimal(COIN_NAME)
+        netFee = get_tx_fee(COIN_NAME)
+        MinTx = get_min_tx_amount(COIN_NAME)
+        MaxTX = get_max_tx_amount(COIN_NAME)
+        real_amount = int(amount * COIN_DEC)
+        addressLength = get_addrlen(COIN_NAME)
+        IntaddressLength = get_intaddrlen(COIN_NAME)
+
+        valid_address = addressvalidation.validate_address_cn(CoinAddress, COIN_NAME)
+        if valid_address is None:
+                await ctx.message.add_reaction(EMOJI_ERROR)
+                await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} Address: `{CoinAddress}` '
+                               'is invalid.')
+                return
+        if valid_address != CoinAddress:
+            await ctx.message.add_reaction(EMOJI_ERROR)
+            await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} Invalid {COIN_NAME} address:\n'
+                           f'`{CoinAddress}`')
+            return
+        # OK valid address
+        user_from = await store.sql_get_userwallet(str(ctx.message.author.id), COIN_NAME)
+        userdata_balance = store.sql_xmr_balance(str(ctx.message.author.id), COIN_NAME)
+        if real_amount + netFee > float(user_from['actual_balance']) + float(userdata_balance['Adjust']):
+            await ctx.message.add_reaction(EMOJI_ERROR)
+            await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} Insufficient balance to send out '
+                           f'{num_format_coin(real_amount, COIN_NAME)} '
+                           f'{COIN_NAME}.')
+            return
+        if real_amount < MinTx:
+            await ctx.message.add_reaction(EMOJI_ERROR)
+            await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} Transaction cannot be smaller than '
+                           f'{num_format_coin(MinTx, COIN_NAME)} '
+                           f'{COIN_NAME}.')
+            return
+        if real_amount > MaxTX:
+            await ctx.message.add_reaction(EMOJI_ERROR)
+            await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} Transaction cannot be bigger than '
+                           f'{num_format_coin(MaxTX, COIN_NAME)} '
+                           f'{COIN_NAME}.')
+            return
+
+        SendTx = await store.sql_external_xmr_single(str(ctx.message.author.id), real_amount,
+                                                     CoinAddress, COIN_NAME, "SEND")
+        if SendTx:
+            SendTx_hash = SendTx['tx_hash']
+            await ctx.message.add_reaction(get_emoji(COIN_NAME))
+            await botLogChan.send(f'A user successfully executed `.send {num_format_coin(real_amount, COIN_NAME)} {COIN_NAME}`.')
+            await ctx.message.author.send(f'{EMOJI_ARROW_RIGHTHOOK} You have sent {num_format_coin(real_amount, COIN_NAME)} '
+                                          f'{COIN_NAME} to `{CoinAddress}`.\n'
+                                          f'Transaction hash: `{SendTx_hash}`\n'
+                                          'Network fee deducted from your account balance.')
+            return
+        else:
+            await ctx.message.add_reaction(EMOJI_ERROR)
+            await botLogChan.send(f'A user failed to execute `.send {num_format_coin(real_amount, COIN_NAME)} {COIN_NAME}`.')
+            return
+        return
     else:
         if (len(CoinAddress) == 34) and CoinAddress.startswith("D"):
             COIN_NAME = "DOGE"
@@ -2339,186 +2090,6 @@ async def send(ctx, amount: str, CoinAddress: str):
             await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} Invalid {COIN_NAME} address:\n'
                            f'`{CoinAddress}`')
             return
-
-    COIN_DEC = get_decimal(COIN_NAME)
-    netFee = get_tx_fee(COIN_NAME)
-    MinTx = get_min_tx_amount(COIN_NAME)
-    MaxTX = get_max_tx_amount(COIN_NAME)
-    real_amount = int(amount * COIN_DEC)
-    addressLength = get_addrlen(COIN_NAME)
-    IntaddressLength = get_intaddrlen(COIN_NAME)
-
-    if COIN_NAME in MAINTENANCE_COIN:
-        await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} {COIN_NAME} in maintenance.')
-        return
-
-    if len(CoinAddress) == int(addressLength) or getattr(getattr(config,"daemon"+COIN_NAME),"coin_family") == "XMR":
-        valid_address = addressvalidation.validate_address_cn(CoinAddress, COIN_NAME)
-        # print(valid_address)
-        if valid_address is None:
-            await ctx.message.add_reaction(EMOJI_ERROR)
-            await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} Invalid {COIN_NAME} address:\n'
-                           f'`{CoinAddress}`')
-            return
-        if valid_address != CoinAddress:
-            await ctx.message.add_reaction(EMOJI_ERROR)
-            await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} Invalid {COIN_NAME} address:\n'
-                           f'`{CoinAddress}`')
-            return
-    elif len(CoinAddress) == int(IntaddressLength):
-        valid_address = addressvalidation.validate_integrated_cn(CoinAddress, COIN_NAME)
-        # print(valid_address)
-        if (valid_address == 'invalid'):
-            await ctx.message.add_reaction(EMOJI_ERROR)
-            await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} Invalid integrated address:\n'
-                           f'`{CoinAddress}`')
-            return
-        if (len(valid_address) == 2):
-            iCoinAddress = CoinAddress
-            CoinAddress = valid_address['address']
-            paymentid = valid_address['integrated_id']
-    elif len(CoinAddress) == int(addressLength) + 64 + 1:
-        valid_address = {}
-        check_address = CoinAddress.split(".")
-        if len(check_address) != 2:
-            await ctx.message.add_reaction(EMOJI_ERROR)
-            await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} Invalid {COIN_NAME} address + paymentid')
-            return
-        else:
-            valid_address_str = addressvalidation.validate_address_cn(check_address[0], COIN_NAME)
-            paymentid = check_address[1].strip()
-            if valid_address_str is None:
-                await ctx.message.add_reaction(EMOJI_ERROR)
-                await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} Invalid address:\n'
-                               f'`{check_address[0]}`')
-                return
-            else:
-                valid_address['address'] = valid_address_str
-        # Check payment ID
-            if len(paymentid) == 64:
-                if not re.match(r'[a-zA-Z0-9]{64,}', paymentid.strip()):
-                    await ctx.message.add_reaction(EMOJI_ERROR)
-                    await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} PaymentID: `{paymentid}`\n'
-                                    'Should be in 64 correct format.')
-                    return
-                else:
-                    CoinAddress = valid_address['address']
-                    valid_address['paymentid'] = paymentid
-                    iCoinAddress = addressvalidation.make_integrated_cn(valid_address['address'], COIN_NAME, paymentid)['integrated_address']
-                    pass
-            else:
-                await ctx.message.add_reaction(EMOJI_ERROR)
-                await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} PaymentID: `{paymentid}`\n'
-                                'Incorrect length')
-                return
-    else:
-        await ctx.message.add_reaction(EMOJI_ERROR)
-        await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} Invalid {COIN_NAME} address:\n'
-                       f'`{CoinAddress}`')
-        return
-
-    real_amount = int(amount * COIN_DEC)
-
-    user_from = await store.sql_get_userwallet(ctx.message.author.id, COIN_NAME)
-    if user_from['balance_wallet_address'] == CoinAddress:
-        await ctx.message.add_reaction(EMOJI_ERROR)
-        await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} You can not send to your own deposit address.')
-        return
-
-    if real_amount + get_tx_fee(COIN_NAME) >= user_from['actual_balance']:
-        await ctx.message.add_reaction(EMOJI_ERROR)
-        await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} Insufficient balance to send tip of '
-                       f'{num_format_coin(real_amount, COIN_NAME)} '
-                       f'{COIN_NAME} to {CoinAddress}.')
-
-        return
-
-    if real_amount > MaxTX:
-        await ctx.message.add_reaction(EMOJI_ERROR)
-        await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} Transactions cannot be bigger than '
-                       f'{num_format_coin(MaxTX, COIN_NAME)} '
-                       f'{COIN_NAME}.')
-        return
-    elif real_amount < MinTx:
-        await ctx.message.add_reaction(EMOJI_ERROR)
-        await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} Transactions cannot be smaller than '
-                       f'{num_format_coin(MinTx, COIN_NAME)} '
-                       f'{COIN_NAME}.')
-
-        return
-
-    # Get wallet status
-    walletStatus = await daemonrpc_client.getWalletStatus(COIN_NAME)
-    if walletStatus is None:
-        await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} {COIN_NAME} Wallet service hasn\'t started.')
-        return
-    else:
-        localDaemonBlockCount = int(walletStatus['blockCount'])
-        networkBlockCount = int(walletStatus['knownBlockCount'])
-        if networkBlockCount - localDaemonBlockCount >= 20:
-            # if height is different by 20
-            t_percent = '{:,.2f}'.format(truncate(localDaemonBlockCount / networkBlockCount * 100, 2))
-            t_localDaemonBlockCount = '{:,}'.format(localDaemonBlockCount)
-            t_networkBlockCount = '{:,}'.format(networkBlockCount)
-            await ctx.message.add_reaction(EMOJI_WARNING)
-            await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} {COIN_NAME} Wallet service hasn\'t sync fully with network or being re-sync. More info:\n```'
-                           f'networkBlockCount:     {t_networkBlockCount}\n'
-                           f'localDaemonBlockCount: {t_localDaemonBlockCount}\n'
-                           f'Progress %:            {t_percent}\n```'
-                           )
-            return
-        else:
-            pass
-    # End of wallet status
-
-    if len(valid_address) == 2:
-        tip = None
-        try:
-            tip = await store.sql_send_tip_Ex_id(ctx.message.author.id, CoinAddress, real_amount, paymentid, COIN_NAME)
-        except Exception as e:
-            traceback.print_exc(file=sys.stdout)
-        if tip:
-            await ctx.message.add_reaction(get_emoji(COIN_NAME))
-            if botLogChan is not None:
-                await botLogChan.send(f'A user successfully executed `.send {num_format_coin(real_amount, COIN_NAME)} {COIN_NAME}` with paymentid.')
-            await ctx.message.author.send(
-                                   f'{EMOJI_ARROW_RIGHTHOOK} You have sent {num_format_coin(real_amount, COIN_NAME)} '
-                                   f'{COIN_NAME} '
-                                   f'to `{iCoinAddress}`\n\n'
-                                   f'Address: `{CoinAddress}`\n'
-                                   f'Payment ID: `{paymentid}`\n'
-                                   f'Transaction hash: `{tip}`')
-            return
-        else:
-            await ctx.message.add_reaction(EMOJI_ERROR)
-            if botLogChan is not None:
-                await botLogChan.send(f'A user failed to execute `.send {num_format_coin(real_amount, COIN_NAME)} {COIN_NAME}` with paymentid.')
-            await ctx.send('{ctx.author.mention} You may need to `optimize` or retry.')
-            return
-    else:
-        tip = None
-        try:
-            tip = await store.sql_send_tip_Ex(ctx.message.author.id, CoinAddress, real_amount, COIN_NAME)
-        except Exception as e:
-            traceback.print_exc(file=sys.stdout)
-        if tip:
-            await ctx.message.add_reaction(get_emoji(COIN_NAME))
-            if botLogChan is not None:
-                await botLogChan.send(f'A user successfully executed `.send {num_format_coin(real_amount, COIN_NAME)} {COIN_NAME}`.')
-            await ctx.message.author.send(f'{EMOJI_ARROW_RIGHTHOOK} You have sent {num_format_coin(real_amount, COIN_NAME)} '
-                                          f'{COIN_NAME} '
-                                          f'to `{CoinAddress}`\n'
-                                          f'Transaction hash: `{tip}`')
-            return
-        else:
-            await ctx.message.add_reaction(EMOJI_ERROR)
-            if botLogChan is not None:
-                await botLogChan.send(f'A user failed to execute `.send {num_format_coin(real_amount, COIN_NAME)} {COIN_NAME}`.')
-            await ctx.send(f'{ctx.author.mention} Can not deliver TX for {COIN_NAME} right now. Try again soon.')
-            # add to failed tx table
-            store.sql_add_failed_tx(COIN_NAME, str(ctx.message.author.id), ctx.message.author.name, real_amount, "SEND")
-            return
-
 
 @bot.command(pass_context=True, name='checkaddress', aliases=['addr'], help=bot_help_address)
 async def address(ctx, *args):
@@ -3751,15 +3322,6 @@ async def setting_error(ctx, error):
     if isinstance(error, commands.MissingPermissions):
         await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} Looks like you don\'t have the permission.')
 
-
-@register.error
-async def register_error(ctx, error):
-    if isinstance(error, commands.MissingRequiredArgument):
-        await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} Missing your wallet address. '
-                       'You need to have a supported coin **address** after `register` command')
-    return
-
-
 @account.error
 @verify.error
 async def account_verify_error(ctx, error):
@@ -3794,14 +3356,6 @@ async def botbalance_error(ctx, error):
 @forwardtip.error
 async def forwardtip_error(ctx, error):
     pass
-
-
-@withdraw.error
-async def withdraw_error(ctx, error):
-    if isinstance(error, commands.MissingRequiredArgument):
-        await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} Missing amount and/or ticker. '
-                       'You need to tell me **AMOUNT** and/or **TICKER**.')
-    return
 
 
 @tip.error
