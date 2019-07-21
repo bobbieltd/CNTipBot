@@ -53,7 +53,8 @@ async def call_aiohttp_wallet(method_name: str, coin: str, payload: Dict = None)
             payload["address_indices"] = [indices['index']['minor']]
 
     if coin_family == "XMR" and method_name == "getAddresses":
-        method_name = "get_accounts"
+        method_name = "get_address"
+        payload["account_index"] = 0
 
     if coin_family == "XMR" and method_name == "sendTransaction":
         method_name = "transfer"
