@@ -1860,7 +1860,7 @@ async def send(ctx, amount: str, CoinAddress: str):
         if SendTx:
             SendTx_hash = SendTx['transactionHash']
             await ctx.message.add_reaction(get_emoji(COIN_NAME))
-            await botLogChan.send(f'A user successfully executed `.send {num_format_coin(real_amount, COIN_NAME)} {COIN_NAME}`.')
+            # await botLogChan.send(f'A user successfully executed `.send {num_format_coin(real_amount, COIN_NAME)} {COIN_NAME}`.')
             await ctx.message.author.send(f'{EMOJI_ARROW_RIGHTHOOK} You have sent {num_format_coin(real_amount, COIN_NAME)} '
                                           f'{COIN_NAME} to `{CoinAddress}`.\n'
                                           f'Transaction hash: `{SendTx_hash}`\n'
@@ -1868,7 +1868,7 @@ async def send(ctx, amount: str, CoinAddress: str):
             return
         else:
             await ctx.message.add_reaction(EMOJI_ERROR)
-            await botLogChan.send(f'A user failed to execute `.send {num_format_coin(real_amount, COIN_NAME)} {COIN_NAME}`.')
+            # await botLogChan.send(f'A user failed to execute `.send {num_format_coin(real_amount, COIN_NAME)} {COIN_NAME}`.')
             return
         return
     else:
