@@ -98,6 +98,7 @@ async def send_transaction(from_address: str, to_address: str, amount: int, coin
     result = await rpc_client.call_aiohttp_wallet('sendTransaction', coin, payload=payload)
     if result:
         if not 'transactionHash' in result and not 'tx_hash' in result: # tx in error
+            print("Transaction failed")
             return None
         if not 'transactionHash' in result:
             result['transactionHash'] = result['tx_hash']
