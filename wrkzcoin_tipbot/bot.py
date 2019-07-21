@@ -1160,19 +1160,6 @@ async def donate(ctx, amount: str, coin: str = None):
 
     amount = amount.replace(",", "")
 
-    # Check flood of tip
-    repeatTx = 0
-    for itemCoin in ENABLE_COIN:
-        floodTip = store.sql_get_countLastTip(str(ctx.message.author.id), config.floodTipDuration, itemCoin.upper())
-        repeatTx = repeatTx + floodTip
-    if repeatTx >= config.floodTip:
-        await ctx.message.add_reaction(EMOJI_ERROR)
-        await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} Cool down your tip or TX. or increase your amount next time.')
-        if botLogChan is not None:
-            await botLogChan.send(f'{ctx.message.author.name} / {ctx.message.author.id} reached max. TX threshold. Currently halted: `.donate`')
-        return
-    # End of Check flood of tip
-
     # Check if maintenance
     if IS_MAINTENANCE == 1:
         if int(ctx.message.author.id) in MAINTENANCE_OWNER:
@@ -1598,19 +1585,6 @@ async def tipall(ctx, amount: str, *args):
         await ctx.send(f'{EMOJI_RED_NO} {COIN_NAME} in maintenance.')
         return
 
-    # Check flood of tip
-    repeatTx = 0
-    for itemCoin in ENABLE_COIN:
-        floodTip = store.sql_get_countLastTip(str(ctx.message.author.id), config.floodTipDuration, itemCoin.upper())
-        repeatTx = repeatTx + floodTip
-    if repeatTx >= config.floodTip:
-        await ctx.message.add_reaction(EMOJI_ERROR)
-        await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} Cool down your tip or TX. or increase your amount next time.')
-        if botLogChan is not None:
-            await botLogChan.send(f'{ctx.message.author.name} / {ctx.message.author.id} reached max. TX threshold. Currently halted: `.tipall`')
-        return
-    # End of Check flood of tip
-
     # Check if maintenance
     if IS_MAINTENANCE == 1:
         if int(ctx.message.author.id) in MAINTENANCE_OWNER:
@@ -1879,19 +1853,6 @@ async def send(ctx, amount: str, CoinAddress: str):
 
     # botLogChan = bot.get_channel(id=LOG_CHAN)
     amount = amount.replace(",", "")
-
-    # Check flood of tip
-    repeatTx = 0
-    for itemCoin in ENABLE_COIN:
-        floodTip = store.sql_get_countLastTip(str(ctx.message.author.id), config.floodTipDuration, itemCoin.upper())
-        repeatTx = repeatTx + floodTip
-    if repeatTx >= config.floodTip:
-        await ctx.message.add_reaction(EMOJI_ERROR)
-        await ctx.send(f'{EMOJI_RED_NO}{ctx.author.mention} Cool down your tip or TX. or increase your amount next time.')
-        if botLogChan is not None:
-            await botLogChan.send(f'{ctx.message.author.name} / {ctx.message.author.id} reached max. TX threshold. Currently halted: `.send`')
-        return
-    # End of Check flood of tip
 
     # Check if maintenance
     if IS_MAINTENANCE == 1:

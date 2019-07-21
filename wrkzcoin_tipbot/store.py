@@ -260,35 +260,6 @@ async def sql_get_userwallet(userID, coin: str = None):
     except Exception as e:
         traceback.print_exc(file=sys.stdout)
 
-def sql_get_countLastTip(userID, lastDuration: int, coin: str = None):
-    global conn
-    if coin is None:
-        coin = "WRKZ"
-    lapDuration = int(time.time()) - lastDuration
-    try:
-        sql = None
-        with conn.cursor() as cur:
-            if coin in ENABLE_COIN:
-                sql = """ (SELECT `from_user`,`amount`,`date` FROM """+coin.lower()+"""_tip WHERE `from_user` = %s AND `date`>%s )
-                          UNION
-                          (SELECT `from_user`,`amount_total`,`date` FROM """+coin.lower()+"""_tipall WHERE `from_user` = %s AND `date`>%s )
-                          UNION
-                          (SELECT `from_user`,`amount`,`date` FROM """+coin.lower()+"""_send WHERE `from_user` = %s AND `date`>%s )
-                          UNION
-                          (SELECT `user_id`,`amount`,`date` FROM """+coin.lower()+"""_withdraw WHERE `user_id` = %s AND `date`>%s )
-                          UNION
-                          (SELECT `from_user`,`amount`,`date` FROM """+coin.lower()+"""_donate WHERE `from_user` = %s AND `date`>%s )
-                          ORDER BY `date` DESC LIMIT 10 """
-            cur.execute(sql, (str(userID), lapDuration, str(userID), lapDuration, str(userID), lapDuration,
-                              str(userID), lapDuration, str(userID), lapDuration,))
-            result = cur.fetchall()
-            if result is None:
-                return 0
-            else:
-                return len(result)
-    except Exception as e:
-        traceback.print_exc(file=sys.stdout)
-
 async def sql_send_tip(user_from: str, user_to: str, amount: int, coin: str = None):
     global conn
     if coin is None:
