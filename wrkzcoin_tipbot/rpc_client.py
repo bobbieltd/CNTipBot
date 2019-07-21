@@ -100,10 +100,10 @@ async def call_aiohttp_wallet(method_name: str, coin: str, payload: Dict = None)
                 if coin_family == "XMR" and method_name == "get_balance":
                     result['availableBalance'] = result["per_subaddress"][0]['unlocked_balance']
                     result['lockedAmount'] = result["per_subaddress"][0]['balance']-result["per_subaddress"][0]['unlocked_balance']
-                if coin_family == "XMR" and method_name == "get_accounts":
+                if coin_family == "XMR" and method_name == "get_address":
                     resultReformat = {'addresses' : []}
-                    for address in result["subaddress_accounts"]:
-                        resultReformat['addresses'].append(address["base_address"])
+                    for address in result["addresses"]:
+                        resultReformat['addresses'].append(address["address"])
                     result = resultReformat
                 if coin_family == "XMR" and method_name == "transfer":
                     if hasattr(config,"daemon"+coin):
