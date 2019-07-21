@@ -50,7 +50,7 @@ async def call_aiohttp_wallet(method_name: str, coin: str, payload: Dict = None)
         method_name = "get_balance"
         payload["account_index"] = 0
         payload["address_indices"] = [0]
-        if payload is not None and 'address' in payload:
+        if 'address' in payload:
             indices = await call_aiohttp_wallet_original('get_address_index', coin, payload=payload)
             indexMajor = indices['index']['major']
             if int(indexMajor) != 0:
@@ -102,6 +102,9 @@ async def call_aiohttp_wallet(method_name: str, coin: str, payload: Dict = None)
                 if coin_family == "XMR" and method_name == "get_balance":
                     result['availableBalance'] = result["per_subaddress"][0]['unlocked_balance']
                     result['lockedAmount'] = result["per_subaddress"][0]['balance']-result["per_subaddress"][0]['unlocked_balance']
+                    if 'address' not in payload: # global
+                        result['availableBalance'] = result["unlocked_balance"]
+                        result['lockedAmount'] = result["balance"]-result["unlocked_balance"]
                 if coin_family == "XMR" and method_name == "get_address":
                     resultReformat = {'addresses' : []}
                     for address in result["addresses"]:
