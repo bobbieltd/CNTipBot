@@ -2400,6 +2400,7 @@ async def paymentid(ctx):
 async def stats(ctx, coin: str = None):
     if coin is not None:
         coin = coin.upper()
+        COIN_NAME = coin.upper()
     if ((coin is None) and isinstance(ctx.message.channel, discord.DMChannel)) or coin.upper() == "BOT":
         await bot.wait_until_ready()
         get_all_m = bot.get_all_members()
@@ -2416,20 +2417,20 @@ async def stats(ctx, coin: str = None):
         botstats = botstats + '```'
         await ctx.send(f'{botstats}')
         await ctx.send('Please add ticker: '+ ', '.join(ENABLE_COIN).lower() + ' to get stats about coin instead.')
-        return
+        coin = serverinfo['default_coin'].upper()
+        if coin not in ENABLE_COIN or coin in MAINTENANCE_COIN:
+            return
     elif (coin is None) and isinstance(ctx.message.channel, discord.DMChannel) == False:
         serverinfo = get_info_pref_coin(ctx)
         coin = serverinfo['default_coin']
         pass
 
-    if coin.upper() not in ENABLE_COIN:
+    if COIN_NAME not in ENABLE_COIN:
         await ctx.message.add_reaction(EMOJI_ERROR)
         await ctx.send('Please put available ticker: '+ ', '.join(ENABLE_COIN).lower())
         return
-    else:
-        coin = coin.upper()
 
-    if coin.upper() in MAINTENANCE_COIN:
+    if COIN_NAME in MAINTENANCE_COIN:
         await ctx.send(f'{EMOJI_RED_NO} {coin.upper()} in maintenance.')
         return
 
@@ -2444,7 +2445,7 @@ async def stats(ctx, coin: str = None):
     except Exception as e:
         traceback.print_exc(file=sys.stdout)
     if gettopblock:
-        COIN_NAME = coin
+        coin_family = getattr(getattr(config,"daemon"+COIN_NAME,"daemonWRKZ"),"coin_family","TRTL")
         COIN_DEC = get_decimal(coin)
         COIN_DIFF = get_diff_target(coin)
         blockfound = datetime.utcfromtimestamp(int(gettopblock['block_header']['timestamp'])).strftime("%Y-%m-%d %H:%M:%S")
