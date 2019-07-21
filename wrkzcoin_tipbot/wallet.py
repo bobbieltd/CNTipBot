@@ -77,7 +77,7 @@ async def send_transaction_donate(from_address: str, to_address: str, amount: in
 
 
 async def send_transaction(from_address: str, to_address: str, amount: int, coin: str) -> str:
-    COIN_NAME = coin.upper() = coin.upper()
+    COIN_NAME = coin.upper()
     coin_family = getattr(getattr(config,"daemon"+COIN_NAME),"coin_family","TRTL")
 
     if from_address.upper() == "TIPBOT": 
