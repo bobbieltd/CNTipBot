@@ -2417,6 +2417,7 @@ async def stats(ctx, coin: str = None):
         botstats = botstats + '```'
         await ctx.send(f'{botstats}')
         await ctx.send('Please add ticker: '+ ', '.join(ENABLE_COIN).lower() + ' to get stats about coin instead.')
+        serverinfo = get_info_pref_coin(ctx)
         coin = serverinfo['default_coin'].upper()
         if coin not in ENABLE_COIN or coin in MAINTENANCE_COIN:
             return
