@@ -32,7 +32,8 @@ async def call_aiohttp_wallet_original(method_name: str, coin: str, payload: Dic
                 await session.close()
                 decoded_data = json.loads(res_data)
                 result = decoded_data['result']
-                print(coin+" "+method_name+" RPC Result Original : "+json.dumps(result))
+                if random.randint(1,101) > 99: # only random log
+                    print(coin+" "+method_name+" RPC Result Original : "+json.dumps(result))
                 return result
             else:
                 print(" RPC Original Error status : "+response.status);
@@ -107,7 +108,7 @@ async def call_aiohttp_wallet(method_name: str, coin: str, payload: Dict = None)
                         newCoinConfig.fee = result["fee"]
                         setattr(config,"daemon"+coin,newCoinConfig)
                     result["transactionHash"] = result["tx_hash"]
-                if coin_family == "XMR":
+                if coin_family == "XMR" and random.randint(1,101) > 99: # only random log:
                     print(coin+" "+method_name+" RPC Result from XMR family: "+json.dumps(result))
                 return result
             else:
