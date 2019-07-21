@@ -1253,7 +1253,7 @@ def sql_mv_xmr_multiple(user_from: str, user_tos, amount_each: float, coin: str,
             return False
     return True
 
-async def sql_external_xmr_single(user_from: str, amount: float, to_address: str, coin: str, tiptype: str):
+async def sql_external_xmr_single(user_from: str, amount: int, to_address: str, coin: str, tiptype: str):
     global conn
     COIN_NAME = coin.upper()
     coin_family = getattr(getattr(config,"daemon"+COIN_NAME,"daemonWRKZ"),"coin_family","TRTL")

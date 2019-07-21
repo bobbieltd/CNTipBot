@@ -80,7 +80,7 @@ async def send_transaction(from_address: str, to_address: str, amount: int, coin
     COIN_NAME = coin.upper()
     coin_family = getattr(getattr(config,"daemon"+COIN_NAME),"coin_family","TRTL")
 
-    if from_address.upper() == "TIPBOT": 
+    if from_address.upper() in ["TIPBOT","BOT"]: 
         from_address = getattr(getattr(config,"daemon"+COIN_NAME),"DonateAddress")
     else:
         print("It should be not sending from other source !!!")
