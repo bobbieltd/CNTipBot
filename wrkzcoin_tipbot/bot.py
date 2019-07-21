@@ -115,7 +115,6 @@ bot_help_balance = f"Check your {COIN_REPR} balance."
 bot_help_botbalance = f"Check (only) bot {COIN_REPR} balance."
 bot_help_donate = f"Donate {COIN_REPR} to a Bot Owner."
 bot_help_tip = f"Give {COIN_REPR} to a user from your balance."
-bot_help_forwardtip = f"Forward all your received tip of {COIN_REPR} to registered wallet."
 bot_help_tipall = f"Spread a tip amount of {COIN_REPR} to all online members."
 bot_help_send = f"Send {COIN_REPR} to a {COIN_REPR} address from your balance (supported integrated address)."
 bot_help_optimize = f"Optimize your tip balance of {COIN_REPR} for large tip, send, tipall"
@@ -1129,56 +1128,6 @@ async def botbalance(ctx, member: discord.Member = None, *args):
             f'{EMOJI_MONEYBAG} Pending: {balance_locked} '
             f'{COIN_NAME}\n'
             '**This is bot\'s tipjar address. Do not deposit here unless you want to deposit to this bot.**')
-        return
-
-
-@bot.command(pass_context=True, name='forwardtip', aliases=['redirecttip'],
-             help=bot_help_forwardtip)
-async def forwardtip(ctx, coin: str, option: str):
-    if coin is not None:
-        coin = coin.upper()
-    # check if account locked
-    account_lock = await alert_if_userlock(ctx, 'forwardtip')
-    if account_lock:
-        await ctx.message.add_reaction(EMOJI_LOCKED) 
-        await ctx.send(f'{EMOJI_RED_NO} {MSG_LOCKED_ACCOUNT}')
-        return
-    # end of check if account locked
-
-    # Check to test
-    # if ctx.message.author.id not in MAINTENANCE_OWNER:
-        # await ctx.message.add_reaction(EMOJI_WARNING)
-        # await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} Still under testing. Try again in the future.')
-        # return
-    # End Check
-    COIN_NAME = coin.upper()
-    if COIN_NAME not in ENABLE_COIN:
-        await ctx.message.add_reaction(EMOJI_ERROR)
-        await ctx.send(f'{ctx.author.mention} Please use available ticker: '+ ', '.join(ENABLE_COIN).lower())
-        return
-    if option.upper() not in ["ON", "OFF"]:
-        await ctx.message.add_reaction(EMOJI_ERROR)
-        await ctx.send(f'{ctx.author.mention} Parameter must be: **ON** or **OFF**')
-        return
-
-    userwallet = await store.sql_get_userwallet(ctx.message.author.id, COIN_NAME)
-    if userwallet is None:
-        userregister = await store.sql_register_user(str(ctx.message.author.id), COIN_NAME)
-        userwallet = await store.sql_get_userwallet(str(ctx.message.author.id), COIN_NAME)
-    #print(userwallet)
-    # Do not allow to ON if 'user_wallet_address' is None
-    if ('user_wallet_address' not in userwallet) and option.upper() == "ON":
-        await ctx.message.add_reaction(EMOJI_ERROR)
-        await ctx.send(f'{ctx.author.mention} You have\'t registered an address for **{COIN_NAME}**')
-        return
-    if userwallet['forwardtip'].upper() == option.upper():
-        await ctx.message.add_reaction(EMOJI_WARNING)
-        await ctx.send(f'{ctx.author.mention} You have this forwardtip already: **{option.upper()}**')
-        return
-    else:
-        setforward = store.sql_set_forwardtip(str(ctx.message.author.id), COIN_NAME, option.upper())
-        await ctx.message.add_reaction(EMOJI_OK)
-        await ctx.send(f'{ctx.author.mention} You set forwardtip of {COIN_NAME} to: **{option.upper()}**')
         return
 
 @bot.command(pass_context=True, help=bot_help_donate)
@@ -3351,12 +3300,6 @@ async def balance_error(ctx, error):
 @botbalance.error
 async def botbalance_error(ctx, error):
     pass
-
-
-@forwardtip.error
-async def forwardtip_error(ctx, error):
-    pass
-
 
 @tip.error
 async def tip_error(ctx, error):
