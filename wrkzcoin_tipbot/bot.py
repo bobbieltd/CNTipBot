@@ -907,7 +907,7 @@ async def balance(ctx, coin: str = None):
                 if locked - actual + userdata_balance['Adjust'] < 0:
                     balance_locked =  num_format_coin(0, COIN_NAME)
                 else:
-                    balance_locked =  num_format_coin(locked - actual +serdata_balance['Adjust'], COIN_NAME)
+                    balance_locked =  num_format_coin(locked - actual + userdata_balance['Adjust'], COIN_NAME)
         pass
     elif COIN_NAME == "DOGE":
         depositAddress = await DOGE_LTC_getaccountaddress(ctx.message.author.id, COIN_NAME)
