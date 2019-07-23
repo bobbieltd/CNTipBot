@@ -1831,7 +1831,7 @@ async def send(ctx, amount: str, CoinAddress: str):
         originalCoinAddress = None
         if len(CoinAddress) == get_addrlen(COIN_NAME) + 64 + 1:
             originalCoinAddress = CoinAddress
-            CoinAddress = valid_address['integrated_address']
+            CoinAddress = valid_address
         elif valid_address != CoinAddress:
             await ctx.message.add_reaction(EMOJI_ERROR)
             await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} Invalid {COIN_NAME} address (Syntax: .send <amount> <address> or .send <amount> <address.paymentid> ):\n'
