@@ -360,6 +360,7 @@ async def make_integrated_address_xmr(address: str, coin: str, paymentid: str = 
         try:
             value = int(paymentid, 16)
         except ValueError:
+            traceback.print_exc(file=sys.stdout)
             return False
     else:
         paymentid = addressvalidation.paymentid(8)

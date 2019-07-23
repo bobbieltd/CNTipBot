@@ -281,44 +281,48 @@ async def make_integrated_cn(wallet_address, coin, integrated_id=None):
 async def validate_address(wallet_address, coin: str):
     COIN_NAME = coin.upper()
     coin_family = getattr(getattr(config,"daemon"+COIN_NAME,"daemonWRKZ"),"coin_family","TRTL");
-    # TODO Check length and make integrated for TurtleCoin
-    if len(wallet_address) == wallet.get_addrlen(COIN_NAME) + 64 + 1: # Syntax "address.payment64ID"
-        mixedAddress = wallet_address.split(".")
-        if len(mixedAddress) != 2:
+    try:
+        # TODO Check length and make integrated for TurtleCoin
+        if len(wallet_address) == wallet.get_addrlen(COIN_NAME) + 64 + 1: # Syntax "address.payment64ID"
+            mixedAddress = wallet_address.split(".")
+            if len(mixedAddress) != 2:
+                return None
+            paymentID = mixedAddress[1]
+            if len(paymentID) != 64:
+                return None
+            wallet_address = await make_integrated_cn(mixedAddress[0], COIN_NAME, paymentID)
+        if coin_family == "XMR" and len(wallet_address) == wallet.get_addrlen(COIN_NAME) + 16 + 1: # Syntax "address.payment16ID"
+            mixedAddress = wallet_address.split(".")
+            if len(mixedAddress) != 2:
+                return None
+            paymentID = mixedAddress[1]
+            if len(paymentID) != 16:
+                return None
+            wallet_address = await make_integrated_cn(mixedAddress[0], COIN_NAME, paymentID)
+        if coin_family == "TRTL":
+            if len(wallet_address) != int(wallet.get_addrlen(COIN_NAME)) and len(wallet_address) != int(wallet.get_intaddrlen(COIN_NAME)):
+                return None
+        prefix_char=wallet.get_prefix_char(COIN_NAME)
+        my_regex = r""+prefix_char+r"[a-zA-Z0-9]"
+        if not re.match(my_regex, wallet_address.strip()):
             return None
-        paymentID = mixedAddress[1]
-        if len(paymentID) != 64:
-            return None
-        wallet_address = await make_integrated_cn(mixedAddress[0], COIN_NAME, paymentID)
-    if coin_family == "XMR" and len(wallet_address) == wallet.get_addrlen(COIN_NAME) + 16 + 1: # Syntax "address.payment16ID"
-        mixedAddress = wallet_address.split(".")
-        if len(mixedAddress) != 2:
-            return None
-        paymentID = mixedAddress[1]
-        if len(paymentID) != 16:
-            return None
-        wallet_address = await make_integrated_cn(mixedAddress[0], COIN_NAME, paymentID)
-    if coin_family == "TRTL":
-        if len(wallet_address) != int(wallet.get_addrlen(COIN_NAME)) and len(wallet_address) != int(wallet.get_intaddrlen(COIN_NAME)):
-            return None
-    prefix_char=wallet.get_prefix_char(COIN_NAME)
-    my_regex = r""+prefix_char+r"[a-zA-Z0-9]"
-    if not re.match(my_regex, wallet_address.strip()):
-        return None
-    address_hex = decode(wallet_address)
-    prefix=wallet.get_prefix(COIN_NAME)
-    prefix_hex=varint_encode(prefix).hex()
-    if address_hex.startswith(prefix_hex):
-        return wallet_address
-    prefix=wallet.get_prefix_extra1(COIN_NAME)
-    prefix_hex=varint_encode(prefix).hex()
-    if address_hex.startswith(prefix_hex):
-        return wallet_address
-    prefix=wallet.get_prefix_extra2(COIN_NAME)
-    prefix_hex=varint_encode(prefix).hex()
-    if address_hex.startswith(prefix_hex):
-        return wallet_address
-    print("Wrong prefix for address_hex = "+address_hex)
+        address_hex = decode(wallet_address)
+        prefix=wallet.get_prefix(COIN_NAME)
+        prefix_hex=varint_encode(prefix).hex()
+        if address_hex.startswith(prefix_hex):
+            return wallet_address
+        if coin_family == "XMR":
+            prefix=wallet.get_prefix_extra1(COIN_NAME)
+            prefix_hex=varint_encode(prefix).hex()
+            if address_hex.startswith(prefix_hex):
+                return wallet_address
+            prefix=wallet.get_prefix_extra2(COIN_NAME)
+            prefix_hex=varint_encode(prefix).hex()
+            if address_hex.startswith(prefix_hex):
+                return wallet_address
+        print("Wrong prefix for address_hex = "+address_hex)
+    except:
+        traceback.print_exc(file=sys.stdout)
     return None
 
 # Validate address:
