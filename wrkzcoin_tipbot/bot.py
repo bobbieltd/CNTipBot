@@ -83,6 +83,7 @@ EMOJI_COIN = {\
 "XTRI" : "\U0001F538",\
 "XTOR" : "\U0001F346",\
 "BLOG" : "\U0000270D",\
+"TRTG" : "\U0001F5A4",\
 "DOGE" : "\U0001F436"}
 
 EMOJI_RED_NO = "\u26D4"
@@ -3138,6 +3139,8 @@ def get_cn_coin_from_address(CoinAddress: str):
         COIN_NAME = "XTOR"
     elif CoinAddress.startswith("cms"):
         COIN_NAME = "BLOG"
+    elif CoinAddress.startswith("Tg"):
+        COIN_NAME = "TRTG"
     return COIN_NAME
 
 
