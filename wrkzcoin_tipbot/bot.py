@@ -2828,14 +2828,14 @@ def get_cn_coin_from_address(CoinAddress: str):
         COIN_NAME = "TRTL"
     elif CoinAddress.startswith("L"):
         COIN_NAME = "LOKI"
-    elif CoinAddress.startswith("T"):
-        COIN_NAME = "XTRI"
     elif CoinAddress.startswith("bit"):
         COIN_NAME = "XTOR"
     elif CoinAddress.startswith("cms"):
         COIN_NAME = "BLOG"
     elif CoinAddress.startswith("Tg"):
         COIN_NAME = "TRTG"
+    elif CoinAddress.startswith("T"):
+        COIN_NAME = "XTRI"
     return COIN_NAME
 
 
