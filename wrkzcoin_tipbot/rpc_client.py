@@ -116,6 +116,8 @@ async def call_aiohttp_wallet(method_name: str, coin: str, payload: Dict = None)
                         newCoinConfig.fee = result["fee"]
                         setattr(config,"daemon"+coin,newCoinConfig)
                     result["transactionHash"] = result["tx_hash"]
+                if coin_family == "TRTL" and method_name == "sendTransaction":
+                    result["fee"] = payload["fee"]
                 if coin_family == "XMR" and random.randint(1,101) > 99: # only random log:
                     print(coin+" "+method_name+" RPC Result from XMR family: "+json.dumps(result))
                 return result

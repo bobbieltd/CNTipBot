@@ -1863,19 +1863,20 @@ async def send(ctx, amount: str, CoinAddress: str):
                                                      CoinAddress, COIN_NAME, "SEND")
         if SendTx:
             SendTx_hash = SendTx['transactionHash']
+            tx_fee = SendTx['fee']
             await ctx.message.add_reaction(get_emoji(COIN_NAME))
             # await botLogChan.send(f'A user successfully executed `.send {num_format_coin(real_amount, COIN_NAME)} {COIN_NAME}`.')
             if originalCoinAddress is None:
                 await ctx.message.author.send(f'{EMOJI_ARROW_RIGHTHOOK} You have sent {num_format_coin(real_amount, COIN_NAME)} '
                                               f'{COIN_NAME} to `{CoinAddress}`.\n'
                                               f'Transaction hash: `{SendTx_hash}`\n'
-                                              'Network fee deducted from your account balance.')
+                                              f'Network fee deducted from your account balance: `{tx_fee}`')
             else:
                 await ctx.message.author.send(f'{EMOJI_ARROW_RIGHTHOOK} You have sent {num_format_coin(real_amount, COIN_NAME)} '
                                               f'{COIN_NAME} to `{originalCoinAddress}`.\n'
                                               f'Equivalent integrated address: `{CoinAddress}`.\n'
                                               f'Transaction hash: `{SendTx_hash}`\n'
-                                              'Network fee deducted from your account balance.')
+                                              f'Network fee deducted from your account balance: `{tx_fee}`')
             return
         else:
             await ctx.message.add_reaction(EMOJI_ERROR)
