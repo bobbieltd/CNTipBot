@@ -281,8 +281,9 @@ def validate_address(wallet_address, coin: str):
     COIN_NAME = coin.upper()
     coin_family = getattr(getattr(config,"daemon"+COIN_NAME,"daemonWRKZ"),"coin_family","TRTL");
     # TODO Check length and make integrated for TurtleCoin
-    if coin_family == "TRTL" and len(wallet_address) != int(wallet.get_addrlen(COIN_NAME)):
-        return None
+    if coin_family == "TRTL":
+        if len(wallet_address) != int(wallet.get_addrlen(COIN_NAME) and len(wallet_address) != int(wallet.get_intaddrlen(COIN_NAME):
+            return None
     prefix_char=wallet.get_prefix_char(COIN_NAME)
     my_regex = r""+prefix_char+r"[a-zA-Z0-9]"
     if not re.match(my_regex, wallet_address.strip()):
