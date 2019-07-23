@@ -620,7 +620,7 @@ CREATE TABLE `xtor_external_tx` (
   `amount` bigint(20) NOT NULL,
   `fee` bigint(16) NOT NULL,
   `decimal` bigint(16) NOT NULL,
-  `to_address` varchar(128) NOT NULL,
+  `to_address` varchar(256) NOT NULL,
   `type` enum('SEND','WITHDRAW') NOT NULL DEFAULT 'WITHDRAW',
   `date` int(11) NOT NULL,
   `tx_hash` varchar(64) NOT NULL,
