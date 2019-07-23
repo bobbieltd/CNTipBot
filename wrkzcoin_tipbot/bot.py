@@ -1483,12 +1483,12 @@ async def tip(ctx, amount: str, *args):
                         message_talker = store.sql_get_messages(str(ctx.message.guild.id), str(ctx.message.channel.id), time_given)
                         if len(message_talker) == 0:
                             await ctx.message.add_reaction(EMOJI_ERROR)
-                            await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} There is no active talker in such period.')
+                            msg = await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} There is no active talker in such period.')
                             await msg.add_reaction(EMOJI_OK_BOX)
                             return
                         else:
                             #print(message_talker)
-                            await _tip_talker(ctx, amount, message_talker, COIN_NAME)
+                            msg = await _tip_talker(ctx, amount, message_talker, COIN_NAME)
                             await msg.add_reaction(EMOJI_OK_BOX)
                             return
             else:
@@ -2137,22 +2137,23 @@ async def stats(ctx, coin: str = None):
     COIN_NAME = None
     if coin is not None:
         coin = coin.upper()
+        COIN_NAME = coin.upper()
 
-    if (coin is None) and isinstance(ctx.message.channel, discord.DMChannel) == False:
+    if (COIN_NAME is None) and isinstance(ctx.message.channel, discord.DMChannel) == False:
             serverinfo = get_info_pref_coin(ctx)
             COIN_NAME = serverinfo['default_coin'].upper()
-    elif (coin is None) and isinstance(ctx.message.channel, discord.DMChannel):
+    elif (COIN_NAME is None) and isinstance(ctx.message.channel, discord.DMChannel):
         COIN_NAME = "BOT"
-    elif coin:
-        COIN_NAME = coin.upper()
         
     if COIN_NAME not in ENABLE_COIN and COIN_NAME != "BOT":
         await ctx.message.add_reaction(EMOJI_ERROR)
-        await ctx.send(f'{ctx.author.mention} Please put available ticker: '+ ', '.join(ENABLE_COIN).lower())
+        msg = await ctx.send(f'{ctx.author.mention} Please put available ticker: '+ ', '.join(ENABLE_COIN).lower())
+        await msg.add_reaction(EMOJI_OK_BOX)
         return
 
     if COIN_NAME in MAINTENANCE_COIN:
-        await ctx.send(f'{EMOJI_RED_NO} {COIN_NAME} in maintenance.')
+        msg = await ctx.send(f'{EMOJI_RED_NO} {COIN_NAME} in maintenance.')
+        await msg.add_reaction(EMOJI_OK_BOX)
         return
 
     if COIN_NAME == "BOT":
@@ -2170,24 +2171,24 @@ async def stats(ctx, coin: str = None):
         botstats = botstats + botid + '\n' + guildnumber + '\n' + shardcount + '\n' + totalonline + '\n' + uniqmembers + '\n' + channelnumb
         botstats = botstats + '```'
         await ctx.send(f'{botstats}')
-        await ctx.send('Please add ticker: '+ ', '.join(ENABLE_COIN).lower() + ' to get stats about coin instead.')
+        msg = await ctx.send('Please add ticker: '+ ', '.join(ENABLE_COIN).lower() + ' to get stats about coin instead.')
         await msg.add_reaction(EMOJI_OK_BOX)
         return
 
     gettopblock = None
     try:
-        gettopblock = await daemonrpc_client.gettopblock(coin)
+        gettopblock = await daemonrpc_client.gettopblock(COIN_NAME)
     except Exception as e:
         traceback.print_exc(file=sys.stdout)
     walletStatus = None
     try:
-        walletStatus = await daemonrpc_client.getWalletStatus(coin)
+        walletStatus = await daemonrpc_client.getWalletStatus(COIN_NAME)
     except Exception as e:
         traceback.print_exc(file=sys.stdout)
     if gettopblock:
         coin_family = getattr(getattr(config,"daemon"+COIN_NAME,"daemonWRKZ"),"coin_family","TRTL")
-        COIN_DEC = get_decimal(coin)
-        COIN_DIFF = get_diff_target(coin)
+        COIN_DEC = get_decimal(COIN_NAME)
+        COIN_DIFF = get_diff_target(COIN_NAME)
         blockfound = datetime.utcfromtimestamp(int(gettopblock['block_header']['timestamp'])).strftime("%Y-%m-%d %H:%M:%S")
         ago = str(timeago.format(blockfound, datetime.utcnow()))
         difficulty = "{:,}".format(gettopblock['block_header']['difficulty'])
@@ -2216,20 +2217,21 @@ async def stats(ctx, coin: str = None):
                 balance_locked = num_format_coin(walletBalance['locked'], COIN_NAME)
                 balance_str = f'[TOTAL UNLOCKED] {balance_actual}{COIN_NAME}\n'
                 balance_str = balance_str + f'[TOTAL LOCKED]   {balance_locked}{COIN_NAME}'
-            await ctx.send(f'**[ {COIN_NAME} ]**\n'
+            msg = await ctx.send(f'**[ {COIN_NAME} ]**\n'
                            f'```[NETWORK HEIGHT] {height}\n'
                            f'[TIME]           {ago}\n'
                            f'[DIFFICULTY]     {difficulty}\n'
-                           f'[BLOCK REWARD]   {reward}{coin.upper()}\n'
+                           f'[BLOCK REWARD]   {reward}{COIN_NAME}\n'
                            f'[NETWORK HASH]   {hashrate}\n'
                            f'[WALLET SYNC %]: {t_percent}\n'
                            f'{balance_str}'
                            '```'
                            )
+            await msg.add_reaction(EMOJI_OK_BOX)
             return
-        await msg.add_reaction(EMOJI_OK_BOX)
+
     else:
-        await ctx.send('`Unavailable.`')
+        msg = await ctx.send('`Unavailable.`')
         await msg.add_reaction(EMOJI_OK_BOX)
         return
 
