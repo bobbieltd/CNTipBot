@@ -2095,10 +2095,11 @@ async def paymentid(ctx):
 
 @bot.command(pass_context=True, aliases=['stat'], help=bot_help_stats)
 async def stats(ctx, coin: str = None):
+    COIN_NAME = None
     if coin is not None:
         coin = coin.upper()
         COIN_NAME = coin.upper()
-    if ((coin is None) and isinstance(ctx.message.channel, discord.DMChannel)) or coin.upper() == "BOT":
+    if ((coin is None) and isinstance(ctx.message.channel, discord.DMChannel)) or COIN_NAME == "BOT":
         await bot.wait_until_ready()
         get_all_m = bot.get_all_members()
         #membercount = '[Members] ' + '{:,.0f}'.format(sum([x.member_count for x in bot.guilds]))
