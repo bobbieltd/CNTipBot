@@ -334,7 +334,7 @@ def make_integrated(wallet_address, coin: str, integrated_id=None):
     if integrated_id is None:
         return None
     if coin_family == "XMR":
-        result = await wallet.make_integrated_address_xmr(wallet_address, COIN_NAME, integrated_id)
+        result = await make_integrated_address_xmr(wallet_address, COIN_NAME, integrated_id)
         print('{} - {} - {}'.format(wallet_address, result['payment_id'], result['integrated_address']))
         return result['integrated_address']
     prefix=wallet.get_prefix(COIN_NAME)
