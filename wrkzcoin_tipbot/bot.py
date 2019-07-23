@@ -118,7 +118,6 @@ bot_help_donate = f"Donate {COIN_REPR} to a Bot Owner."
 bot_help_tip = f"Give {COIN_REPR} to a user from your balance."
 bot_help_tipall = f"Spread a tip amount of {COIN_REPR} to all online members."
 bot_help_send = f"Send {COIN_REPR} to a {COIN_REPR} address from your balance (supported integrated address)."
-bot_help_optimize = f"Optimize your tip balance of {COIN_REPR} for large tip, send, tipall"
 bot_help_address = f"Check {COIN_REPR} address | Generate {COIN_REPR} integrated address."
 bot_help_paymentid = "Make a random payment ID with 64 chars length."
 bot_help_address_qr = "Show an input address in QR code image."
@@ -1316,7 +1315,7 @@ async def donate(ctx, amount: str, coin: str = None):
         return
     else:
         await ctx.message.add_reaction(EMOJI_ERROR)
-        await ctx.send(f'{ctx.author.mention} Thank you but you may need to `optimize` or try again later.')
+        await ctx.send(f'{ctx.author.mention} Thank you but you may need to lower the amount or try again later.')
         # add to failed tx table
         store.sql_add_failed_tx(COIN_NAME, str(ctx.message.author.id), ctx.message.author.name, real_amount, "DONATE")
         return
@@ -2919,17 +2918,6 @@ async def send_error(ctx, error):
 @voucher.error
 async def voucher_error(ctx, error):
     pass
-
-
-@optimize.error
-async def optimize_error(ctx, error):
-    pass
-
-
-@address.error
-async def address_error(ctx, error):
-    pass
-
 
 @paymentid.error
 async def payment_error(ctx, error):
