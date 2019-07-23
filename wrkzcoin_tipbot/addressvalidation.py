@@ -278,104 +278,44 @@ def make_integrated_cn(wallet_address, coin, integrated_id=None):
 
 # Validate address: - XMR for three prefixes
 def validate_address(wallet_address, coin: str):
-    coin_family = getattr(getattr(config,"daemon"+coin),"coin_family","TRTL");
-
-    if coin_family == "XMR":
-        prefix_char=wallet.get_prefix_char(coin.upper())
-        my_regex = r""+prefix_char+r"[a-zA-Z0-9]"
-        if not re.match(my_regex, wallet_address.strip()):
-            return None
-        address_hex = decode(wallet_address)
-        prefix=wallet.get_prefix(coin)
-        prefix_hex=varint_encode(prefix).hex()
-        if address_hex.startswith(prefix_hex):
-            return wallet_address
-        prefix=wallet.get_prefix_extra1(coin)
-        prefix_hex=varint_encode(prefix).hex()
-        if address_hex.startswith(prefix_hex):
-            return wallet_address
-        prefix=wallet.get_prefix_extra2(coin)
-        prefix_hex=varint_encode(prefix).hex()
-        if address_hex.startswith(prefix_hex):
-            return wallet_address
-        print("Wrong prefix for address_hex = "+address_hex)
+    COIN_NAME = coin.upper()
+    coin_family = getattr(getattr(config,"daemon"+COIN_NAME,"daemonWRKZ"),"coin_family","TRTL");
+    # TODO Check length and make integrated for TurtleCoin
+    if coin_family == "TRTL" and len(wallet_address) != int(wallet.get_addrlen(COIN_NAME)):
         return None
-        
-    prefix=wallet.get_prefix(coin)
-    prefix_hex=varint_encode(prefix).hex()
-    prefix_char=wallet.get_prefix_char(coin.upper())
-    main_address_len=wallet.get_addrlen(coin.upper())
-    remain_length=main_address_len-len(prefix_char)
-    my_regex = r""+prefix_char+r"[a-zA-Z0-9]"+r"{"+str(remain_length)+",}"
+    prefix_char=wallet.get_prefix_char(COIN_NAME)
+    my_regex = r""+prefix_char+r"[a-zA-Z0-9]"
     if not re.match(my_regex, wallet_address.strip()):
         return None
-    if (len(wallet_address) != int(main_address_len)):
-        return None
-    try:
-        address_hex = decode(wallet_address)
-        if(address_hex.startswith(prefix_hex)):
-            i=len(prefix_hex)-1
-            address_no_prefix = address_hex[i:]
-            spend = address_no_prefix[1:65]
-            view = address_no_prefix[65:129]
-            checksum = address_no_prefix[129:137]
-            expectedChecksum = cn_fast_hash(prefix_hex+spend + view)[0:8]
-            if(checksum==expectedChecksum):
-                return wallet_address
-            else:
-                return None
-        else:
-            return None
-    except Exception as e:
-        traceback.print_exc(file=sys.stdout)
-        return None
-        pass
+    address_hex = decode(wallet_address)
+    prefix=wallet.get_prefix(COIN_NAME)
+    prefix_hex=varint_encode(prefix).hex()
+    if address_hex.startswith(prefix_hex):
+        return wallet_address
+    prefix=wallet.get_prefix_extra1(COIN_NAME)
+    prefix_hex=varint_encode(prefix).hex()
+    if address_hex.startswith(prefix_hex):
+        return wallet_address
+    prefix=wallet.get_prefix_extra2(COIN_NAME)
+    prefix_hex=varint_encode(prefix).hex()
+    if address_hex.startswith(prefix_hex):
+        return wallet_address
+    print("Wrong prefix for address_hex = "+address_hex)
+    return None
 
 # Validate address:
 def validate_integrated(wallet_address, coin: str):
-    coin_family = getattr(getattr(config,"daemon"+coin),"coin_family","TRTL");
-    
-    if coin_family == "XMR":
-        return validate_address(wallet_address, coin)
-    prefix=wallet.get_prefix(coin.upper())
-    prefix_hex=varint_encode(prefix).hex()
-    int_address_len=wallet.get_intaddrlen(coin.upper())
-    prefix_char=wallet.get_prefix_char(coin.upper())
-    remain_length=int_address_len-len(prefix_char)
-    my_regex = r""+prefix_char+r"[a-zA-Z0-9]"+r"{"+str(remain_length)+",}"
-    if (len(wallet_address) != int(int_address_len)):
-        return None
-    if not re.match(my_regex, wallet_address.strip()):
-        return None
-    try:
-        address_hex = decode(wallet_address)
-        if(address_hex.startswith(prefix_hex)):
-            i=len(prefix_hex)-1
-            address_no_prefix = address_hex[i:]
-            integrated_id = address_no_prefix[1:129]
-            spend = address_no_prefix[(128+1):(128+65)]
-            view = address_no_prefix[(128+65):(128+129)]
-            checksum = address_no_prefix[(128+129):(128+137)]
-            expectedChecksum = cn_fast_hash(prefix_hex+integrated_id+spend + view)[0:8]
-            if(checksum==expectedChecksum):
-                checksum = cn_fast_hash(prefix_hex + spend + view);
-                address_b58=encode(prefix_hex+spend+view + checksum[0:8])
-                result = {}
-                result['address']=str(address_b58)
-                result['integrated_id']=str(hextostr(integrated_id))
-            else:
-                return 'invalid'
-    except Exception as e:
-        traceback.print_exc(file=sys.stdout)
-        return None
-    return result
+    coin_family = getattr(getattr(config,"daemon"+coin,"daemonWRKZ"),"coin_family","TRTL");
+    # TODO Check length
+    return validate_address(wallet_address, coin)
 
 # make_integrated address:
 def make_integrated(wallet_address, coin: str, integrated_id=None):
-    prefix=wallet.get_prefix(coin.upper())
+    COIN_NAME = coin.upper()
+    prefix=wallet.get_prefix(COIN_NAME)
     prefix_hex=varint_encode(prefix).hex()
-    main_address_len=wallet.get_addrlen(coin.upper())
-    prefix_char=wallet.get_prefix_char(coin.upper())
+    main_address_len=wallet.get_addrlen(COIN_NAME)
+    prefix_char=wallet.get_prefix_char(COIN_NAME)
     remain_length=main_address_len-len(prefix_char)
     my_regex = r""+prefix_char+r"[a-zA-Z0-9]"+r"{"+str(remain_length)+",}"
     if integrated_id is None:
@@ -409,7 +349,6 @@ def make_integrated(wallet_address, coin: str, integrated_id=None):
         traceback.print_exc(file=sys.stdout)
         return None
         pass
-
 
 ## make random paymentid:
 def paymentid(length=None):
