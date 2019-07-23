@@ -327,14 +327,14 @@ def validate_integrated(wallet_address, coin: str):
     return validate_address(wallet_address, coin)
 
 # make_integrated address ONLY FOR SEND
-def make_integrated(wallet_address, coin: str, integrated_id=None):
+def make_integrated(wallet_address: str, coin: str, integrated_id: str =None):
     COIN_NAME = coin.upper()
     coin_family = getattr(getattr(config,"daemon"+COIN_NAME,"daemonWRKZ"),"coin_family","TRTL")
     
     if integrated_id is None:
         return None
     if coin_family == "XMR":
-        result = await make_integrated_address_xmr(wallet_address, COIN_NAME, integrated_id)
+        result = await wallet.make_integrated_address_xmr(wallet_address, COIN_NAME, integrated_id)
         print('{} - {} - {}'.format(wallet_address, result['payment_id'], result['integrated_address']))
         return result['integrated_address']
     prefix=wallet.get_prefix(COIN_NAME)
