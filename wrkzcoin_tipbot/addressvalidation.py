@@ -323,6 +323,7 @@ async def validate_address(wallet_address, coin: str):
         print("Wrong prefix for address_hex = "+address_hex)
     except:
         traceback.print_exc(file=sys.stdout)
+        print("Error Wallet Address :"+wallet_address)
     return None
 
 # Validate address:
