@@ -1,6 +1,6 @@
 ## For random paymentid
 import traceback, pdb
-import secrets, sha3, hashlib
+import secrets, sha3
 import sys, re
 from binascii import hexlify, unhexlify
 from config import config
@@ -27,7 +27,7 @@ def cn_fast_hash(s):
 
 def keccak_256(s):
     #return Keccak().Keccak((len(s)*4, s), 1088, 512, 0x01, 32*8, False).lower()
-    k = hashlib.sha3_256()
+    k = sha3.keccak_256()
     k.update(s)
     return k.hexdigest()
 
