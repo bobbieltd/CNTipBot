@@ -1829,7 +1829,7 @@ async def send(ctx, amount: str, CoinAddress: str):
                                'is invalid. (Syntax: .send <amount> <address> or .send <amount> <address.paymentid> )')
                 return
         originalCoinAddress = None
-        if 'integrated_address' in valid_address and valid_address != CoinAddress:
+        if lent(CoinAddress) == wallet.get_addrlen(COIN_NAME) + 64 + 1:
             originalCoinAddress = CoinAddress
             CoinAddress = valid_address['integrated_address']
         elif valid_address != CoinAddress:

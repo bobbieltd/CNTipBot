@@ -290,7 +290,7 @@ def validate_address(wallet_address, coin: str):
             return None
         if len(paymentID) != 64 and coin_family == "TRTL": # TRTL only 64 bytes paymentID
             return None
-        wallet_address = make_integrated_cn(mixedAddress[0], COIN_NAME, paymentID)['integrated_address']
+        wallet_address = make_integrated_cn(mixedAddress[0], COIN_NAME, paymentID)
     if coin_family == "TRTL":
         if len(wallet_address) != int(wallet.get_addrlen(COIN_NAME)) and len(wallet_address) != int(wallet.get_intaddrlen(COIN_NAME)):
             return None
@@ -330,7 +330,7 @@ def make_integrated(wallet_address, coin: str, integrated_id=None):
     if coin_family == "XMR":
         result = wallet.make_integrated_address_xmr(wallet_address, COIN_NAME, integrated_id)
         print('{} - {} - {}'.format(wallet_address, result['payment_id'], result['integrated_address']))
-        return result
+        return result['integrated_address']
     prefix=wallet.get_prefix(COIN_NAME)
     prefix_hex=varint_encode(prefix).hex()
     main_address_len=wallet.get_addrlen(COIN_NAME)
@@ -361,7 +361,7 @@ def make_integrated(wallet_address, coin: str, integrated_id=None):
             result['paymentid']=checkPaymentID
             result['integrated_address']=address
             print('{} - {} - {}'.format(result['address'], result['paymentid'], result['integrated_address']))
-            return result
+            return result['integrated_address']
         else:
             return None
     except Exception as e:
