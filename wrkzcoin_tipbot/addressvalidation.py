@@ -281,8 +281,18 @@ def validate_address(wallet_address, coin: str):
     COIN_NAME = coin.upper()
     coin_family = getattr(getattr(config,"daemon"+COIN_NAME,"daemonWRKZ"),"coin_family","TRTL");
     # TODO Check length and make integrated for TurtleCoin
+    if len(wallet_address) == wallet.get_addrlen(COIN_NAME) + 64 + 1: # Syntax "address.paymentID"
+        mixedAddress = wallet_address.split(".")
+        if len(mixedAddress) != 2:
+            return None
+        paymentID = mixedAddress[1]
+        if len(paymentID) != 64 and len(paymentID) != 16:
+            return None
+        if len(paymentID) != 64 and coin_family == "TRTL": # TRTL only 64 bytes paymentID
+            return None
+        wallet_address = make_integrated_cn(mixedAddress[0], COIN_NAME, paymentID)['integrated_address']
     if coin_family == "TRTL":
-        if len(wallet_address) != int(wallet.get_addrlen(COIN_NAME) and len(wallet_address) != int(wallet.get_intaddrlen(COIN_NAME):
+        if len(wallet_address) != int(wallet.get_addrlen(COIN_NAME)) and len(wallet_address) != int(wallet.get_intaddrlen(COIN_NAME)):
             return None
     prefix_char=wallet.get_prefix_char(COIN_NAME)
     my_regex = r""+prefix_char+r"[a-zA-Z0-9]"
@@ -306,21 +316,26 @@ def validate_address(wallet_address, coin: str):
 
 # Validate address:
 def validate_integrated(wallet_address, coin: str):
-    coin_family = getattr(getattr(config,"daemon"+coin,"daemonWRKZ"),"coin_family","TRTL");
+    coin_family = getattr(getattr(config,"daemon"+coin,"daemonWRKZ"),"coin_family","TRTL")
     # TODO Check length
     return validate_address(wallet_address, coin)
 
-# make_integrated address:
+# make_integrated address ONLY FOR SEND
 def make_integrated(wallet_address, coin: str, integrated_id=None):
     COIN_NAME = coin.upper()
+    coin_family = getattr(getattr(config,"daemon"+COIN_NAME,"daemonWRKZ"),"coin_family","TRTL")
+    
+    if integrated_id is None:
+        return None
+    if coin_family == "XMR":
+        return wallet.make_integrated_address_xmr(wallet_address, COIN_NAME, integrated_id)
     prefix=wallet.get_prefix(COIN_NAME)
     prefix_hex=varint_encode(prefix).hex()
     main_address_len=wallet.get_addrlen(COIN_NAME)
     prefix_char=wallet.get_prefix_char(COIN_NAME)
     remain_length=main_address_len-len(prefix_char)
     my_regex = r""+prefix_char+r"[a-zA-Z0-9]"+r"{"+str(remain_length)+",}"
-    if integrated_id is None:
-        integrated_id=paymentid()
+
     if len(wallet_address) != int(main_address_len):
         return None
     if not re.match(my_regex, wallet_address.strip()):
