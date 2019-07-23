@@ -4,7 +4,7 @@ import secrets, sha3
 import sys, re
 from binascii import hexlify, unhexlify
 from config import config
-import wallet
+import wallet, asyncio
 
 import ed25519
 
