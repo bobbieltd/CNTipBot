@@ -281,14 +281,20 @@ def validate_address(wallet_address, coin: str):
     COIN_NAME = coin.upper()
     coin_family = getattr(getattr(config,"daemon"+COIN_NAME,"daemonWRKZ"),"coin_family","TRTL");
     # TODO Check length and make integrated for TurtleCoin
-    if len(wallet_address) == wallet.get_addrlen(COIN_NAME) + 64 + 1: # Syntax "address.paymentID"
+    if len(wallet_address) == wallet.get_addrlen(COIN_NAME) + 64 + 1: # Syntax "address.payment64ID"
         mixedAddress = wallet_address.split(".")
         if len(mixedAddress) != 2:
             return None
         paymentID = mixedAddress[1]
-        if len(paymentID) != 64 and len(paymentID) != 16:
+        if len(paymentID) != 64:
             return None
-        if len(paymentID) != 64 and coin_family == "TRTL": # TRTL only 64 bytes paymentID
+        wallet_address = make_integrated_cn(mixedAddress[0], COIN_NAME, paymentID)
+    if coin_family == "XMR" and len(wallet_address) == wallet.get_addrlen(COIN_NAME) + 16 + 1: # Syntax "address.payment16ID"
+        mixedAddress = wallet_address.split(".")
+        if len(mixedAddress) != 2:
+            return None
+        paymentID = mixedAddress[1]
+        if len(paymentID) != 16:
             return None
         wallet_address = make_integrated_cn(mixedAddress[0], COIN_NAME, paymentID)
     if coin_family == "TRTL":
