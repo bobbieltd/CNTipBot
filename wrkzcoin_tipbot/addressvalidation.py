@@ -269,15 +269,16 @@ def validate_integrated_cn(wallet_address: str, coin: str):
         return None
 
 
-def make_integrated_cn(wallet_address, coin, integrated_id=None):
+async def make_integrated_cn(wallet_address, coin, integrated_id=None):
     if coin.upper() in ENABLE_COIN:
-        return make_integrated(wallet_address, coin.upper(), integrated_id)
+        result = await make_integrated(wallet_address, coin.upper(), integrated_id)
+        return result
     else:
         return None
 
 
 # Validate address: - XMR for three prefixes
-def validate_address(wallet_address, coin: str):
+async def validate_address(wallet_address, coin: str):
     COIN_NAME = coin.upper()
     coin_family = getattr(getattr(config,"daemon"+COIN_NAME,"daemonWRKZ"),"coin_family","TRTL");
     # TODO Check length and make integrated for TurtleCoin
@@ -288,7 +289,7 @@ def validate_address(wallet_address, coin: str):
         paymentID = mixedAddress[1]
         if len(paymentID) != 64:
             return None
-        wallet_address = make_integrated_cn(mixedAddress[0], COIN_NAME, paymentID)
+        wallet_address = await make_integrated_cn(mixedAddress[0], COIN_NAME, paymentID)
     if coin_family == "XMR" and len(wallet_address) == wallet.get_addrlen(COIN_NAME) + 16 + 1: # Syntax "address.payment16ID"
         mixedAddress = wallet_address.split(".")
         if len(mixedAddress) != 2:
@@ -296,7 +297,7 @@ def validate_address(wallet_address, coin: str):
         paymentID = mixedAddress[1]
         if len(paymentID) != 16:
             return None
-        wallet_address = make_integrated_cn(mixedAddress[0], COIN_NAME, paymentID)
+        wallet_address = await make_integrated_cn(mixedAddress[0], COIN_NAME, paymentID)
     if coin_family == "TRTL":
         if len(wallet_address) != int(wallet.get_addrlen(COIN_NAME)) and len(wallet_address) != int(wallet.get_intaddrlen(COIN_NAME)):
             return None
@@ -327,7 +328,7 @@ def validate_integrated(wallet_address, coin: str):
     return validate_address(wallet_address, coin)
 
 # make_integrated address ONLY FOR SEND
-def make_integrated(wallet_address: str, coin: str, integrated_id: str =None):
+async def make_integrated(wallet_address: str, coin: str, integrated_id: str =None):
     COIN_NAME = coin.upper()
     coin_family = getattr(getattr(config,"daemon"+COIN_NAME,"daemonWRKZ"),"coin_family","TRTL")
     

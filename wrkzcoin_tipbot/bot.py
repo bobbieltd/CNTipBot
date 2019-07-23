@@ -1822,7 +1822,7 @@ async def send(ctx, amount: str, CoinAddress: str):
         # addressLength = get_addrlen(COIN_NAME)
         # IntaddressLength = get_intaddrlen(COIN_NAME)
 
-        valid_address = addressvalidation.validate_address_cn(CoinAddress, COIN_NAME)
+        valid_address = await addressvalidation.validate_address_cn(CoinAddress, COIN_NAME)
         if valid_address is None:
                 await ctx.message.add_reaction(EMOJI_ERROR)
                 await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} Address: `{CoinAddress}` '
@@ -2432,7 +2432,7 @@ async def addressqr(ctx, *args):
     if len(args) == 1:
         CoinAddress = args[0]
         if len(CoinAddress) == int(addressLength):
-            valid_address = addressvalidation.validate_address_cn(CoinAddress, COIN_NAME)
+            valid_address = await addressvalidation.validate_address_cn(CoinAddress, COIN_NAME)
             if valid_address is None:
                 await ctx.message.add_reaction(EMOJI_ERROR)
                 await ctx.send(f'{EMOJI_RED_NO} Address: `{CoinAddress}`\n'
@@ -2539,7 +2539,7 @@ async def makeqr(ctx, *args):
             return
         real_amount = int(amount * COIN_DEC)
         if len(CoinAddress) == int(addressLength):
-            valid_address = addressvalidation.validate_address_cn(CoinAddress, COIN_NAME)
+            valid_address = await addressvalidation.validate_address_cn(CoinAddress, COIN_NAME)
             if (valid_address is None):
                 await ctx.message.add_reaction(EMOJI_ERROR)
                 await ctx.send(f'{EMOJI_RED_NO} Address: `{CoinAddress}`\n'
@@ -2595,7 +2595,7 @@ async def makeqr(ctx, *args):
             return
 
         if len(CoinAddress) == int(addressLength):
-            valid_address = addressvalidation.validate_address_cn(CoinAddress, COIN_NAME)
+            valid_address = await addressvalidation.validate_address_cn(CoinAddress, COIN_NAME)
             if valid_address is None:
                 await ctx.message.add_reaction(EMOJI_ERROR)
                 await ctx.send(f'{EMOJI_RED_NO} Address: `{CoinAddress}`\n'
