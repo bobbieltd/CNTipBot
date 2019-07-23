@@ -93,6 +93,7 @@ EMOJI_FORWARD = "\u23E9"
 EMOJI_REFRESH = "\U0001F504"
 EMOJI_ZIPPED_MOUTH = "\U0001F910"
 EMOJI_LOCKED = "\U0001F512"
+EMOJI_OK_BOX = "\U0001F5D1"
 
 ENABLE_COIN = config.Enable_Coin.split(",")
 ENABLE_COIN_DOGE = ["DOGE"]
@@ -217,6 +218,42 @@ async def on_guild_join(guild):
         await botLogChan.send(f'Bot joins a new guild {guild.name} / {guild.id}')
     return
 
+@bot.event
+async def on_reaction_add(reaction, user):
+    # If bot re-act, ignore.
+    if user.id == bot.user.id:
+        return
+    # If other people beside bot react.
+    else:
+        # If re-action is OK box and message author is bot itself
+        if reaction.emoji == EMOJI_OK_BOX and reaction.message.author.id == bot.user.id \
+            and (not reaction.message.content.startswith("**ADDRESS REQ")):
+            await reaction.message.delete()
+        elif reaction.emoji == EMOJI_OK_BOX and reaction.message.author.id == bot.user.id \
+            and reaction.message.content.startswith("**ADDRESS REQ") and \
+            (user in reaction.message.mentions):
+            # OK he confirm
+            COIN_NAME = reaction.message.content.split()[2].upper()
+            name_to_give = reaction.message.content.split()[5]
+            to_send = reaction.message.guild.get_member_named(name_to_give)
+            if COIN_NAME in (ENABLE_COIN + ENABLE_XMR):
+                user_addr = await store.sql_get_userwallet(str(user.id), COIN_NAME)
+                if user_addr is None:
+                    userregister = await store.sql_register_user(str(user.id), COIN_NAME)
+                    user_addr = await store.sql_get_userwallet(str(user.id), COIN_NAME)
+                address = user_addr['balance_wallet_address'] or "NONE"
+                # this one to public channel
+                # msg = await reaction.message.channel.send(f'{user.mention}\'s {COIN_NAME} deposit address:\n```{address}```')
+                try:
+                    msg = await to_send.send(f'{str(user)}\'s {COIN_NAME} deposit address:\n```{address}```')
+                    # delete message afterward to avoid loop.
+                    await reaction.message.delete()
+                except discord.Forbidden:
+                    # If DM is failed, popup to channel.
+                    await reaction.message.channel.send(f'{to_send.mention} I failed DM you for the address.')
+                return
+                # await msg.add_reaction(EMOJI_OK_BOX)
+        return
 
 @bot.event
 async def on_message(message):
@@ -1440,17 +1477,19 @@ async def tip(ctx, amount: str, *args):
                 if time_given:
                     if time_given < 5*60 or time_given > 30*24*60*60:
                         await ctx.message.add_reaction(EMOJI_ERROR)
-                        await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} Please try time inteval between 5minutes to 24hours.')
+                        await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} Please try time inteval between 5minutes to 30 days.')
                         return
                     else:
                         message_talker = store.sql_get_messages(str(ctx.message.guild.id), str(ctx.message.channel.id), time_given)
                         if len(message_talker) == 0:
                             await ctx.message.add_reaction(EMOJI_ERROR)
                             await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} There is no active talker in such period.')
+                            await msg.add_reaction(EMOJI_OK_BOX)
                             return
                         else:
                             #print(message_talker)
                             await _tip_talker(ctx, amount, message_talker, COIN_NAME)
+                            await msg.add_reaction(EMOJI_OK_BOX)
                             return
             else:
                 await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} You need at least one person to tip to.')
@@ -2098,8 +2137,25 @@ async def stats(ctx, coin: str = None):
     COIN_NAME = None
     if coin is not None:
         coin = coin.upper()
+
+    if (coin is None) and isinstance(ctx.message.channel, discord.DMChannel) == False:
+            serverinfo = get_info_pref_coin(ctx)
+            COIN_NAME = serverinfo['default_coin'].upper()
+    elif (coin is None) and isinstance(ctx.message.channel, discord.DMChannel):
+        COIN_NAME = "BOT"
+    elif coin:
         COIN_NAME = coin.upper()
-    if ((coin is None) and isinstance(ctx.message.channel, discord.DMChannel)) or COIN_NAME == "BOT":
+        
+    if (COIN_NAME not in (ENABLE_COIN+ENABLE_XMR)) and COIN_NAME != "BOT":
+        await ctx.message.add_reaction(EMOJI_ERROR)
+        await ctx.send(f'{ctx.author.mention} Please put available ticker: '+ ', '.join(ENABLE_COIN).lower())
+        return
+
+    if COIN_NAME in MAINTENANCE_COIN:
+        await ctx.send(f'{EMOJI_RED_NO} {COIN_NAME} in maintenance.')
+        return
+
+    if COIN_NAME == "BOT":
         await bot.wait_until_ready()
         get_all_m = bot.get_all_members()
         #membercount = '[Members] ' + '{:,.0f}'.format(sum([x.member_count for x in bot.guilds]))
@@ -2115,18 +2171,7 @@ async def stats(ctx, coin: str = None):
         botstats = botstats + '```'
         await ctx.send(f'{botstats}')
         await ctx.send('Please add ticker: '+ ', '.join(ENABLE_COIN).lower() + ' to get stats about coin instead.')
-    elif (coin is None) and isinstance(ctx.message.channel, discord.DMChannel) == False:
-        serverinfo = get_info_pref_coin(ctx)
-        coin = serverinfo['default_coin']
-        pass
-
-    if COIN_NAME not in ENABLE_COIN:
-        await ctx.message.add_reaction(EMOJI_ERROR)
-        await ctx.send('Please put available ticker: '+ ', '.join(ENABLE_COIN).lower())
-        return
-
-    if COIN_NAME in MAINTENANCE_COIN:
-        await ctx.send(f'{EMOJI_RED_NO} {coin.upper()} in maintenance.')
+        await msg.add_reaction(EMOJI_OK_BOX)
         return
 
     gettopblock = None
@@ -2182,8 +2227,10 @@ async def stats(ctx, coin: str = None):
                            '```'
                            )
             return
+        await msg.add_reaction(EMOJI_OK_BOX)
     else:
         await ctx.send('`Unavailable.`')
+        await msg.add_reaction(EMOJI_OK_BOX)
         return
 
 
