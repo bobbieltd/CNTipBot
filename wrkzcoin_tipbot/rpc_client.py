@@ -26,7 +26,7 @@ async def call_aiohttp_wallet_original(method_name: str, coin: str, payload: Dic
     }
     url = get_wallet_rpc_url(coin)
     async with aiohttp.ClientSession() as session:
-        async with session.post(url, json=full_payload, timeout=8) as response:
+        async with session.post(url, json=full_payload, timeout=30) as response:
             if response.status == 200:
                 res_data = await response.read()
                 res_data = res_data.decode('utf-8')
@@ -87,7 +87,7 @@ async def call_aiohttp_wallet(method_name: str, coin: str, payload: Dict = None)
 
     url = get_wallet_rpc_url(coin)
     async with aiohttp.ClientSession() as session:
-        async with session.post(url, json=full_payload, timeout=8) as response:
+        async with session.post(url, json=full_payload, timeout=30) as response:
             if response.status == 200:
                 res_data = await response.read()
                 res_data = res_data.decode('utf-8')
@@ -137,7 +137,7 @@ async def call_doge_ltc(method_name: str, coin: str, payload: str = None) -> Dic
     elif coin.upper() == "LTC":
         url = f'http://{config.daemonLTC.username}:{config.daemonLTC.password}@{config.daemonLTC.host}:{config.daemonLTC.rpcport}/'
     async with aiohttp.ClientSession() as session:
-        async with session.post(url, data=data, timeout=8) as response:
+        async with session.post(url, data=data, timeout=30) as response:
             if response.status == 200:
                 res_data = await response.read()
                 res_data = res_data.decode('utf-8')
