@@ -328,7 +328,9 @@ def make_integrated(wallet_address, coin: str, integrated_id=None):
     if integrated_id is None:
         return None
     if coin_family == "XMR":
-        return wallet.make_integrated_address_xmr(wallet_address, COIN_NAME, integrated_id)
+        result = wallet.make_integrated_address_xmr(wallet_address, COIN_NAME, integrated_id)
+        print('{} - {} - {}'.format(wallet_address, result['payment_id'], result['integrated_address']))
+        return result
     prefix=wallet.get_prefix(COIN_NAME)
     prefix_hex=varint_encode(prefix).hex()
     main_address_len=wallet.get_addrlen(COIN_NAME)
@@ -358,6 +360,7 @@ def make_integrated(wallet_address, coin: str, integrated_id=None):
             result['address']=wallet_address
             result['paymentid']=checkPaymentID
             result['integrated_address']=address
+            print('{} - {} - {}'.format(result['address'], result['paymentid'], result['integrated_address']))
             return result
         else:
             return None
