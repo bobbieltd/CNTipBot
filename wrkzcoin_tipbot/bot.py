@@ -236,7 +236,7 @@ async def on_reaction_add(reaction, user):
             COIN_NAME = reaction.message.content.split()[2].upper()
             name_to_give = reaction.message.content.split()[5]
             to_send = reaction.message.guild.get_member_named(name_to_give)
-            if COIN_NAME in (ENABLE_COIN + ENABLE_XMR):
+            if COIN_NAME in ENABLE_COIN:
                 user_addr = await store.sql_get_userwallet(str(user.id), COIN_NAME)
                 if user_addr is None:
                     userregister = await store.sql_register_user(str(user.id), COIN_NAME)
@@ -2146,7 +2146,7 @@ async def stats(ctx, coin: str = None):
     elif coin:
         COIN_NAME = coin.upper()
         
-    if (COIN_NAME not in (ENABLE_COIN+ENABLE_XMR)) and COIN_NAME != "BOT":
+    if COIN_NAME not in ENABLE_COIN and COIN_NAME != "BOT":
         await ctx.message.add_reaction(EMOJI_ERROR)
         await ctx.send(f'{ctx.author.mention} Please put available ticker: '+ ', '.join(ENABLE_COIN).lower())
         return
