@@ -1863,7 +1863,7 @@ async def send(ctx, amount: str, CoinAddress: str):
                                                      CoinAddress, COIN_NAME, "SEND")
         if SendTx:
             SendTx_hash = SendTx['transactionHash']
-            tx_fee = SendTx['fee']
+            tx_fee = num_format_coin(SendTx['fee'], COIN_NAME)
             await ctx.message.add_reaction(get_emoji(COIN_NAME))
             # await botLogChan.send(f'A user successfully executed `.send {num_format_coin(real_amount, COIN_NAME)} {COIN_NAME}`.')
             if originalCoinAddress is None:
