@@ -2181,12 +2181,12 @@ async def dice(ctx, times :str, amount: str, coin: str = None):
         playerWin = True
 
     if playerWin:
-        msg = await ctx.send(f'{EMOJI_DICE_GAME} Dice game : Congratulations {ctx.author.mention}, you won. The dices rolled was {dices}\n'
-                             f'Won {int(times)*int(amount)} {COIN_NAME}')
+        msg = await ctx.send(f'{EMOJI_DICE_GAME} Dice game {EMOJI_DICE_GAME} Congratulations {ctx.author.mention}, you won. The dices rolled was {dices}\n'
+                             f'**Profit** {int(times)*int(amount-1)} **{COIN_NAME}**')
         await msg.add_reaction(EMOJI_OK_BOX)
     else:
-        msg = await ctx.send(f'{EMOJI_DICE_GAME} Dice game  : Sorry {ctx.author.mention}, you lost. The dices rolled was {dices}\n'
-                             f'Loss {int(amount)} {COIN_NAME}')
+        msg = await ctx.send(f'{EMOJI_DICE_GAME} Dice game  {EMOJI_DICE_GAME} Sorry {ctx.author.mention}, you lost. The dices rolled was {dices}\n'
+                             f'**Loss** {int(amount)} **{COIN_NAME}**')
         await msg.add_reaction(EMOJI_OK_BOX)
     return
 
