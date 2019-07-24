@@ -149,7 +149,7 @@ bot_help_account_unverify = "Unverify your account and disable 2FA code."
 # games
 DICE_HOUSE_EDGE = 0.001
 EMOJI_DICE_GAME = "\U0001F3B2"
-EMOJI_DIGIT = ["\U00000031"+"\U000020E3","\U0032"+"\U20E3","\U0033"+"\U20E3","\U0034"+"\U20E3","\U0035"+"\U20E3","\U0036"+"\U20E3"]
+EMOJI_DIGIT = ["\U00000031"+"\U000020E3","\U003220E3","\U00000033"+"\U000020E3","\U00000034"+"\U000020E3","\U00000035"+"\U000020E3","\U00000036"+"\U000020E3"]
 
 def get_emoji(coin: str):
     if coin is None:
