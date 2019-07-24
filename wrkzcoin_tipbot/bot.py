@@ -2125,7 +2125,7 @@ async def voucher(ctx, command: str, amount: str, coin: str = None):
     return
 
 @bot.command(pass_context=True, name='dice', help=bot_help_dice)
-async def dice(ctx : str, times :str, amount: str, coin: str = None):
+async def dice(ctx, times :str, amount: str, coin: str = None):
     COIN_NAME = None
 
     # check coin
@@ -2175,7 +2175,7 @@ async def dice(ctx : str, times :str, amount: str, coin: str = None):
     for x in range(times):
         dices = dices + str(random.randint(1,6))
     playerWin = False
-    if (random.random() < playerLuck):
+    if float(random.random()) < playerLuck:
         playerWin = True
 
     if playerWin:
