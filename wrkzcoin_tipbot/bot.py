@@ -2161,7 +2161,7 @@ async def dice(ctx, times :str, amount: str, coin: str = None):
         amount = int(amount)
     except:
         correctSyntax = False
-    if times <= 1:
+    if int(times) <= 1:
         correctSyntax = False
     if not correctSyntax:
         await ctx.message.add_reaction(EMOJI_ERROR)
@@ -2172,7 +2172,7 @@ async def dice(ctx, times :str, amount: str, coin: str = None):
     # Rolling dices
     playerLuck = float((1-DICE_HOUSE_EDGE)/times)
     dices = ""
-    for x in range(times):
+    for x in range(int(times)):
         dices = dices + str(random.randint(1,6))
     playerWin = False
     if float(random.random()) < playerLuck:
