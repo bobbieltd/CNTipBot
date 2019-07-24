@@ -130,6 +130,7 @@ bot_help_notifytip = "Toggle notify tip notification from bot ON|OFF"
 bot_help_settings = "settings view and set for prefix, default coin. Requires permission manage_channels"
 bot_help_invite = "Invite link of bot to your server."
 bot_help_voucher = "(Testing) make a voucher image and your friend can claim via QR code."
+bot_help_dice = "Play dice game. House edge 0.1%."
 
 # admin commands
 bot_help_admin = "Various admin commands."
@@ -145,6 +146,8 @@ bot_help_account_twofa = "Generate a 2FA and scanned with Authenticator Program.
 bot_help_account_verify = "Verify 2FA code from QR code and your Authenticator Program."
 bot_help_account_unverify = "Unverify your account and disable 2FA code."
 
+# games
+DICE_HOUSE_EDGE = 0.001
 
 def get_emoji(coin: str):
     if coin is None:
@@ -705,7 +708,7 @@ async def unlockuser(ctx, user_id: str):
         return
 
 
-@bot.command(pass_context=True, name='info', aliases=['wallet','address'], help=bot_help_info)
+@bot.command(pass_context=True, name='info', aliases=['deposit','wallet','address'], help=bot_help_info)
 async def info(ctx, coin: str = None):
     COIN_NAME = None
     if coin is not None:
@@ -1814,7 +1817,7 @@ async def tipall(ctx, amount: str, *args):
             await ctx.message.add_reaction(EMOJI_ERROR)
         return
 
-@bot.command(pass_context=True, help=bot_help_send)
+@bot.command(pass_context=True, name='send', aliases=['withdraw'], help=bot_help_send)
 async def send(ctx, amount: str, CoinAddress: str):
     # check if account locked
     account_lock = await alert_if_userlock(ctx, 'send')
@@ -2121,7 +2124,67 @@ async def voucher(ctx, command: str, amount: str, coin: str = None):
         await ctx.message.add_reaction(EMOJI_ERROR)
     return
 
+@bot.command(pass_context=True, name='dice', help=bot_help_dice)
+async def dice(ctx, command: str, times :str, amount: str, coin: str = None):
+    COIN_NAME = None
 
+    # check coin
+    if coin is not None:
+        COIN_NAME = coin.upper()
+    else:
+        serverinfo = store.sql_info_by_server(str(ctx.guild.id))
+        if 'default_coin' in serverinfo:
+            if serverinfo['default_coin'].upper() in ENABLE_COIN:
+                COIN_NAME = serverinfo['default_coin'].upper()
+            else:
+                COIN_NAME = "BTCM"
+        else:
+            COIN_NAME = "BTCM"
+
+    if COIN_NAME in MAINTENANCE_COIN:
+        msg = await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} {COIN_NAME} in maintenance.')
+        await msg.add_reaction(EMOJI_OK_BOX)
+        return
+        
+    if COIN_NAME not in ENABLE_COIN:
+        await ctx.message.add_reaction(EMOJI_ERROR)
+        msg = await ctx.send(f'{ctx.author.mention} Please put available ticker: '+ ', '.join(ENABLE_COIN).lower())
+        await msg.add_reaction(EMOJI_OK_BOX)
+        return
+
+    correctSyntax = True
+    if times[len(times)-1] != "x":
+        correctSyntax = False
+        times = times[:1]
+    try:
+        times = int(times)
+        amount = int(amount)
+    except:
+        correctSyntax = False
+    if times <= 1:
+        correctSyntax = False
+    if not correctSyntax:
+        await ctx.message.add_reaction(EMOJI_ERROR)
+        msg = await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} Invalid syntax. Example : !dice 2x 15 trtl')
+        await msg.add_reaction(EMOJI_OK_BOX)
+        return
+
+    # Rolling dices
+    playerLuck = float((1-DICE_HOUSE_EDGE)/times)
+    dices = ""
+    for x in range(x)
+        dices = dices + str(random.randint(1,6))
+    playerWin = False
+    if (random.random() < playerLuck):
+        playerWin = True
+
+    if playerWin:
+        msg = await ctx.send(f'Congratulations {ctx.author.mention}, you won. The dices rolled was {dices}')
+        await msg.add_reaction(EMOJI_OK_BOX)
+    else
+        msg = await ctx.send(f'Sorry {ctx.author.mention}, you lost. The dices rolled was {dices}')
+        await msg.add_reaction(EMOJI_OK_BOX)
+    return
 
 @bot.command(pass_context=True, name='paymentid', aliases=['payid'], help=bot_help_paymentid)
 async def paymentid(ctx):
@@ -2980,6 +3043,13 @@ async def send_error(ctx, error):
 @voucher.error
 async def voucher_error(ctx, error):
     pass
+
+@dice.error
+async def dice_error(ctx, error):
+    if isinstance(error, commands.MissingRequiredArgument):
+        await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} Incorrect arguments. '
+                       'DICE <payout>x <bet amount> <coin ticker>. For example : !dice 2x 10 trtl')
+    return
 
 @paymentid.error
 async def payment_error(ctx, error):
