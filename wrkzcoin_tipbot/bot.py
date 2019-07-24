@@ -278,7 +278,7 @@ async def on_message(message):
         if MESSAGE_HISTORY_LAST == 0:
             MESSAGE_HISTORY_LAST = int(time.time())
     # filter ignorechan
-    commandList = ('TIP', 'TIPALL', 'DONATE', 'HELP', 'STATS', 'DONATE', 'SEND', 'WITHDRAW', 'BOTBAL', 'BAL PUB')
+    commandList = ('TIP', 'TIPALL', 'DONATE', 'HELP', 'STATS', 'SEND', 'WITHDRAW', 'BOTBAL', 'BAL PUB', 'DICE')
     try:
         # remove first char
         if (isinstance(message.channel, discord.DMChannel) == False) and message.content[1:].upper().startswith(commandList) and (str(message.channel.id) in LIST_IGNORECHAN[str(message.guild.id)]):
