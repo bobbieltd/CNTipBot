@@ -148,6 +148,8 @@ bot_help_account_unverify = "Unverify your account and disable 2FA code."
 
 # games
 DICE_HOUSE_EDGE = 0.001
+EMOJI_DICE_GAME = "\U0001F3B2"
+EMOJI_DIGIT = ["\U0031\U20E3","\U0032\U20E3","\U0033\U20E3","\U0034\U20E3","\U0035\U20E3","\U0036\U20E3"]
 
 def get_emoji(coin: str):
     if coin is None:
@@ -2161,7 +2163,7 @@ async def dice(ctx, times :str, amount: str, coin: str = None):
         amount = int(amount)
     except:
         correctSyntax = False
-    if int(times) <= 1:
+    if int(times) <= 1 or int(amount) <= 0:
         correctSyntax = False
     if not correctSyntax:
         await ctx.message.add_reaction(EMOJI_ERROR)
@@ -2173,16 +2175,18 @@ async def dice(ctx, times :str, amount: str, coin: str = None):
     playerLuck = float((1-DICE_HOUSE_EDGE)/times)
     dices = ""
     for x in range(int(times)):
-        dices = dices + str(random.randint(1,6))
+        dices = dices + str(EMOJI_DIGIT[random.randint(1,6)])
     playerWin = False
     if float(random.random()) < playerLuck:
         playerWin = True
 
     if playerWin:
-        msg = await ctx.send(f'Congratulations {ctx.author.mention}, you won. The dices rolled was {dices}')
+        msg = await ctx.send(f'{EMOJI_DICE_GAME} DICE GAME : Congratulations {ctx.author.mention}, you won. The dices rolled was {dices}\n'
+                             f'Won {int(times)*int(amount)} {COIN_NAME}')
         await msg.add_reaction(EMOJI_OK_BOX)
     else:
-        msg = await ctx.send(f'Sorry {ctx.author.mention}, you lost. The dices rolled was {dices}')
+        msg = await ctx.send(f'{EMOJI_DICE_GAME} DICE GAME : Sorry {ctx.author.mention}, you lost. The dices rolled was {dices}\n'
+                             f'Loss {int(amount)} {COIN_NAME}')
         await msg.add_reaction(EMOJI_OK_BOX)
     return
 
