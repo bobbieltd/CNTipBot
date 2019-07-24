@@ -151,6 +151,9 @@ DICE_HOUSE_EDGE = 0.001
 EMOJI_DICE_GAME = "\U0001F3B2"
 EMOJI_DIGIT = ["","\U00000031"+"\U000020E3","\U00000032"+"\U000020E3","\U00000033"+"\U000020E3","\U00000034"+"\U000020E3","\U00000035"+"\U000020E3","\U00000036"+"\U000020E3"]
 
+# issue found by capETN - wrkzdev
+WITHDRAW_IN_PROCESS = {}
+
 def get_emoji(coin: str):
     if coin is None:
         coin = "WRKZ"
@@ -1903,8 +1906,17 @@ async def send(ctx, amount: str, CoinAddress: str):
                            f'{COIN_NAME}.')
             return
 
+        if ctx.message.author.id in WITHDRAW_IN_PROCESS and WITHDRAW_IN_PROCESS[ctx.message.author.id] == True:
+            await ctx.message.add_reaction(EMOJI_ERROR)
+            msg = await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} There is another withdraw in process. Please wait it to finish. ')
+            await msg.add_reaction(EMOJI_OK_BOX)
+            return
+
+        WITHDRAW_IN_PROCESS[ctx.message.author.id] = True
         SendTx = await store.sql_external_xmr_single(str(ctx.message.author.id), real_amount,
                                                      CoinAddress, COIN_NAME, "SEND")
+        del WITHDRAW_IN_PROCESS[ctx.message.author.id]
+
         if SendTx:
             SendTx_hash = SendTx['transactionHash']
             tx_fee = num_format_coin(SendTx['fee'], COIN_NAME)
