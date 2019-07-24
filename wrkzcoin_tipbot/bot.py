@@ -2125,7 +2125,7 @@ async def voucher(ctx, command: str, amount: str, coin: str = None):
     return
 
 @bot.command(pass_context=True, name='dice', help=bot_help_dice)
-async def dice(ctx, command: str, times :str, amount: str, coin: str = None):
+async def dice(ctx : str, times :str, amount: str, coin: str = None):
     COIN_NAME = None
 
     # check coin
