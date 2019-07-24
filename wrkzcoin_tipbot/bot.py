@@ -2181,7 +2181,7 @@ async def dice(ctx, command: str, times :str, amount: str, coin: str = None):
     if playerWin:
         msg = await ctx.send(f'Congratulations {ctx.author.mention}, you won. The dices rolled was {dices}')
         await msg.add_reaction(EMOJI_OK_BOX)
-    else
+    else:
         msg = await ctx.send(f'Sorry {ctx.author.mention}, you lost. The dices rolled was {dices}')
         await msg.add_reaction(EMOJI_OK_BOX)
     return
