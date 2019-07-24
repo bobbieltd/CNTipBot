@@ -149,7 +149,7 @@ bot_help_account_unverify = "Unverify your account and disable 2FA code."
 # games
 DICE_HOUSE_EDGE = 0.001
 EMOJI_DICE_GAME = "\U0001F3B2"
-EMOJI_DIGIT = ["\U0031\U20E3","\U0032\U20E3","\U0033\U20E3","\U0034\U20E3","\U0035\U20E3","\U0036\U20E3"]
+EMOJI_DIGIT = ["\U00000031"+"\U000020E3","\U0032"+"\U20E3","\U0033"+"\U20E3","\U0034"+"\U20E3","\U0035"+"\U20E3","\U0036"+"\U20E3"]
 
 def get_emoji(coin: str):
     if coin is None:
@@ -280,7 +280,7 @@ async def on_message(message):
         if MESSAGE_HISTORY_LAST == 0:
             MESSAGE_HISTORY_LAST = int(time.time())
     # filter ignorechan
-    commandList = ('TIP', 'TIPALL', 'DONATE', 'HELP', 'STATS', 'SEND', 'WITHDRAW', 'BOTBAL', 'BAL PUB', 'DICE')
+    commandList = ('TIP', 'TIPALL', 'DONATE', 'HELP', 'STATS', 'SEND', 'WITHDRAW', 'BOTBAL', 'BAL PUB'')
     try:
         # remove first char
         if (isinstance(message.channel, discord.DMChannel) == False) and message.content[1:].upper().startswith(commandList) and (str(message.channel.id) in LIST_IGNORECHAN[str(message.guild.id)]):
@@ -2181,11 +2181,11 @@ async def dice(ctx, times :str, amount: str, coin: str = None):
         playerWin = True
 
     if playerWin:
-        msg = await ctx.send(f'{EMOJI_DICE_GAME} DICE GAME : Congratulations {ctx.author.mention}, you won. The dices rolled was {dices}\n'
+        msg = await ctx.send(f'{EMOJI_DICE_GAME} Dice game : Congratulations {ctx.author.mention}, you won. The dices rolled was {dices}\n'
                              f'Won {int(times)*int(amount)} {COIN_NAME}')
         await msg.add_reaction(EMOJI_OK_BOX)
     else:
-        msg = await ctx.send(f'{EMOJI_DICE_GAME} DICE GAME : Sorry {ctx.author.mention}, you lost. The dices rolled was {dices}\n'
+        msg = await ctx.send(f'{EMOJI_DICE_GAME} Dice game  : Sorry {ctx.author.mention}, you lost. The dices rolled was {dices}\n'
                              f'Loss {int(amount)} {COIN_NAME}')
         await msg.add_reaction(EMOJI_OK_BOX)
     return
