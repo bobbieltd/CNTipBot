@@ -2172,7 +2172,7 @@ async def dice(ctx, command: str, times :str, amount: str, coin: str = None):
     # Rolling dices
     playerLuck = float((1-DICE_HOUSE_EDGE)/times)
     dices = ""
-    for x in range(times)
+    for x in range(times):
         dices = dices + str(random.randint(1,6))
     playerWin = False
     if (random.random() < playerLuck):
