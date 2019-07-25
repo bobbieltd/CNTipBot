@@ -1905,14 +1905,14 @@ async def send(ctx, amount: str, CoinAddress: str):
                            f'{num_format_coin(MaxTX, COIN_NAME)} '
                            f'{COIN_NAME}.')
             return
-
-        if ctx.message.author.id in WITHDRAW_IN_PROCESS and WITHDRAW_IN_PROCESS[ctx.message.author.id] == True:
+        # pass if last withdrawal is > 30 minutes ago
+        if ctx.message.author.id in WITHDRAW_IN_PROCESS and (WITHDRAW_IN_PROCESS[ctx.message.author.id] - int(time.time()) <= 30*60):
             await ctx.message.add_reaction(EMOJI_ERROR)
             msg = await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} There is another withdraw in process. Please wait it to finish. ')
             await msg.add_reaction(EMOJI_OK_BOX)
             return
 
-        WITHDRAW_IN_PROCESS[ctx.message.author.id] = True
+        WITHDRAW_IN_PROCESS[ctx.message.author.id] = int(time.time())
         SendTx = await store.sql_external_xmr_single(str(ctx.message.author.id), real_amount,
                                                      CoinAddress, COIN_NAME, "SEND")
         del WITHDRAW_IN_PROCESS[ctx.message.author.id]
