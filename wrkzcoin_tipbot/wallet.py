@@ -25,7 +25,7 @@ async def registerOTHER(coin: str) -> str:
         paymentid = addressvalidation.paymentid(8)
     else:
         paymentid = addressvalidation.paymentid(32)
-    integratedAddress = addressvalidation.make_integrated(base_address, paymentid)
+    integratedAddress = await addressvalidation.make_integrated(base_address, paymentid)
     reg_address = {}
     reg_address['main_address'] = base_address
     reg_address['int_address'] = integratedAddress
