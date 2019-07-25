@@ -2,7 +2,7 @@ import traceback, pdb
 from typing import List, Dict
 import json
 from uuid import uuid4
-import rpc_client
+import rpc_client, addressvalidation
 import aiohttp
 import asyncio
 import time
