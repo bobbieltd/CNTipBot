@@ -1906,7 +1906,7 @@ async def send(ctx, amount: str, CoinAddress: str):
                            f'{COIN_NAME}.')
             return
         # pass if last withdrawal is > 30 minutes ago
-        if ctx.message.author.id in WITHDRAW_IN_PROCESS and (WITHDRAW_IN_PROCESS[ctx.message.author.id] - int(time.time()) <= 30*60):
+        if ctx.message.author.id in WITHDRAW_IN_PROCESS and (int(time.time() - WITHDRAW_IN_PROCESS[ctx.message.author.id]) <= 30*60):
             await ctx.message.add_reaction(EMOJI_ERROR)
             msg = await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} There is another withdraw in process. Please wait it to finish. ')
             await msg.add_reaction(EMOJI_OK_BOX)
