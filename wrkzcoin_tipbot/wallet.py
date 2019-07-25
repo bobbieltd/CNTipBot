@@ -14,28 +14,24 @@ sys.path.append("..")
 
 async def registerOTHER(coin: str) -> str:
     coin_family = getattr(getattr(config,"daemon"+coin),"coin_family","TRTL");
+    base_address = getattr(getattr(config,"daemon"+COIN_NAME),"DonateAddress");
 
     payload = {
         'label' : 'tipbot'
     }
+    paymentid = None
     if coin_family == "XMR":
-        result = await rpc_client.call_aiohttp_wallet('create_address', coin, payload=payload)
-        if result is None:
-            print("Error when creating address ");
-            return None
+        paymentid = addressvalidation.paymentid(8)
     else:
-        result = await rpc_client.call_aiohttp_wallet('createAddress', coin)
-        if result is None:
-            print("Error when creating address ");
-            return None
-
+        paymentid = addressvalidation.paymentid(32)
+    integratedAddress = addressvalidation.make_integrated(base_address, paymentid)
     reg_address = {}
-    reg_address['privateSpendKey'] = await getSpendKey(result['address'], coin)
-    reg_address['address'] = result['address']
-    reg_address['payment_id'] = None
+    reg_address['main_address'] = base_address
+    reg_address['int_address'] = integratedAddress
+    reg_address['paymentid'] = paymentid
     
     # Avoid any crash and nothing to restore or import
-    print('Wallet register: '+reg_address['address']+'=>privateSpendKey: '+reg_address['privateSpendKey']+" ,family: "+coin_family)
+    print('Wallet register: '+reg_address['int_address']+'=>base_address: '+reg_address['main_address']+" ,family: "+coin_family)
     # End print log ID,spendkey to log file
     return reg_address
 

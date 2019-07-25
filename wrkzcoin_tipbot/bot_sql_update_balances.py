@@ -20,7 +20,7 @@ async def update_balance():
         try:
             await store.sql_update_balances(coinItem.upper().strip())
         except Exception as e:
-            print(e)
+            traceback.print_exc(file=sys.stdout)
         end = time.time()
         print('Done update balance: '+ coinItem.upper().strip()+ ' duration (s): '+str(end - start))
 

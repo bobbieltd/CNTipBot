@@ -60,21 +60,43 @@ async def sql_update_balances(coin: str = None):
         coin = "WRKZ"
     print('SQL: Updating ALL wallet balances '+coin)
     if coin in ENABLE_COIN:
-        balances = await wallet.get_all_balances_all(coin)
-        try:
-            with conn.cursor() as cur:
-                for details in balances:
-                    sql = """ SELECT * FROM """+coin.lower()+"""_user_paymentid WHERE `main_address`=%s AND `coin_name` = %s LIMIT 1 """
-                    cur.execute(sql, (str(details['address']), coin.upper()))
-                    result = cur.fetchone()
-                    if result:
-                        print('SQL: Update user_paymentid '+details['address'])
-                        sql = """ UPDATE """+coin.lower()+"""_user_paymentid SET `actual_balance`=%s, 
-                                          `locked_balance`=%s, `lastUpdate`=%s WHERE `main_address`=%s """
-                        cur.execute(sql, (details['unlocked'], details['locked'],
-                                            updateTime, details['address'],))
-        except Exception as e:
-            traceback.print_exc(file=sys.stdout)
+        print('SQL: Updating get_transfers '+COIN_NAME)
+        get_transfers = await wallet.get_transfers_xmr(COIN_NAME)
+        if len(get_transfers) >= 1:
+            try:
+                with conn.cursor() as cur:
+                    sql = """ SELECT * FROM """+coin.lower()+"""_get_transfers WHERE `coin_name` = %s """
+                    cur.execute(sql, (COIN_NAME,))
+                    result = cur.fetchall()
+                    d = [i['txid'] for i in result]
+                    # print('=================='+COIN_NAME+'===========')
+                    # print(d)
+                    # print('=================='+COIN_NAME+'===========')
+                    list_balance_user = {}
+                    for tx in get_transfers['in']:
+                        if ('payment_id' in tx) and (tx['payment_id'] in list_balance_user):
+                            list_balance_user[tx['payment_id']] += tx['amount']
+                        elif ('payment_id' in tx) and (tx['payment_id'] not in list_balance_user):
+                            list_balance_user[tx['payment_id']] = tx['amount']
+                        try:
+                            if tx['txid'] not in d:
+                                sql = """ INSERT IGNORE INTO """+coin.lower()+"""_get_transfers (`coin_name`, `in_out`, `txid`, 
+                                `payment_id`, `height`, `timestamp`, `amount`, `fee`, `decimal`, `address`, time_insert) 
+                                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) """
+                                cur.execute(sql, (COIN_NAME, tx['type'].upper(), tx['txid'], tx['payment_id'], tx['height'], tx['timestamp'],
+                                                  tx['amount'], tx['fee'], wallet.get_decimal(COIN_NAME), tx['address'], int(time.time())))
+                        except Exception as e:
+                            traceback.print_exc(file=sys.stdout)
+                    if len(list_balance_user) > 0:
+                        list_update = []
+                        timestamp = int(time.time())
+                        for key, value in list_balance_user.items():
+                            list_update.append((value, timestamp, key))
+                        cur.executemany(""" UPDATE """+coin.lower()+"""_user_paymentid SET `actual_balance` = %s, `lastUpdate` = %s 
+                                        WHERE paymentid = %s """, list_update)
+                        conn_cursors.commit()
+            except Exception as e:
+                traceback.print_exc(file=sys.stdout)
 
 async def sql_update_some_balances(wallet_addresses: List[str], coin: str = None):
     global conn
@@ -110,6 +132,11 @@ async def sql_register_user(userID, coin: str = None):
                 sql = """ SELECT * FROM """+coin.lower()+"""_user_paymentid WHERE `user_id`=%s AND `coin_name` = %s LIMIT 1 """
                 cur.execute(sql, (str(userID), COIN_NAME))
                 result = cur.fetchone()
+                # recreate new address
+                if len(wallet['paymentid']) !== 16 and len(wallet['paymentid']) !== 64:
+                    sql = """ DELETE FROM """+coin.lower()+"""_user_paymentid WHERE `user_id`=%s AND `coin_name` = %s LIMIT 1 """
+                    cur.execute(sql, (str(userID), COIN_NAME))
+                    result = None
             elif coin in ENABLE_COIN_DOGE:
                 sql = """ SELECT user_id, balance_wallet_address, user_wallet_address FROM """+coin.lower()+"""_user
                           WHERE `user_id`=%s LIMIT 1 """
@@ -140,9 +167,9 @@ async def sql_register_user(userID, coin: str = None):
                             chainHeight = int(walletStatus['blocks'])
                     if coin in ENABLE_COIN:
                         sql = """ INSERT INTO """+coin.lower()+"""_user_paymentid (`coin_name`, `user_id`, `main_address`, 
-                                  `int_address`, `paymentid_ts`, `extrainfo`) 
+                                  `paymentid`,`int_address`, `paymentid_ts`, `extrainfo`) 
                                   VALUES (%s, %s, %s, %s, %s, %s) """
-                        cur.execute(sql, (COIN_NAME, str(userID), balance_address['address'], balance_address['address'], int(time.time()), balance_address['privateSpendKey']))
+                        cur.execute(sql, (COIN_NAME, str(userID), balance_address['main_address'], balance_address['paymentid'], balance_address['int_address'], int(time.time()), "v1.0")
                     elif coin in ENABLE_COIN_DOGE:
                         sql = """ INSERT INTO """+coin.lower()+"""_user (`user_id`, `balance_wallet_address`, 
                                   `balance_wallet_address_ts`, `balance_wallet_address_ch`, `privateKey`) 
