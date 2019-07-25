@@ -15,7 +15,7 @@ sys.path.append("..")
 async def registerOTHER(coin: str) -> str:
     COIN_NAME = coin.upper()
     coin_family = getattr(getattr(config,"daemon"+COIN_NAME),"coin_family","TRTL");
-    base_address = getattr(getattr(config,"daemon"+COIN_NAME),"DonateAddress");
+    main_address = getattr(getattr(config,"daemon"+COIN_NAME),"DonateAddress");
 
     payload = {
         'label' : 'tipbot'
@@ -25,9 +25,9 @@ async def registerOTHER(coin: str) -> str:
         paymentid = addressvalidation.paymentid(8)
     else:
         paymentid = addressvalidation.paymentid(32)
-    integratedAddress = await addressvalidation.make_integrated(base_address, paymentid)
+    integratedAddress = await addressvalidation.make_integrated(main_address, COIN_NAME, paymentid)
     reg_address = {}
-    reg_address['main_address'] = base_address
+    reg_address['main_address'] = main_address
     reg_address['int_address'] = integratedAddress
     reg_address['paymentid'] = paymentid
     
