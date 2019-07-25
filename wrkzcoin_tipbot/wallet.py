@@ -13,7 +13,8 @@ sys.path.append("..")
 
 
 async def registerOTHER(coin: str) -> str:
-    coin_family = getattr(getattr(config,"daemon"+coin),"coin_family","TRTL");
+    COIN_NAME = coin.upper()
+    coin_family = getattr(getattr(config,"daemon"+COIN_NAME),"coin_family","TRTL");
     base_address = getattr(getattr(config,"daemon"+COIN_NAME),"DonateAddress");
 
     payload = {
