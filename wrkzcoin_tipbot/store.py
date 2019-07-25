@@ -58,6 +58,7 @@ async def sql_update_balances(coin: str = None):
     updateTime = int(time.time())
     if coin is None:
         coin = "WRKZ"
+
     print('SQL: Updating ALL wallet balances '+coin)
     if coin in ENABLE_COIN:
         print('SQL: Updating get_transfers '+COIN_NAME)
@@ -134,6 +135,7 @@ async def sql_register_user(userID, coin: str = None):
                 result = cur.fetchone()
                 # recreate new address
                 if result is not None:
+                    print("Delete old wallet address: "+result['int_address'])
                     if 'paymentid' not in result or result['paymentid'] is None or (len(result['paymentid']) != 16 and len(result['paymentid']) != 64):
                         sql = """ DELETE FROM """+coin.lower()+"""_user_paymentid WHERE `user_id`=%s AND `coin_name` = %s LIMIT 1 """
                         cur.execute(sql, (str(userID), COIN_NAME))
@@ -169,7 +171,7 @@ async def sql_register_user(userID, coin: str = None):
                     if coin in ENABLE_COIN:
                         sql = """ INSERT INTO """+coin.lower()+"""_user_paymentid (`coin_name`, `user_id`, `main_address`, 
                                   `paymentid`,`int_address`, `paymentid_ts`, `extrainfo`) 
-                                  VALUES (%s, %s, %s, %s, %s, %s) """
+                                  VALUES (%s, %s, %s, %s, %s, %s, %s) """
                         cur.execute(sql, (COIN_NAME, str(userID), balance_address['main_address'], balance_address['paymentid'], balance_address['int_address'], int(time.time()), "v1.0"))
                     elif coin in ENABLE_COIN_DOGE:
                         sql = """ INSERT INTO """+coin.lower()+"""_user (`user_id`, `balance_wallet_address`, 

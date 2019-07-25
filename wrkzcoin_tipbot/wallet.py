@@ -14,8 +14,8 @@ sys.path.append("..")
 
 async def registerOTHER(coin: str) -> str:
     COIN_NAME = coin.upper()
-    coin_family = getattr(getattr(config,"daemon"+COIN_NAME),"coin_family","TRTL");
-    main_address = getattr(getattr(config,"daemon"+COIN_NAME),"DonateAddress");
+    coin_family = getattr(getattr(config,"daemon"+COIN_NAME),"coin_family","TRTL")
+    main_address = getattr(getattr(config,"daemon"+COIN_NAME),"DonateAddress")
 
     payload = {
         'label' : 'tipbot'

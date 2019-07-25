@@ -3500,6 +3500,9 @@ def main():
     #bot.loop.create_task(update_balance_wallets())
     #task = bot.loop.create_task(update_balance_wallets())
     #bot.loop.run_until_complete(task)
+    # TODO check if main_address is correct
+    for coin in ENABLE_COIN:
+        main_address = getattr(getattr(config,"daemon"+coin),"DonateAddress")
     bot.run(config.discord.token, reconnect=True)
 
 if __name__ == '__main__':
