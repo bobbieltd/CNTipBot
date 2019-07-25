@@ -133,7 +133,7 @@ async def sql_register_user(userID, coin: str = None):
                 cur.execute(sql, (str(userID), COIN_NAME))
                 result = cur.fetchone()
                 # recreate new address
-                if len(wallet['paymentid']) != 16 and len(wallet['paymentid']) != 64:
+                if paymentid not in wallet or (len(wallet['paymentid']) != 16 and len(wallet['paymentid']) != 64):
                     sql = """ DELETE FROM """+coin.lower()+"""_user_paymentid WHERE `user_id`=%s AND `coin_name` = %s LIMIT 1 """
                     cur.execute(sql, (str(userID), COIN_NAME))
                     result = None
