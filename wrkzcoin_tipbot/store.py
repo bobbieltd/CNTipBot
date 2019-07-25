@@ -169,7 +169,7 @@ async def sql_register_user(userID, coin: str = None):
                         sql = """ INSERT INTO """+coin.lower()+"""_user_paymentid (`coin_name`, `user_id`, `main_address`, 
                                   `paymentid`,`int_address`, `paymentid_ts`, `extrainfo`) 
                                   VALUES (%s, %s, %s, %s, %s, %s) """
-                        cur.execute(sql, (COIN_NAME, str(userID), balance_address['main_address'], balance_address['paymentid'], balance_address['int_address'], int(time.time()), "v1.0")
+                        cur.execute(sql, (COIN_NAME, str(userID), balance_address['main_address'], balance_address['paymentid'], balance_address['int_address'], int(time.time()), "v1.0"))
                     elif coin in ENABLE_COIN_DOGE:
                         sql = """ INSERT INTO """+coin.lower()+"""_user (`user_id`, `balance_wallet_address`, 
                                   `balance_wallet_address_ts`, `balance_wallet_address_ch`, `privateKey`) 
