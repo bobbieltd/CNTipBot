@@ -128,7 +128,7 @@ async def sql_register_user(userID, coin: str = None):
         coin = "WRKZ"
     COIN_NAME = coin.upper()
     try:
-        with conn.cursor() as cur:
+        with conn.cursor(pymysql.cursors.DictCursor) as cur:
             if coin in ENABLE_COIN:
                 sql = """ SELECT * FROM """+coin.lower()+"""_user_paymentid WHERE `user_id`=%s AND `coin_name` = %s LIMIT 1 """
                 cur.execute(sql, (str(userID), COIN_NAME))
@@ -185,10 +185,10 @@ async def sql_register_user(userID, coin: str = None):
                     return result2
             else:
                 result2 = {}
-                result2['user_id'] = result[0]
-                result2['balance_wallet_address'] = result[1]
+                result2['user_id'] = result['user_id']
+                result2['balance_wallet_address'] = result['int_address']
                 try:
-                    result2['user_wallet_address'] = result[2]
+                    result2['balance_wallet_address'] = result['user_wallet_address']
                 except IndexError:
                     result2['user_wallet_address'] = ''
                 return result2
