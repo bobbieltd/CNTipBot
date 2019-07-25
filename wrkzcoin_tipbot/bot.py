@@ -787,7 +787,7 @@ async def info(ctx, coin: str = None):
     elif coin in ENABLE_COIN:
         wallet = await store.sql_get_userwallet(str(ctx.message.author.id), coin)
         # recreate new address if exist
-        if 'paymentid' not in wallet or (len(wallet['paymentid']) != 16 and len(wallet['paymentid']) != 64):
+        if 'paymentid' not in wallet or wallet['paymentid'] is None or (len(wallet['paymentid']) != 16 and len(wallet['paymentid']) != 64):
             wallet = None
         if wallet is None or wallet['balance_wallet_address'] == str(ctx.message.author.id):
             userregister = await store.sql_register_user(str(ctx.message.author.id), coin)
