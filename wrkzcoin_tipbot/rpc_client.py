@@ -68,8 +68,8 @@ async def call_aiohttp_wallet(method_name: str, coin: str, payload: Dict = None)
         indexMajor = indices['index']['major']
         if int(indexMajor) != 0:
             print(coin+" - Error user with majorindex: ")
-        payload["account_index"] = indexMajor
-        payload["subaddr_indices"] = [indices['index']['minor']]
+        # payload["account_index"] = indexMajor
+        # payload["subaddr_indices"] = [indices['index']['minor']]
         payload["destinations"] = payload["transfers"]
         payload["priority"] = 0
         payload["mixin"] = payload["anonymity"]
