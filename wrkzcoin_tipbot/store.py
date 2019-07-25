@@ -58,6 +58,7 @@ async def sql_update_balances(coin: str = None):
     updateTime = int(time.time())
     if coin is None:
         coin = "WRKZ"
+    COIN_NAME = coin.upper()
 
     print('SQL: Updating ALL wallet balances '+coin)
     if coin in ENABLE_COIN:
