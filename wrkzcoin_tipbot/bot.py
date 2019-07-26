@@ -1015,8 +1015,8 @@ async def balance(ctx, coin: str = None):
         f'{EMOJI_MONEYBAG} Pending: {balance_locked} '
         f'{COIN_NAME}\n'
         f'{get_notice_txt(COIN_NAME)}')
-    if ago:
-        await ctx.message.author.send(f'{EMOJI_HOURGLASS_NOT_DONE} update: {ago}')
+    if ago and int(wallet['lastUpdate']) > 0:
+        await ctx.message.author.send(f'{EMOJI_HOURGLASS_NOT_DONE} Last update : {ago}')
 
 
 @bot.command(pass_context=True, aliases=['botbal'], help=bot_help_botbalance)
