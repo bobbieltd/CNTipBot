@@ -63,8 +63,21 @@ async def sql_update_balances(coin: str = None):
 
     print('SQL: Updating ALL wallet balances '+COIN_NAME+", coin_family: "+coin_family)
     if COIN_NAME in ENABLE_COIN:
-        print('SQL: Updating get_transfers '+COIN_NAME)
-        get_transfers = await wallet.get_transfers_xmr(COIN_NAME)
+        height_start = 1
+        back_scan = 1000
+        try:
+            with conn.cursor(pymysql.cursors.DictCursor) as cur:
+                sql = """ SELECT MAX(height) AS maximum FROM """+coin.lower()+"""_get_transfers WHERE `coin_name` = %s """
+                cur.execute(sql, (COIN_NAME,))
+                result = cur.fetchone()
+                if result is not None and result['maximum'] > back_scan:
+                    height_start = int(result['maximum']) - back_scan
+        except Exception as e:
+            traceback.print_exc(file=sys.stdout)
+            height_start = 1
+        print('SQL: Updating get_transfers '+COIN_NAME+' start from '+height_start)
+        # TODO take last height so no need to rescan all and scan from last height
+        get_transfers = await wallet.get_transfers_xmr(COIN_NAME,height_start)
         if get_transfers is not None and len(get_transfers) >= 1 and coin_family == "XMR":
             try:
                 with conn.cursor(pymysql.cursors.DictCursor) as cur:

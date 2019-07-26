@@ -373,11 +373,11 @@ async def make_integrated_address_xmr(address: str, coin: str, paymentid: str = 
             return None
 
 
-async def get_transfers_xmr(coin: str, height_start: int = 1, height_end: int = None):
+async def get_transfers_xmr(coin: str, height_start: int = None, height_end: int = None):
     COIN_NAME = coin.upper()
     coin_family = getattr(getattr(config,"daemon"+COIN_NAME),"coin_family","TRTL")
-    if height_end is None:
-        height_end = height_start + 1000000000
+    if height_start is None:
+        height_start = 1
     payload = {}
     if coin_family == "XMR":
         payload = {
@@ -387,12 +387,15 @@ async def get_transfers_xmr(coin: str, height_start: int = 1, height_end: int = 
             "failed": False,
             "pool": False,
             "filter_by_height": True,
-            "min_height": height_start,
-            "max_height": height_end
+            "min_height": height_start
         }
+        if height_end is not None:
+            payload["max_height"] = height_end
         result = await rpc_client.call_aiohttp_wallet('get_transfers', COIN_NAME, payload=payload)
         return result["in"]
     elif coin_family == "TRTL":
+        if height_end is None:
+            height_end = 1000000000
         payload = {
             "firstBlockIndex" : height_start,
             "blockCount" : height_end-height_start
