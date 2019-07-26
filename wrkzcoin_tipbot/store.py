@@ -564,7 +564,7 @@ async def sql_withdraw(user_from: str, amount: int, coin: str=None):
         return None
 
 
-async def sql_donate(user_id: str, change_amount: int, coin: str = None) -> str:
+async def sql_donate(userID: str, change_amount: int, coin: str = None) -> str:
     # TODO
     global conn
     if coin in ENABLE_COIN:
@@ -576,7 +576,7 @@ async def sql_donate(user_id: str, change_amount: int, coin: str = None) -> str:
             traceback.print_exc(file=sys.stdout)
     return None
 
-async def sql_update_gaming(user_id: str, change_amount: int, coin: str = None) -> str:
+async def sql_update_gaming(userID: str, change_amount: int, coin: str = None) -> str:
     global conn
     COIN_NAME = coin.upper()
     if coin in ENABLE_COIN:
