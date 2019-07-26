@@ -59,14 +59,15 @@ async def sql_update_balances(coin: str = None):
     if coin is None:
         coin = "WRKZ"
     COIN_NAME = coin.upper()
+    coin_family = getattr(getattr(config,"daemon"+COIN_NAME),"coin_family","TRTL")
 
-    print('SQL: Updating ALL wallet balances '+coin)
-    if coin in ENABLE_COIN:
+    print('SQL: Updating ALL wallet balances '+COIN_NAME+", coin_family: "+coin_family)
+    if COIN_NAME in ENABLE_COIN:
         print('SQL: Updating get_transfers '+COIN_NAME)
         get_transfers = await wallet.get_transfers_xmr(COIN_NAME)
-        if len(get_transfers) >= 1:
+        if get_transfers is not None and len(get_transfers) >= 1 and coin_family == "XMR":
             try:
-                with conn.cursor() as cur:
+                with conn.cursor(pymysql.cursors.DictCursor) as cur:
                     sql = """ SELECT * FROM """+coin.lower()+"""_get_transfers WHERE `coin_name` = %s """
                     cur.execute(sql, (COIN_NAME,))
                     result = cur.fetchall()
@@ -75,7 +76,7 @@ async def sql_update_balances(coin: str = None):
                     # print(d)
                     # print('=================='+COIN_NAME+'===========')
                     list_balance_user = {}
-                    for tx in get_transfers['in']:
+                    for tx in get_transfers:
                         if ('payment_id' in tx) and (tx['payment_id'] in list_balance_user):
                             list_balance_user[tx['payment_id']] += tx['amount']
                         elif ('payment_id' in tx) and (tx['payment_id'] not in list_balance_user):
@@ -83,7 +84,42 @@ async def sql_update_balances(coin: str = None):
                         try:
                             if tx['txid'] not in d:
                                 sql = """ INSERT IGNORE INTO """+coin.lower()+"""_get_transfers (`coin_name`, `in_out`, `txid`, 
-                                `payment_id`, `height`, `timestamp`, `amount`, `fee`, `decimal`, `address`, time_insert) 
+                                `payment_id`, `height`, `timestamp`, `amount`, `fee`, `decimal`, `address`, `time_insert`) 
+                                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) """
+                                cur.execute(sql, (COIN_NAME, tx['type'].upper(), tx['txid'], tx['payment_id'], tx['height'], tx['timestamp'],
+                                                  tx['amount'], tx['fee'], wallet.get_decimal(COIN_NAME), tx['address'], int(time.time())))
+                        except Exception as e:
+                            traceback.print_exc(file=sys.stdout)
+                    if len(list_balance_user) > 0:
+                        list_update = []
+                        timestamp = int(time.time())
+                        for key, value in list_balance_user.items():
+                            list_update.append((value, timestamp, key))
+                        cur.executemany(""" UPDATE """+coin.lower()+"""_user_paymentid SET `actual_balance` = %s, `lastUpdate` = %s 
+                                        WHERE paymentid = %s """, list_update)
+                        conn_cursors.commit()
+            except Exception as e:
+                traceback.print_exc(file=sys.stdout)
+        if get_transfers is not None and len(get_transfers) >= 1 and coin_family == "TRTL":
+            try:
+                with conn.cursor(pymysql.cursors.DictCursor) as cur:
+                    sql = """ SELECT * FROM """+coin.lower()+"""_get_transfers WHERE `coin_name` = %s """
+                    cur.execute(sql, (COIN_NAME,))
+                    result = cur.fetchall()
+                    d = [i['txid'] for i in result]
+                    # print('=================='+COIN_NAME+'===========')
+                    # print(d)
+                    # print('=================='+COIN_NAME+'===========')
+                    list_balance_user = {}
+                    for tx in get_transfers:
+                        if ('payment_id' in tx) and (tx['payment_id'] in list_balance_user):
+                            list_balance_user[tx['payment_id']] += tx['amount']
+                        elif ('payment_id' in tx) and (tx['payment_id'] not in list_balance_user):
+                            list_balance_user[tx['payment_id']] = tx['amount']
+                        try:
+                            if tx['txid'] not in d:
+                                sql = """ INSERT IGNORE INTO """+coin.lower()+"""_get_transfers (`coin_name`, `in_out`, `txid`, 
+                                `payment_id`, `height`, `timestamp`, `amount`, `fee`, `decimal`, `address`, `time_insert`) 
                                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) """
                                 cur.execute(sql, (COIN_NAME, tx['type'].upper(), tx['txid'], tx['payment_id'], tx['height'], tx['timestamp'],
                                                   tx['amount'], tx['fee'], wallet.get_decimal(COIN_NAME), tx['address'], int(time.time())))
