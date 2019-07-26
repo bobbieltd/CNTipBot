@@ -22,8 +22,8 @@ ENABLE_COIN = config.Enable_Coin.split(",")
 ENABLE_COIN_DOGE = ["DOGE"]
 
 pymysqlpool.logger.setLevel('DEBUG')
-config={'host': config.mysql.host, 'user':config.mysql.user, 'password':config.mysql.password, 'database':config.mysql.db, 'autocommit':True}
-connPool = pymysqlpool.ConnectionPool(size=100, name='connPool', **config)
+configMySQL={'host': config.mysql.host, 'user':config.mysql.user, 'password':config.mysql.password, 'database':config.mysql.db, 'autocommit':True}
+connPool = pymysqlpool.ConnectionPool(size=100, name='connPool', **configMySQL)
 conn = connPool.get_connection(timeout=5, retry_num=2)
 
 def sql_get_walletinfo():
