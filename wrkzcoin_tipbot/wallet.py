@@ -377,7 +377,7 @@ async def get_transfers_xmr(coin: str, height_start: int = 1, height_end: int = 
     COIN_NAME = coin.upper()
     coin_family = getattr(getattr(config,"daemon"+COIN_NAME),"coin_family","TRTL")
     if height_end is None:
-        height_end = height_start + 1000
+        height_end = height_start + 100000
     payload = {}
     if coin_family == "XMR":
         payload = {

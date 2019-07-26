@@ -99,7 +99,6 @@ async def sql_update_balances(coin: str = None):
                             list_update.append((value, timestamp, key))
                         cur.executemany(""" UPDATE """+coin.lower()+"""_user_paymentid SET `actual_balance` = %s, `lastUpdate` = %s 
                                         WHERE paymentid = %s """, list_update)
-                        conn_cursors.commit()
             except Exception as e:
                 traceback.print_exc(file=sys.stdout)
         if get_transfers is not None and len(get_transfers) >= 1 and coin_family == "TRTL":
@@ -136,7 +135,6 @@ async def sql_update_balances(coin: str = None):
                             list_update.append((value, timestamp, key))
                         cur.executemany(""" UPDATE """+coin.lower()+"""_user_paymentid SET `actual_balance` = %s, `lastUpdate` = %s 
                                         WHERE paymentid = %s """, list_update)
-                        conn_cursors.commit()
             except Exception as e:
                 traceback.print_exc(file=sys.stdout)
 
