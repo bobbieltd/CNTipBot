@@ -299,6 +299,8 @@ async def sql_get_userwallet(userID, coin: str = None):
                     result['forwardtip'] = False
                     result['actual_balance'] = 0
                     result['locked_balance'] = 0
+                    result['donation_balance'] = 0
+                    result['gaming_balance'] = 0
                     result['lastUpdate'] = int(time.time())
                     
             elif coin in ENABLE_COIN_DOGE:
@@ -323,6 +325,9 @@ async def sql_get_userwallet(userID, coin: str = None):
                     return None
             else:
                 userwallet = result
+                # recalculating actual_balance
+                if 'donation_balance' in userwallet and 'gaming_balance' in userwallet:
+                    userwallet['actual_balance'] = userwallet['actual_balance'] - userwallet['donation_balance'] + userwallet['gaming_balance']
                 userwallet['balance_wallet_address'] = result['int_address']
                 if coin in ENABLE_COIN_DOGE:
                     depositAddress = await wallet.DOGE_LTC_getaccountaddress(str(userID), coin)

@@ -673,6 +673,8 @@ CREATE TABLE `xtor_user_paymentid` (
   `forwardtip` enum('ON','OFF') NOT NULL DEFAULT 'OFF',
   `actual_balance` bigint(20) NOT NULL DEFAULT '0',
   `locked_balance` bigint(20) NOT NULL DEFAULT '0',
+  `donation_balance` bigint(20) NOT NULL DEFAULT '0',
+  `gaming_balance` bigint(20) NOT NULL DEFAULT '0',
   `lastUpdate` int(11) NOT NULL DEFAULT '0',
   `extrainfo` varchar(512) CHARACTER SET utf8,
   `user_server` enum('DISCORD','TELEGRAM') NOT NULL DEFAULT 'DISCORD',
