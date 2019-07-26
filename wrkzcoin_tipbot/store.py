@@ -79,19 +79,20 @@ async def sql_update_balances(coin: str = None):
                     # print('=================='+COIN_NAME+'===========')
                     list_balance_user = {}
                     for tx in get_transfers:
-                        if ('payment_id' in tx) and (tx['payment_id'] in list_balance_user):
-                            list_balance_user[tx['payment_id']] += tx['amount']
-                        elif ('payment_id' in tx) and (tx['payment_id'] not in list_balance_user):
-                            list_balance_user[tx['payment_id']] = tx['amount']
-                        try:
-                            if tx['txid'] not in d and tx['txid'] != "0000000000000000":
-                                sql = """ INSERT IGNORE INTO """+coin.lower()+"""_get_transfers (`coin_name`, `in_out`, `txid`, 
-                                `payment_id`, `height`, `timestamp`, `amount`, `fee`, `decimal`, `address`, `time_insert`) 
-                                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) """
-                                cur.execute(sql, (COIN_NAME, tx['type'].upper(), tx['txid'], tx['payment_id'], tx['height'], tx['timestamp'],
-                                                  tx['amount'], tx['fee'], wallet.get_decimal(COIN_NAME), tx['address'], int(time.time())))
-                        except Exception as e:
-                            traceback.print_exc(file=sys.stdout)
+                        if tx['type'] == "IN":
+                            if ('payment_id' in tx) and (tx['payment_id'] in list_balance_user):
+                                list_balance_user[tx['payment_id']] += tx['amount']
+                            elif ('payment_id' in tx) and (tx['payment_id'] not in list_balance_user):
+                                list_balance_user[tx['payment_id']] = tx['amount']
+                            try:
+                                if tx['txid'] not in d and tx['txid'] != "0000000000000000":
+                                    sql = """ INSERT IGNORE INTO """+coin.lower()+"""_get_transfers (`coin_name`, `in_out`, `txid`, 
+                                    `payment_id`, `height`, `timestamp`, `amount`, `fee`, `decimal`, `address`, `time_insert`) 
+                                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) """
+                                    cur.execute(sql, (COIN_NAME, tx['type'].upper(), tx['txid'], tx['payment_id'], tx['height'], tx['timestamp'],
+                                                      tx['amount'], tx['fee'], wallet.get_decimal(COIN_NAME), tx['address'], int(time.time())))
+                            except Exception as e:
+                                traceback.print_exc(file=sys.stdout)
                     if len(list_balance_user) > 0:
                         list_update = []
                         timestamp = int(time.time())
