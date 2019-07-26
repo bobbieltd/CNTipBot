@@ -382,7 +382,7 @@ async def get_transfers_xmr(coin: str, height_start: int = 1, height_end: int = 
     if coin_family == "XMR":
         payload = {
             "in" : True,
-            "out": True,
+            "out": False,
             "pending": False,
             "failed": False,
             "pool": False,
