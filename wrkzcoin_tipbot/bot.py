@@ -150,6 +150,7 @@ bot_help_account_unverify = "Unverify your account and disable 2FA code."
 DICE_HOUSE_EDGE = 0.001
 EMOJI_DICE_GAME = "\U0001F3B2"
 EMOJI_DIGIT = ["","\U00000031"+"\U000020E3","\U00000032"+"\U000020E3","\U00000033"+"\U000020E3","\U00000034"+"\U000020E3","\U00000035"+"\U000020E3","\U00000036"+"\U000020E3"]
+LIMIT_GAME = {"BTCM":100000000, "LOK":100, "XTRI":1000, "XTOR": 1000000, "BLOG": 1000000, "TRTG":1000000000}
 
 # issue found by capETN - wrkzdev
 WITHDRAW_IN_PROCESS = {}
@@ -2193,6 +2194,15 @@ async def dice(ctx, times :str, amount: str, coin: str = None):
         return
 
     COIN_DEC = get_decimal(COIN_NAME)
+    limit = 100
+    if COIN_NAME in LIMIT_GAME:
+        limit = LIMIT_GAME[COIN_NAME]
+    if amount > limit:
+        await ctx.message.add_reaction(EMOJI_ERROR)
+        msg = await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} Amount is too big. Max is {LIMIT_GAME[COIN_NAME]} {COIN_NAME}.')
+        await msg.add_reaction(EMOJI_OK_BOX)
+        return
+
     user_from = await store.sql_get_userwallet(str(ctx.message.author.id), COIN_NAME)
     real_amount = int(round(amount * COIN_DEC))
     userdata_balance = store.sql_xmr_balance(str(ctx.message.author.id), COIN_NAME)
