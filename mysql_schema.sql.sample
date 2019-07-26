@@ -630,6 +630,7 @@ CREATE TABLE `xtor_external_tx` (
 
 DROP TABLE IF EXISTS `xtor_get_transfers`;
 CREATE TABLE `xtor_get_transfers` (
+  `coin_name` varchar(16) NOT NULL,
   `in_out` varchar(16) NOT NULL,
   `txid` varchar(64) NOT NULL,
   `payment_id` varchar(64) NOT NULL,
