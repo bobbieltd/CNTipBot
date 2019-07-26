@@ -2185,6 +2185,7 @@ async def dice(ctx, times :str, amount: str, coin: str = None):
         msg = await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} Invalid syntax. Example : !dice 2x 15 trtl')
         await msg.add_reaction(EMOJI_OK_BOX)
         return
+    COIN_DEC = get_decimal(COIN_NAME)
     user_from = await store.sql_get_userwallet(str(ctx.message.author.id), COIN_NAME)
     real_amount = int(round(amount * COIN_DEC))
     userdata_balance = store.sql_xmr_balance(str(ctx.message.author.id), COIN_NAME)
