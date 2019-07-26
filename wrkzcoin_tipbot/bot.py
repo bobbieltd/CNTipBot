@@ -178,7 +178,7 @@ async def get_prefix(bot, message):
     if serverinfo is None:
         # Let's add some info if guild return None
         add_server_info = store.sql_addinfo_by_server(str(message.guild.id), message.guild.name,
-                                                      config.discord.prefixCmd, "WRKZ")
+                                                      config.discord.prefixCmd, "BTCM")
         pre_cmd = config.discord.prefixCmd
 
     if 'prefix' in serverinfo:
