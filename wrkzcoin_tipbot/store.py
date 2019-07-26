@@ -570,7 +570,7 @@ async def sql_donate(user_id: str, change_amount: int, coin: str = None) -> str:
     if coin in ENABLE_COIN:
         try:
             with conn.cursor() as cur: 
-                sql = """ UPDATE """+coin.lower()+"""_user_paymentid SET donation_balance=donation_balance+'"""+change_amount+"""' WHERE user_id=%s """
+                sql = """ UPDATE """+coin.lower()+"""_user_paymentid SET donation_balance=donation_balance+'"""+str(change_amount)+"""' WHERE user_id=%s """
                 cur.execute(sql, (str(userID),))
         except Exception as e:
             traceback.print_exc(file=sys.stdout)
@@ -582,7 +582,7 @@ async def sql_update_gaming(user_id: str, change_amount: int, coin: str = None) 
     if coin in ENABLE_COIN:
         try:
             with conn.cursor() as cur: 
-                sql = """ UPDATE """+coin.lower()+"""_user_paymentid SET gaming_balance=gaming_balance+'"""+change_amount+"""' WHERE user_id=%s """
+                sql = """ UPDATE """+coin.lower()+"""_user_paymentid SET gaming_balance=gaming_balance+'"""+str(change_amount)+"""' WHERE user_id=%s """
                 cur.execute(sql, (str(userID),))
         except Exception as e:
             traceback.print_exc(file=sys.stdout)
