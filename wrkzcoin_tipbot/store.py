@@ -328,6 +328,8 @@ async def sql_get_userwallet(userID, coin: str = None):
                 # recalculating actual_balance
                 if 'donation_balance' in userwallet and 'gaming_balance' in userwallet:
                     userwallet['actual_balance'] = userwallet['actual_balance'] - userwallet['donation_balance'] + userwallet['gaming_balance']
+                else:
+                    print("Error : New donation_balance and gaming_balance do not exist.")
                 userwallet['balance_wallet_address'] = result['int_address']
                 if coin in ENABLE_COIN_DOGE:
                     depositAddress = await wallet.DOGE_LTC_getaccountaddress(str(userID), coin)
@@ -562,42 +564,29 @@ async def sql_withdraw(user_from: str, amount: int, coin: str=None):
         return None
 
 
-async def sql_donate(user_from: str, address_to: str, amount: int, coin: str = None) -> str:
+async def sql_donate(user_id: str, change_amount: int, coin: str = None) -> str:
+    # TODO
     global conn
-    if coin is None:
-        coin = "WRKZ"
-    else:
-        coin = coin
-    user_from_wallet = None
     if coin in ENABLE_COIN:
-        user_from_wallet = await sql_get_userwallet(user_from, coin)
-    if all(v is not None for v in [user_from_wallet['balance_wallet_address'], address_to]):
-        tx_hash = None
-        if coin in ENABLE_COIN:
-            tx_hash = await wallet.send_transaction_donate(user_from_wallet['balance_wallet_address'], address_to, amount, coin)
-        if tx_hash is not None:
-            updateTime = int(time.time())
-            try:
-                with conn.cursor() as cur:
-                    timestamp = int(time.time())
-                    updateBalance = None
-                    if coin in ENABLE_COIN:
-                        sql = """ INSERT INTO """+coin.lower()+"""_donate (`from_user`, `to_address`, `amount`, 
-                                  `date`, `tx_hash`) VALUES (%s, %s, %s, %s, %s) """
-                        cur.execute(sql, (user_from, address_to, amount, timestamp, tx_hash,))
-                        updateBalance = await wallet.get_balance_address(user_from_wallet['balance_wallet_address'], coin)
-                    if updateBalance:
-                        if coin in ENABLE_COIN:
-                            sql = """ UPDATE """+coin.lower()+"""_walletapi SET `actual_balance`=%s, 
-                                      `locked_balance`=%s, `lastUpdate`=%s WHERE `balance_wallet_address`=%s """
-                            cur.execute(sql, (updateBalance['unlocked'], updateBalance['locked'], 
-                                        updateTime, user_from_wallet['balance_wallet_address'],))
-            except Exception as e:
-                traceback.print_exc(file=sys.stdout)
-        return tx_hash
-    else:
-        return None
+        try:
+            with conn.cursor() as cur: 
+                sql = """ UPDATE """+coin.lower()+"""_user_paymentid SET donation_balance=donation_balance+'"""+change_amount+"""' WHERE user_id=%s """
+                cur.execute(sql, (str(userID),))
+        except Exception as e:
+            traceback.print_exc(file=sys.stdout)
+    return None
 
+async def sql_update_gaming(user_id: str, change_amount: int, coin: str = None) -> str:
+    global conn
+    COIN_NAME = coin.upper()
+    if coin in ENABLE_COIN:
+        try:
+            with conn.cursor() as cur: 
+                sql = """ UPDATE """+coin.lower()+"""_user_paymentid SET gaming_balance=gaming_balance+'"""+change_amount+"""' WHERE user_id=%s """
+                cur.execute(sql, (str(userID),))
+        except Exception as e:
+            traceback.print_exc(file=sys.stdout)
+    return None
 
 def sql_get_donate_list():
     global conn

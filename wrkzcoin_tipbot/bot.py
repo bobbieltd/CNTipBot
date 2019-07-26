@@ -2175,17 +2175,24 @@ async def dice(ctx, times :str, amount: str, coin: str = None):
     times = times[:1]
     try:
         times = int(times)
-        amount = int(amount)
+        amount = float(amount)
     except:
         correctSyntax = False
-    if int(times) <= 1 or int(amount) <= 0:
+    if int(times) <= 1 or float(amount) <= 0:
         correctSyntax = False
     if not correctSyntax:
         await ctx.message.add_reaction(EMOJI_ERROR)
         msg = await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} Invalid syntax. Example : !dice 2x 15 trtl')
         await msg.add_reaction(EMOJI_OK_BOX)
         return
-
+    user_from = await store.sql_get_userwallet(str(ctx.message.author.id), COIN_NAME)
+    real_amount = int(round(amount * COIN_DEC))
+    userdata_balance = store.sql_xmr_balance(str(ctx.message.author.id), COIN_NAME)
+    if user_from['actual_balance'] + userdata_balance['Adjust'] < real_amount:
+        await ctx.message.add_reaction(EMOJI_ERROR)
+        msg = await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} You do not have enough balance to play.')
+        await msg.add_reaction(EMOJI_OK_BOX)
+        return
     # Rolling dices
     playerLuck = float((1-DICE_HOUSE_EDGE)/times)
     dices = ""
@@ -2197,11 +2204,15 @@ async def dice(ctx, times :str, amount: str, coin: str = None):
 
     if playerWin:
         msg = await ctx.send(f'{EMOJI_DICE_GAME} Dice game TEST {EMOJI_DICE_GAME} Congratulations {ctx.author.mention}, you won. The dices rolled was {dices}\n'
-                             f'*Profit* {int(times)*int(amount-1)} **{COIN_NAME}**')
+                             f'*Profit* {int((times-1)*amount)} **{COIN_NAME}**'
+                             f'*For entertaining purpose, only small amounts are allowed to play.*')
+        await store.sql_update_gaming(str(ctx.message.author.id),int((times-1)*amount * COIN_DEC))
         await msg.add_reaction(EMOJI_OK_BOX)
     else:
         msg = await ctx.send(f'{EMOJI_DICE_GAME} Dice game TEST {EMOJI_DICE_GAME} Sorry {ctx.author.mention}, you lost. The dices rolled was {dices}\n'
-                             f'*Loss* {int(amount)} **{COIN_NAME}**')
+                             f'*Loss* {int(amount)} **{COIN_NAME}**'
+                             f'*For entertaining purpose, only small amounts are allowed to play.*')
+        await store.sql_update_gaming(str(ctx.message.author.id),int((-1) * amount * COIN_DEC))
         await msg.add_reaction(EMOJI_OK_BOX)
     return
 
