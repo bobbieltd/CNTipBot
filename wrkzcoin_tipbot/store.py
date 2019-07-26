@@ -1346,10 +1346,10 @@ async def sql_external_xmr_single(user_from: str, amount: int, to_address: str, 
                                                     amount, COIN_NAME, 0)
             if tx_hash:
                 updateTime = int(time.time())
-                    sql = """ INSERT INTO """+coin.lower()+"""_external_tx (`coin_name`, `user_id`, `amount`, `fee`, `decimal`, `to_address`, 
-                              `type`, `date`, `tx_hash`, `tx_key`) 
-                              VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s) """
-                    cur.execute(sql, (COIN_NAME, user_from, amount, tx_hash['fee'], wallet.get_decimal(COIN_NAME), to_address, tiptype.upper(), int(time.time()), tx_hash['transactionHash'], tx_hash['tx_key'],))
+                sql = """ INSERT INTO """+coin.lower()+"""_external_tx (`coin_name`, `user_id`, `amount`, `fee`, `decimal`, `to_address`, 
+                          `type`, `date`, `tx_hash`, `tx_key`) 
+                          VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s) """
+                cur.execute(sql, (COIN_NAME, user_from, amount, tx_hash['fee'], wallet.get_decimal(COIN_NAME), to_address, tiptype.upper(), int(time.time()), tx_hash['transactionHash'], tx_hash['tx_key'],))
             return tx_hash
     except Exception as e:
         traceback.print_exc(file=sys.stdout)
