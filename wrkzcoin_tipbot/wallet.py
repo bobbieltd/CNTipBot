@@ -395,7 +395,7 @@ async def get_transfers_xmr(coin: str, height_start: int = None, height_end: int
         return result["in"]
     elif coin_family == "TRTL":
         if height_end is None:
-            height_end = 1000000000
+            height_end = height_start + 1000000000
         payload = {
             "firstBlockIndex" : height_start,
             "blockCount" : height_end-height_start
