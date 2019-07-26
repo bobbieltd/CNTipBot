@@ -59,7 +59,7 @@ async def sql_update_balances(coin: str = None):
     if coin is None:
         coin = "WRKZ"
     COIN_NAME = coin.upper()
-    coin_family = getattr(getattr(config,"daemon"+COIN_NAME),"coin_family","TRTL")
+    coin_family = getattr(getattr(config,"daemon"+COIN_NAME,config.daemonWRKZ),"coin_family","TRTL")
 
     print('SQL: Updating ALL wallet balances '+COIN_NAME+", coin_family: "+coin_family)
     if COIN_NAME in ENABLE_COIN:
