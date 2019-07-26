@@ -79,13 +79,13 @@ async def sql_update_balances(coin: str = None):
                     # print('=================='+COIN_NAME+'===========')
                     list_balance_user = {}
                     for tx in get_transfers:
-                        if tx['type'] == "IN":
+                        if tx['type'].upper() == "IN":
                             if ('payment_id' in tx) and (tx['payment_id'] in list_balance_user):
                                 list_balance_user[tx['payment_id']] += tx['amount']
                             elif ('payment_id' in tx) and (tx['payment_id'] not in list_balance_user):
                                 list_balance_user[tx['payment_id']] = tx['amount']
                             try:
-                                if tx['txid'] not in d and tx['txid'] != "0000000000000000":
+                                if tx['txid'] not in d and tx['payment_id'] != "0000000000000000":
                                     sql = """ INSERT IGNORE INTO """+coin.lower()+"""_get_transfers (`coin_name`, `in_out`, `txid`, 
                                     `payment_id`, `height`, `timestamp`, `amount`, `fee`, `decimal`, `address`, `time_insert`) 
                                     VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) """
@@ -121,7 +121,7 @@ async def sql_update_balances(coin: str = None):
                         elif ('payment_id' in tx) and (tx['payment_id'] not in list_balance_user):
                             list_balance_user[tx['payment_id']] = tx['amount']
                         try:
-                            if tx['txid'] not in d and tx['txid'] != "0000000000000000":
+                            if tx['txid'] not in d and tx['payment_id'] != "0000000000000000":
                                 sql = """ INSERT IGNORE INTO """+coin.lower()+"""_get_transfers (`coin_name`, `in_out`, `txid`, 
                                 `payment_id`, `height`, `timestamp`, `amount`, `fee`, `decimal`, `address`, `time_insert`) 
                                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) """
