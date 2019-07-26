@@ -71,9 +71,9 @@ async def sql_update_balances(coin: str = None):
                     sql = """ SELECT * FROM """+coin.lower()+"""_get_transfers WHERE `coin_name` = %s """
                     cur.execute(sql, (COIN_NAME,))
                     result = cur.fetchall()
-                    if result is None:
-                        return
-                    d = [i['txid'] for i in result]
+                    d = []
+                    if result is not None:
+                        d = [i['txid'] for i in result]
                     # print('=================='+COIN_NAME+'===========')
                     # print(d)
                     # print('=================='+COIN_NAME+'===========')
@@ -107,9 +107,9 @@ async def sql_update_balances(coin: str = None):
                     sql = """ SELECT * FROM """+coin.lower()+"""_get_transfers WHERE `coin_name` = %s """
                     cur.execute(sql, (COIN_NAME,))
                     result = cur.fetchall()
-                    if result is None:
-                        return
-                    d = [i['txid'] for i in result]
+                    d = []
+                    if result is not None:
+                        d = [i['txid'] for i in result]
                     # print('=================='+COIN_NAME+'===========')
                     # print(d)
                     # print('=================='+COIN_NAME+'===========')
