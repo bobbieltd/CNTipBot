@@ -23,8 +23,8 @@ ENABLE_COIN_DOGE = ["DOGE"]
 
 pymysqlpool.logger.setLevel('DEBUG')
 configMySQL={'host': config.mysql.host, 'user':config.mysql.user, 'password':config.mysql.password, 'database':config.mysql.db, 'autocommit':True}
-connPool = pymysqlpool.ConnectionPool(size=100, name='connPool', **configMySQL)
-conn = connPool.get_connection(timeout=30, retry_num=2)
+connPool = pymysqlpool.ConnectionPool(size=1000, name='connPool', **configMySQL)
+conn = connPool.get_connection(timeout=30, retry_num=5)
 
 def sql_get_walletinfo():
     global conn
@@ -1337,16 +1337,20 @@ async def sql_external_xmr_single(user_from: str, amount: int, to_address: str, 
     if tiptype.upper() not in ["SEND", "WITHDRAW"]:
         return False
     try:
-        tx_hash = await wallet.send_transaction('TIPBOT', to_address, 
-                                                amount, COIN_NAME, 0)
-        if tx_hash:
-            updateTime = int(time.time())
-            with conn.cursor(pymysql.cursors.DictCursor) as cur: 
-                sql = """ INSERT INTO """+coin.lower()+"""_external_tx (`coin_name`, `user_id`, `amount`, `fee`, `decimal`, `to_address`, 
-                          `type`, `date`, `tx_hash`, `tx_key`) 
-                          VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s) """
-                cur.execute(sql, (COIN_NAME, user_from, amount, tx_hash['fee'], wallet.get_decimal(COIN_NAME), to_address, tiptype.upper(), int(time.time()), tx_hash['transactionHash'], tx_hash['tx_key'],))
-        return tx_hash
+        with conn.cursor(pymysql.cursors.DictCursor) as cur:
+            # Based on capETN finding, testing mysql connection before transfer coins, MySQL failure will go to except
+            sql = """ SELECT 1 FROM """+coin.lower()+"""_external_tx """
+            cur.execute(sql, ())
+            # MySQL is good, we can proceed
+            tx_hash = await wallet.send_transaction('TIPBOT', to_address, 
+                                                    amount, COIN_NAME, 0)
+            if tx_hash:
+                updateTime = int(time.time())
+                    sql = """ INSERT INTO """+coin.lower()+"""_external_tx (`coin_name`, `user_id`, `amount`, `fee`, `decimal`, `to_address`, 
+                              `type`, `date`, `tx_hash`, `tx_key`) 
+                              VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s) """
+                    cur.execute(sql, (COIN_NAME, user_from, amount, tx_hash['fee'], wallet.get_decimal(COIN_NAME), to_address, tiptype.upper(), int(time.time()), tx_hash['transactionHash'], tx_hash['tx_key'],))
+            return tx_hash
     except Exception as e:
         traceback.print_exc(file=sys.stdout)
     return False
