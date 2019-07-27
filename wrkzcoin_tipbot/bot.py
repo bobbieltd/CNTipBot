@@ -827,6 +827,7 @@ async def info(ctx, coin: str = None):
                                     f'{EMOJI_SCALE} Registered Wallet: `'
                                     ''+ wallet['user_wallet_address'] + '`\n'
                                     f'{get_notice_txt(COIN_NAME)}'
+                                    f'*Disclaimer : Do not keep too many coins at tipbot. We do not hold responsibility in case of unexpected bad events.*'
                                     f'{EMOJI_MONEYBAG} Deposit Address: ' + '\n')
         await ctx.message.author.send(wallet['balance_wallet_address'])
     else:
@@ -836,6 +837,7 @@ async def info(ctx, coin: str = None):
         await ctx.message.author.send(f'**[ACCOUNT INFO]**\n\n'
                                f'{EMOJI_SCALE} Registered Wallet: `NONE, Please register.`\n'
                                f'{get_notice_txt(COIN_NAME)}'
+                               f'*Disclaimer : Do not keep too many coins at tipbot. We do not hold responsibility in case of unexpected bad events.*'
                                f'{EMOJI_MONEYBAG} Deposit Address: ' + '\n')
         await ctx.message.author.send(wallet['balance_wallet_address'])
     return
