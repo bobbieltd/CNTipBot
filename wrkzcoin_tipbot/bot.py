@@ -2197,7 +2197,7 @@ async def dice(ctx, times :str, amount: str, coin: str = None):
 
     COIN_DEC = get_decimal(COIN_NAME)
     limit = 100
-    if hasattr(LIMIT_GAME, COIN_NAME):
+    if COIN_NAME in LIMIT_GAME:
         limit = LIMIT_GAME[COIN_NAME]
     if amount > limit:
         await ctx.message.add_reaction(EMOJI_ERROR)
