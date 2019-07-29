@@ -2175,7 +2175,7 @@ async def dice(ctx, times :str, amount: str, coin: str = None):
     correctSyntax = True
     if not times.endswith("x"):
         correctSyntax = False
-    times = times[:1]
+    times = times[:-1]
     try:
         times = int(times)
         amount = float(amount)
