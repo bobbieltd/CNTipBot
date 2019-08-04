@@ -80,7 +80,7 @@ EMOJI_COIN = {\
 "HITC" : "\U0001F691",\
 "NACA" : "\U0001F355",\
 "LOKI" : "\U0001F52B",\
-"XTRI" : "\U0001F538",\
+"XEQ" : "\U0001F538",\
 "XTOR" : "\U0001F346",\
 "BLOG" : "\U0000270D",\
 "TRTG" : "\U0001F5A4",\
@@ -150,7 +150,7 @@ bot_help_account_unverify = "Unverify your account and disable 2FA code."
 DICE_HOUSE_EDGE = 0.001
 EMOJI_DICE_GAME = "\U0001F3B2"
 EMOJI_DIGIT = ["","\U00000031"+"\U000020E3","\U00000032"+"\U000020E3","\U00000033"+"\U000020E3","\U00000034"+"\U000020E3","\U00000035"+"\U000020E3","\U00000036"+"\U000020E3"]
-LIMIT_GAME = {"BTCM":100000000, "LOKI":100, "XTRI":1000, "XTOR": 1000000, "BLOG": 1000000, "TRTG":1000000000}
+LIMIT_GAME = {"BTCM":100000000, "LOKI":100, "XEQ":1000, "XTOR": 1000000, "BLOG": 1000000, "TRTG":1000000000}
 
 # issue found by capETN - wrkzdev
 WITHDRAW_IN_PROCESS = {}
@@ -1491,7 +1491,7 @@ async def tip(ctx, amount: str, *args):
                 if time_given:
                     if time_given < 5*60 or time_given > 30*24*60*60:
                         await ctx.message.add_reaction(EMOJI_ERROR)
-                        await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} Please try time inteval between 5minutes to 30 days.')
+                        await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} Please try time inteval between 5 minutes to 30 days.')
                         return
                     else:
                         message_talker = store.sql_get_messages(str(ctx.message.guild.id), str(ctx.message.channel.id), time_given)
@@ -2999,7 +2999,7 @@ def get_cn_coin_from_address(CoinAddress: str):
     elif CoinAddress.startswith("Tg"):
         COIN_NAME = "TRTG"
     elif CoinAddress.startswith("T"):
-        COIN_NAME = "XTRI"
+        COIN_NAME = "XEQ"
     return COIN_NAME
 
 
