@@ -152,7 +152,7 @@ async def sql_update_balances(coin: str = None):
                     if result is not None:
                         list_update = []
                         d = []
-                        d = [i['payment_id'] for i in result]
+                        d = [i['paymentid'] for i in result]
                         for key in d:
                             sql = """ SELECT SUM(amount) FROM """+coin.lower()+"""_get_transfers WHERE `payment_id` = %s """
                             cur.execute(sql, (key,))
