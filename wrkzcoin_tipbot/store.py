@@ -25,6 +25,7 @@ pymysqlpool.logger.setLevel('DEBUG')
 configMySQL={'host': config.mysql.host, 'user':config.mysql.user, 'password':config.mysql.password, 'database':config.mysql.db, 'autocommit':True}
 connPool = pymysqlpool.ConnectionPool(size=1000, name='connPool', **configMySQL)
 conn = connPool.get_connection(timeout=30, retry_num=5)
+scanCount = 0 # rescan whole blockchain once per 1000 scans for certainty
 
 def sql_get_walletinfo():
     global conn
@@ -76,6 +77,11 @@ async def sql_update_balances(coin: str = None):
             traceback.print_exc(file=sys.stdout)
             height_start = 1
         print('SQL: Updating get_transfers '+COIN_NAME+' start from '+str(height_start))
+        scanCount = scanCount + 1
+        # rescan whole per 1000 scans
+        if scanCount >= 1000:
+            height_start = 1
+            scanCount = 0
         get_transfers = await wallet.get_transfers_xmr(COIN_NAME,height_start)
         if get_transfers is not None and len(get_transfers) >= 1 and coin_family == "XMR":
             try:
@@ -126,14 +132,9 @@ async def sql_update_balances(coin: str = None):
                     # print('=================='+COIN_NAME+'===========')
                     # print(d)
                     # print('=================='+COIN_NAME+'===========')
-                    list_balance_user = {}
                     for block in get_transfers:
                         for tx in block["transactions"]:
                             if tx['amount'] > 0: # IN
-                                if ('paymentId' in tx) and (tx['paymentId'] in list_balance_user):
-                                    list_balance_user[tx['paymentId']] += tx['amount']
-                                elif ('paymentId' in tx) and (tx['paymentId'] not in list_balance_user):
-                                    list_balance_user[tx['paymentId']] = tx['amount']
                                 try:
                                     if tx['transactionHash'] not in d and tx['paymentId'] != "" and tx['paymentId'] != "0000000000000000000000000000000000000000000000000000000000000000":
                                         sql = """ INSERT IGNORE INTO """+coin.lower()+"""_get_transfers (`coin_name`, `in_out`, `txid`, 
@@ -143,11 +144,22 @@ async def sql_update_balances(coin: str = None):
                                                           tx['amount'], tx['fee'], wallet.get_decimal(COIN_NAME), tx["transfers"][0]['address'], int(time.time())))
                                 except Exception as e:
                                     traceback.print_exc(file=sys.stdout)
-                    if len(list_balance_user) > 0:
+                    # calculating balance for all users
+                    sql = """ SELECT * FROM """+coin.lower()+"""_user_paymentid WHERE `coin_name` = %s """
+                    cur.execute(sql, (COIN_NAME,))
+                    result = cur.fetchall()
+                    if result is not None:
                         list_update = []
-                        timestamp = int(time.time())
-                        for key, value in list_balance_user.items():
-                            list_update.append((value, timestamp, key))
+                        d = []
+                        d = [i['payment_id'] for i in result]
+                        for key in d:
+                            sql = """ SELECT SUM(amount) FROM """+coin.lower()+"""_get_transfers WHERE `payment_id` = %s """
+                            cur.execute(sql, (key,))
+                            result = cur.fetchone()
+                            if result is not None:
+                                value = result[0]
+                                timestamp = int(time.time())
+                                list_update.append((value, timestamp, key))
                         cur.executemany(""" UPDATE """+coin.lower()+"""_user_paymentid SET `actual_balance` = %s, `lastUpdate` = %s 
                                         WHERE paymentid = %s """, list_update)
             except Exception as e:
