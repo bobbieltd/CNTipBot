@@ -624,7 +624,8 @@ CREATE TABLE `xtor_external_tx` (
   `type` enum('SEND','WITHDRAW') NOT NULL DEFAULT 'WITHDRAW',
   `date` int(11) NOT NULL,
   `tx_hash` varchar(64) NOT NULL,
-  `tx_key` varchar(1024) NOT NULL
+  `tx_key` varchar(1024) NOT NULL,
+  UNIQUE KEY `txid` (`tx_hash`),
 ) ENGINE=InnoDB DEFAULT CHARSET=ascii;
 
 
@@ -648,6 +649,7 @@ CREATE TABLE `xtor_get_transfers` (
 
 DROP TABLE IF EXISTS `xtor_mv_tx`;
 CREATE TABLE `xtor_mv_tx` (
+  `id` int NOT NULL AUTO_INCREMENT,
   `coin_name` varchar(16) NOT NULL,
   `from_userid` varchar(32) NOT NULL,
   `to_userid` varchar(32) NOT NULL,
@@ -657,7 +659,8 @@ CREATE TABLE `xtor_mv_tx` (
   `date` int(11) NOT NULL,
   KEY `coin_name` (`coin_name`),
   KEY `from_userid` (`from_userid`),
-  KEY `to_userid` (`to_userid`)
+  KEY `to_userid` (`to_userid`),
+  PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=ascii;
 
 
