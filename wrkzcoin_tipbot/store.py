@@ -56,6 +56,7 @@ def sql_get_walletinfo():
 
 async def sql_update_balances(coin: str = None):
     global conn
+    global scanCount
     updateTime = int(time.time())
     if coin is None:
         coin = "WRKZ"
