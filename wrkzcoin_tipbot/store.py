@@ -154,11 +154,11 @@ async def sql_update_balances(coin: str = None):
                         d = []
                         d = [i['paymentid'] for i in result]
                         for key in d:
-                            sql = """ SELECT SUM(amount) FROM """+coin.lower()+"""_get_transfers WHERE `payment_id` = %s """
+                            sql = """ SELECT SUM(amount) AS total FROM """+coin.lower()+"""_get_transfers WHERE `payment_id` = %s """
                             cur.execute(sql, (key,))
                             result = cur.fetchone()
                             if result is not None:
-                                value = result[0]
+                                value = result["total"]
                                 timestamp = int(time.time())
                                 list_update.append((value, timestamp, key))
                         cur.executemany(""" UPDATE """+coin.lower()+"""_user_paymentid SET `actual_balance` = %s, `lastUpdate` = %s 
