@@ -97,7 +97,7 @@ EMOJI_OK_BOX = "\U0001F5D1"
 
 ENABLE_COIN = config.Enable_Coin.split(",")
 ENABLE_COIN_DOGE = ["DOGE"]
-MAINTENANCE_COIN = ["DOGE"]
+MAINTENANCE_COIN = ["DOGE","TRTG"]
 COIN_REPR = "COIN"
 DEFAULT_TICKER = "WRKZ"
 ENABLE_COIN_VOUCHER = config.Enable_Coin_Voucher.split(",")
