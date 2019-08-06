@@ -96,8 +96,8 @@ EMOJI_LOCKED = "\U0001F512"
 EMOJI_OK_BOX = "\U0001F5D1"
 
 ENABLE_COIN = config.Enable_Coin.split(",")
-ENABLE_COIN_DOGE = ["DOGE"]
-MAINTENANCE_COIN = ["DOGE","TRTG"]
+ENABLE_COIN_DOGE = []
+MAINTENANCE_COIN = ["DOGE"]
 COIN_REPR = "COIN"
 DEFAULT_TICKER = "WRKZ"
 ENABLE_COIN_VOUCHER = config.Enable_Coin_Voucher.split(",")
@@ -1020,166 +1020,6 @@ async def balance(ctx, coin: str = None):
         f'{get_notice_txt(COIN_NAME)}')
     if ago and int(wallet['lastUpdate']) > 0:
         await ctx.message.author.send(f'{EMOJI_HOURGLASS_NOT_DONE} Last update : {ago}')
-
-
-@bot.command(pass_context=True, aliases=['botbal'], help=bot_help_botbalance)
-async def botbalance(ctx, member: discord.Member = None, *args):
-    # Get wallet status
-    COIN_NAME = ""
-    if (len(args) > 0) and (args[-1].upper() in ENABLE_COIN):
-        COIN_NAME = args[-1].upper()
-        pass
-    elif (len(args) > 0) and (args[-1].upper() in ENABLE_COIN_DOGE):
-        if (args[-1].upper() == "DOGE") or (args[-1].upper() == "DOGECOIN"):
-            COIN_NAME = "DOGE"
-        else:
-            await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} **INVALID TICKER**!')
-            return
-    else:
-        await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} **INVALID TICKER**!')
-        return
-
-    walletStatus = None
-    if COIN_NAME in MAINTENANCE_COIN:
-        await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} {COIN_NAME} in maintenance.')
-        return
-    if COIN_NAME in ENABLE_COIN:
-        walletStatus = await daemonrpc_client.getWalletStatus(COIN_NAME)
-    elif COIN_NAME in ENABLE_COIN_DOGE:
-        walletStatus = await daemonrpc_client.getDaemonRPCStatus(COIN_NAME)
-
-    if walletStatus is None:
-        await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} {COIN_NAME} Wallet service hasn\'t started.')
-        return
-    else:
-        if COIN_NAME in ENABLE_COIN_DOGE:
-            localDaemonBlockCount = int(walletStatus['blocks'])
-            networkBlockCount = int(walletStatus['blocks'])
-        elif COIN_NAME in ENABLE_COIN:
-            localDaemonBlockCount = int(walletStatus['blockCount'])
-            networkBlockCount = int(walletStatus['knownBlockCount'])
-        if networkBlockCount - localDaemonBlockCount >= 20:
-            # if height is different by 20
-            t_percent = '{:,.2f}'.format(truncate(localDaemonBlockCount / networkBlockCount * 100, 2))
-            t_localDaemonBlockCount = '{:,}'.format(localDaemonBlockCount)
-            t_networkBlockCount = '{:,}'.format(networkBlockCount)
-            await ctx.message.add_reaction(EMOJI_WARNING)
-            await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} {COIN_NAME} Wallet service hasn\'t sync fully with network or being re-sync. More info:\n```'
-                           f'networkBlockCount:     {t_networkBlockCount}\n'
-                           f'localDaemonBlockCount: {t_localDaemonBlockCount}\n'
-                           f'Progress %:            {t_percent}\n```'
-                           )
-            return
-        else:
-            pass
-    # End of wallet status
-
-    # Check if maintenance
-    if IS_MAINTENANCE == 1:
-        if int(ctx.message.author.id) in MAINTENANCE_OWNER:
-            pass
-        else:
-            await ctx.message.add_reaction(EMOJI_WARNING)
-            await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} {config.maintenance_msg}')
-            return
-    else:
-        pass
-    # End Check if maintenance
-    COIN_DEC = 10
-    if COIN_NAME in ENABLE_COIN:
-        COIN_DEC = get_decimal(COIN_NAME)
-
-    if member is None:
-        # Bypass other if they re in ENABLE_COIN_DOGE
-        if COIN_NAME in ENABLE_COIN_DOGE:
-            depositAddress = await DOGE_LTC_getaccountaddress(bot.user.id, COIN_NAME)
-            actual = float(await DOGE_LTC_getbalance_acc(bot.user.id, COIN_NAME, 6))
-            locked = float(await DOGE_LTC_getbalance_acc(bot.user.id, COIN_NAME, 1))
-            userdata_balance = store.sql_doge_balance(bot.user.id, COIN_NAME)
-            if actual == locked:
-                balance_actual = num_format_coin(actual + float(userdata_balance['Adjust']), COIN_NAME)
-                balance_locked = num_format_coin(0 , COIN_NAME)
-            else:
-                balance_actual = num_format_coin(actual + float(userdata_balance['Adjust']), COIN_NAME)
-                if locked - actual + float(userdata_balance['Adjust']) < 0:
-                    balance_locked =  num_format_coin(0, COIN_NAME)
-                else:
-                    balance_locked =  num_format_coin(locked - actual + float(userdata_balance['Adjust']), COIN_NAME)
-            await ctx.send(
-                f'**[ MY {COIN_NAME} BALANCE]**\n'
-                f' Deposit Address: `{depositAddress}`\n'
-                f'{EMOJI_MONEYBAG} Available: {balance_actual} '
-                f'{COIN_NAME}\n'
-                f'{EMOJI_MONEYBAG} Pending: {balance_locked} '
-                f'{COIN_NAME}\n'
-                '**This is bot\'s tipjar address. Do not deposit here unless you want to deposit to this bot.**')
-            return
-
-        wallet = await store.sql_get_userwallet(bot.user.id, COIN_NAME)
-        if wallet is None:
-            botregister = await store.sql_register_user(str(member.id), COIN_NAME)
-            wallet = await store.sql_get_userwallet(str(member.id), COIN_NAME)
-        depositAddress = wallet['balance_wallet_address']
-        balance_actual = num_format_coin(wallet['actual_balance'] , COIN_NAME)
-        balance_locked = num_format_coin(wallet['locked_balance'] , COIN_NAME)
-        await ctx.send(
-            f'**[ MY BALANCE]**\n\n'
-            f' Deposit Address: `{depositAddress}`\n'
-            f'{EMOJI_MONEYBAG} Available: {balance_actual} '
-            f'{COIN_NAME}\n'
-            f'{EMOJI_MONEYBAG} Pending: {balance_locked} '
-            f'{COIN_NAME}\n'
-            '**This is bot\'s tipjar address. Do not deposit here unless you want to deposit to this bot.**')
-        return
-    if member.bot == False:
-        await ctx.message.add_reaction(EMOJI_ERROR)
-        await ctx.send(f'{EMOJI_RED_NO} {ctx.author.mention} Only for bot!!')
-        return
-    else:
-        # Bypass other if they re in ENABLE_COIN_DOGE
-        if COIN_NAME in ENABLE_COIN_DOGE:
-            try:
-                depositAddress = await DOGE_LTC_getaccountaddress(str(member.id), COIN_NAME)
-            except Exception as e:
-                traceback.print_exc(file=sys.stdout)
-            actual = float(await DOGE_LTC_getbalance_acc(bot.user.id, COIN_NAME, 6))
-            locked = float(await DOGE_LTC_getbalance_acc(bot.user.id, COIN_NAME, 1))
-            userdata_balance = store.sql_doge_balance(member.id, COIN_NAME)
-            if actual == locked:
-                balance_actual = num_format_coin(actual + float(userdata_balance['Adjust']), COIN_NAME)
-                balance_locked = num_format_coin(0 , COIN_NAME)
-            else:
-                balance_actual = num_format_coin(actual + float(userdata_balance['Adjust']), COIN_NAME)
-                if locked - actual + float(userdata_balance['Adjust']) < 0:
-                    balance_locked =  num_format_coin(0, COIN_NAME)
-                else:
-                    balance_locked =  num_format_coin(locked - actual + float(userdata_balance['Adjust']), COIN_NAME)
-            await ctx.send(
-                f'**[ MY {COIN_NAME} BALANCE]**\n'
-                f' Deposit Address: `{depositAddress}`\n'
-                f'{EMOJI_MONEYBAG} Available: {balance_actual} '
-                f'{COIN_NAME}\n'
-                f'{EMOJI_MONEYBAG} Pending: {balance_locked} '
-                f'{COIN_NAME}\n'
-                '**This is bot\'s tipjar address. Do not deposit here unless you want to deposit to this bot.**')
-            return
-
-        wallet = await store.sql_get_userwallet(str(member.id), COIN_NAME)
-        if wallet is None:
-            botregister = await store.sql_register_user(str(member.id), COIN_NAME)
-            wallet = await store.sql_get_userwallet(str(member.id), COIN_NAME)
-        balance_actual = num_format_coin(wallet['actual_balance'] , COIN_NAME)
-        balance_locked = num_format_coin(wallet['locked_balance'] , COIN_NAME)
-        depositAddress = wallet['balance_wallet_address']
-        await ctx.send(
-            f'**[INFO BOT {member.name}\'s BALANCE]**\n\n'
-            f' Deposit Address: `{depositAddress}`\n'
-            f'{EMOJI_MONEYBAG} Available: {balance_actual} '
-            f'{COIN_NAME}\n'
-            f'{EMOJI_MONEYBAG} Pending: {balance_locked} '
-            f'{COIN_NAME}\n'
-            '**This is bot\'s tipjar address. Do not deposit here unless you want to deposit to this bot.**')
-        return
 
 @bot.command(pass_context=True, help=bot_help_donate)
 async def donate(ctx, amount: str, coin: str = None):
@@ -2328,8 +2168,8 @@ async def stats(ctx, coin: str = None):
             if ('unlocked' in walletBalance) and ('locked' in walletBalance):
                 balance_actual = num_format_coin(walletBalance['unlocked'], COIN_NAME)
                 balance_locked = num_format_coin(walletBalance['locked'], COIN_NAME)
-                balance_str = f'[TOTAL UNLOCKED] {balance_actual}{COIN_NAME}\n'
-                balance_str = balance_str + f'[TOTAL LOCKED]   {balance_locked}{COIN_NAME}'
+                balance_str = f'[WHOLE BOT UNLOCKED] {balance_actual}{COIN_NAME}\n'
+                balance_str = balance_str + f'[WHOLE BOT LOCKED]   {balance_locked}{COIN_NAME}'
             msg = await ctx.send(f'**[ {COIN_NAME} ]**\n'
                            f'```[NETWORK HEIGHT] {height}\n'
                            f'[TIME]           {ago}\n'
