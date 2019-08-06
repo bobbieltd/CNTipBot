@@ -114,7 +114,6 @@ bot_help_about = "About TipBot"
 bot_help_register = "Register or change your deposit address."
 bot_help_info = "Get your account's info."
 bot_help_balance = f"Check your {COIN_REPR} balance."
-bot_help_botbalance = f"Check (only) bot {COIN_REPR} balance."
 bot_help_donate = f"Donate {COIN_REPR} to a Bot Owner."
 bot_help_tip = f"Give {COIN_REPR} to a user from your balance."
 bot_help_tipall = f"Spread a tip amount of {COIN_REPR} to all online members."
@@ -2889,11 +2888,6 @@ async def info_error(ctx, error):
 
 @balance.error
 async def balance_error(ctx, error):
-    pass
-
-
-@botbalance.error
-async def botbalance_error(ctx, error):
     pass
 
 @tip.error
