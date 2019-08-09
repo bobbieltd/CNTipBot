@@ -349,6 +349,12 @@ async def sql_get_userwallet(userID, coin: str = None):
                     userwallet['actual_balance'] = userwallet['actual_balance'] - userwallet['donation_balance'] + userwallet['gaming_balance']
                 else:
                     print("Error : New donation_balance and gaming_balance do not exist.")
+                    if userwallet['donation_balance'] is None:
+                        sql = """ UPDATE """+coin.lower()+"""_user_paymentid SET donation_balance=0 WHERE user_id=%s """
+                        cur.execute(sql, (str(userID),))
+                    if userwallet['gaming_balance'] is None:
+                        sql = """ UPDATE """+coin.lower()+"""_user_paymentid SET gaming_balance=0 WHERE user_id=%s """
+                        cur.execute(sql, (str(userID),))
                 userwallet['balance_wallet_address'] = result['int_address']
                 if coin in ENABLE_COIN_DOGE:
                     depositAddress = await wallet.DOGE_LTC_getaccountaddress(str(userID), coin)
