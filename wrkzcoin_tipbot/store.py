@@ -345,7 +345,7 @@ async def sql_get_userwallet(userID, coin: str = None):
             else:
                 userwallet = result
                 # recalculating actual_balance
-                if 'donation_balance' in userwallet and 'gaming_balance' in userwallet:
+                if userwallet['donation_balance'] and userwallet['gaming_balance']:
                     userwallet['actual_balance'] = userwallet['actual_balance'] - userwallet['donation_balance'] + userwallet['gaming_balance']
                 else:
                     print("Error : New donation_balance and gaming_balance do not exist.")
